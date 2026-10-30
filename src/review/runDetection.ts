@@ -19,6 +19,7 @@ export async function runDetection(): Promise<void> {
       exclusions: settings.detectionExclusions,
       keepNames: c.config.keepNames,
       types: settings.enabledTypes,
+      learnedTerms: settings.learnedTerms.map((t) => t.text),
     });
     return applyDetection(c, detected);
   });

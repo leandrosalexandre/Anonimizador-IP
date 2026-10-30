@@ -1,6 +1,11 @@
 import { useId, useState, useSyncExternalStore } from 'react';
 import { DEFAULT_EXCLUSIONS } from '../detectors/data/exclusoes';
-import { DEFAULT_ENABLED_TYPES, ENTITY_TYPES, type EntityType } from '../detectors/types';
+import {
+  DEFAULT_ENABLED_TYPES,
+  ENTITY_TYPES,
+  MANUAL_ONLY_TYPES,
+  type EntityType,
+} from '../detectors/types';
 import { TYPE_TITLE } from '../review/labels';
 import { DEFAULT_AI_INSTRUCTIONS } from '../export/build';
 import { TypedConfirm } from '../components/TypedConfirm';
@@ -10,6 +15,7 @@ import {
   resetSettings,
   subscribeSettings,
   updateSettings,
+  type LearnedTerm,
   type LockOnHide,
 } from '../settings/settings';
 import { userMessage } from '../utils/errors';
@@ -122,6 +128,11 @@ export function SettingsPage() {
       <ExclusionsPanel
         value={settings.detectionExclusions}
         onSave={(detectionExclusions) => updateSettings({ detectionExclusions })}
+      />
+
+      <LearnedPanel
+        value={settings.learnedTerms}
+        onChange={(learnedTerms) => updateSettings({ learnedTerms })}
       />
 
       <div className="panel">
@@ -281,7 +292,7 @@ function TypesPanel({
   value: readonly EntityType[];
   onChange: (types: EntityType[]) => void;
 }) {
-  const optional = ENTITY_TYPES.filter((t) => t !== 'PESSOA');
+  const optional = ENTITY_TYPES.filter((t) => t !== 'PESSOA' && !MANUAL_ONLY_TYPES.includes(t));
   const isDefault =
     value.length === DEFAULT_ENABLED_TYPES.length &&
     DEFAULT_ENABLED_TYPES.every((t) => value.includes(t));
@@ -316,6 +327,46 @@ function TypesPanel({
         <button type="button" onClick={() => onChange([...DEFAULT_ENABLED_TYPES])}>
           Voltar ao padrão
         </button>
+      )}
+    </div>
+  );
+}
+
+/** Termos ensinados na revisão ("Vila Nova Esperança: bairro"), que não são mais detectados. */
+function LearnedPanel({
+  value,
+  onChange,
+}: {
+  value: readonly LearnedTerm[];
+  onChange: (terms: LearnedTerm[]) => void;
+}) {
+  return (
+    <div className="panel">
+      <h2>Termos aprendidos (não são dados pessoais)</h2>
+      <p className="hint">
+        Ensinados ao descartar uma entidade na Revisão, com o motivo digitado. Ficam em claro e não
+        são detectados de novo, em todos os cofres.
+      </p>
+      {value.length === 0 ? (
+        <p className="meta">Nenhum termo ensinado ainda.</p>
+      ) : (
+        <ul className="part-list learned-list">
+          {value.map((t, i) => (
+            <li key={`${t.text}-${i}`}>
+              <span>
+                <strong>{t.text}</strong> <span className="meta">— {t.kind}</span>
+              </span>
+              <button
+                type="button"
+                className="danger-outline"
+                aria-label={`Esquecer ${t.text}`}
+                onClick={() => onChange(value.filter((_, j) => j !== i))}
+              >
+                Esquecer
+              </button>
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   );

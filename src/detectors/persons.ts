@@ -27,8 +27,8 @@ const CAP_WORD =
 const PARTICLE = "(?:das|dos|da|de|do|e|d['’]|DAS|DOS|DA|DE|DO|E|D['’])(?![\\p{L}])";
 /** Sequência de palavras capitalizadas (permitindo partículas e uma quebra de linha). */
 const NAME_SEQUENCE = new RegExp(
-  // Uma quebra de linha só continua o nome se a linha seguinte não for outro campo ("Rótulo:").
-  `(?<![\\p{L}\\p{N}])${CAP_WORD}(?:(?:[ \\t]+|[ \\t]*\\n[ \\t]*(?![^\\n:]{1,30}:))(?:${PARTICLE}[ \\t]+)?${CAP_WORD})*`,
+  // Uma quebra de linha só continua o nome se a linha seguinte não tiver um campo ("Rótulo:").
+  `(?<![\\p{L}\\p{N}])${CAP_WORD}(?:(?:[ \\t]+|[ \\t]*\\n[ \\t]*(?![^\\n]{0,80}:))(?:${PARTICLE}[ \\t]+)?${CAP_WORD})*`,
   'gu',
 );
 /** A mesma sequência, sem atravessar a quebra de linha (blocos de qualificação). */
@@ -49,8 +49,12 @@ export interface NameContext {
   blocked: readonly Range[];
 }
 
-export function nameContext(text: string, exclusions: ReadonlySet<string>): NameContext {
-  return { exclusions, blocked: blockedRanges(text) };
+export function nameContext(
+  text: string,
+  exclusions: ReadonlySet<string>,
+  learned: readonly string[] = [],
+): NameContext {
+  return { exclusions, blocked: blockedRanges(text, learned) };
 }
 
 const wordKey = (w: string) => fold(w).replace(/[.'’:,;]+$/u, '');
@@ -192,7 +196,7 @@ function nameAt(
   if (!m || (m.index ?? 0) > 2) return null;
   let span: Span = { start: offset + (m.index ?? 0), end: 0, text: m[0] };
   span.end = span.start + span.text.length;
-  span = cutAtCaseChange(span);
+  span = cutAtCaseChange(splitAtRepeat(span)[0] ?? span);
   const first = splitOnExclusions(span, ctx.exclusions, ctx.blocked)[0];
   if (!first || first.start !== span.start) return null;
   const capped = capTokens(first);
@@ -397,11 +401,63 @@ export function detectTriggers(text: string, ctx: NameContext): Candidate[] {
 const NAMED_AFTER =
   /(?:^|[^\p{L}])(?:lei|leis|rua|avenida|av\.|travessa|pra[çc]a|escola|col[ée]gio|hospital|instituto|universidade|faculdade|funda[çc][ãa]o|f[óo]rum|est[áa]dio|terminal|conjunto|residencial|edif[íi]cio|condom[íi]nio|ponte|viaduto|unidade|creche|posto|igreja|par[óo]quia|capela|comunidade|associa[çc][ãa]o)(?:\s+(?:estadual|municipal|federal|dr\.?|dra\.?|prof\.?|profa\.?|padre|pe\.|santo|santa|s[ãa]o|governador|presidente|deputado|senador|general|coronel|marechal))*[\s:]*$/iu;
 
+/**
+ * Divide na troca de caixa: um nome em CAIXA ALTA seguido de palavra em outra caixa são dois
+ * trechos ("JOSÉ GERARDO DE SOUZA Arquivos" → "JOSÉ GERARDO DE SOUZA" + "Arquivos").
+ */
+/**
+ * O mesmo nome repetido em seguida (fim de uma linha e início da outra) são duas ocorrências:
+ * "JOSÉ GERARDO DE SOUZA JOSÉ GERARDO DE SOUZA" → duas vezes "JOSÉ GERARDO DE SOUZA".
+ */
+function splitAtRepeat(span: Span): Span[] {
+  const words = [...span.text.matchAll(/[^\s]+/gu)];
+  const keys = words.map((w) => wordKey(w[0]));
+  for (let k = 2; k < keys.length; k++) {
+    if (keys[k] !== keys[0] || keys[k + 1] !== keys[1]) continue;
+    const endWord = words[k - 1];
+    const startWord = words[k];
+    if (!endWord || !startWord) break;
+    const end = span.start + (endWord.index ?? 0) + endWord[0].length;
+    const start = span.start + (startWord.index ?? 0);
+    return [
+      { start: span.start, end, text: span.text.slice(0, end - span.start) },
+      ...splitAtRepeat({ start, end: span.end, text: span.text.slice(start - span.start) }),
+    ];
+  }
+  return [span];
+}
+
+function splitAtCaseChange(span: Span): Span[] {
+  const head = cutAtCaseChange(span);
+  if (head.end >= span.end) return [span];
+  const rest = /\S/u.exec(span.text.slice(head.end - span.start));
+  if (!rest) return [head];
+  const start = head.end + rest.index;
+  return [head, { start, end: span.end, text: span.text.slice(start - span.start) }];
+}
+
+/** A última palavra seguida de ":" é o rótulo do próximo campo ("… SOUZA Nascimento: 01/01"). */
+function dropTrailingLabel(text: string, span: Span): Span {
+  if (!/^[ \t]*:/u.test(text.slice(span.end, span.end + 4))) return span;
+  const words = [...span.text.matchAll(/[^\s]+/gu)];
+  let i = words.length - 1;
+  while (i > 0 && PARTICLES.has(fold(words[i - 1]?.[0] ?? ''))) i--;
+  const cut = words[i];
+  if (!cut || i === 0) return { ...span, text: '', end: span.start };
+  const end = span.start + (words[i - 1]?.index ?? 0) + (words[i - 1]?.[0].length ?? 0);
+  return { start: span.start, end, text: span.text.slice(0, end - span.start) };
+}
+
 export function detectCapitalized(text: string, ctx: NameContext): Candidate[] {
   const out: Candidate[] = [];
   for (const m of text.matchAll(NAME_SEQUENCE)) {
-    const span = { start: m.index ?? 0, end: (m.index ?? 0) + m[0].length, text: m[0] };
-    for (const part of splitOnExclusions(span, ctx.exclusions, ctx.blocked)) {
+    const whole = { start: m.index ?? 0, end: (m.index ?? 0) + m[0].length, text: m[0] };
+    const parts = splitAtRepeat(whole)
+      .flatMap(splitAtCaseChange)
+      .map((s) => dropTrailingLabel(text, s))
+      .filter((s) => s.text)
+      .flatMap((s) => splitOnExclusions(s, ctx.exclusions, ctx.blocked));
+    for (const part of parts) {
       if (NAMED_AFTER.test(text.slice(Math.max(0, part.start - 40), part.start))) continue;
       const confidence = sequenceConfidence(part.text);
       if (confidence < 0.3) continue;

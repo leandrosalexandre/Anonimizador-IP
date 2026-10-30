@@ -26,6 +26,7 @@ const PRIORITY: Record<EntityType, number> = {
   EMPRESA_PRIVADA: 4,
   APELIDO: 3,
   PESSOA: 2,
+  CIDADE: 1,
   OUTRO: 1,
 };
 

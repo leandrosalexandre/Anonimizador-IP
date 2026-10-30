@@ -26,6 +26,7 @@ export const TYPE_LABEL: Record<EntityType, string> = {
   NUM_IP: 'IP',
   APELIDO: 'APELIDO',
   EMPRESA_PRIVADA: 'EMPRESA',
+  CIDADE: 'CIDADE',
   OUTRO: 'DADO',
 };
 
@@ -54,6 +55,7 @@ export const TYPE_TITLE: Record<EntityType, string> = {
   NUM_IP: 'Números de IP',
   APELIDO: 'Apelidos',
   EMPRESA_PRIVADA: 'Empresas privadas',
+  CIDADE: 'Cidades e lugares',
   OUTRO: 'Outros dados',
 };
 

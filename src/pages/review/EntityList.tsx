@@ -1,7 +1,7 @@
 import { useMemo, useState, useSyncExternalStore } from 'react';
 import { PERSON_ROLES } from '../../detectors/types';
 import { TYPE_TITLE, labelOf, normalizeRole } from '../../review/labels';
-import { confirm, merge } from '../../review/model';
+import { confirm, merge, pseudonymizeAllPeople } from '../../review/model';
 import { formatFolhas, type ReviewData } from '../../review/useReviewData';
 import { WARNING_BADGE, WARNING_TEXT, contextAround, entityWarnings } from '../../review/warnings';
 import { fold } from '../../detectors/text';
@@ -58,6 +58,8 @@ function groupEntities(entities: readonly StoredEntity[]): Group[] {
   for (const e of entities) {
     if (e.suggested) add('SUGESTAO', 'Possíveis nomes sem sinal forte', e);
     else if (e.type === 'APELIDO') add('APELIDO', TYPE_TITLE.APELIDO, e);
+    else if (e.type === 'CIDADE')
+      add('CIDADE', `${TYPE_TITLE.CIDADE}${e.decision === 'keep' ? ' (em claro)' : ''}`, e);
     else if (e.type === 'PESSOA') {
       if (e.decision === 'keep')
         add('PESSOA:KEEP', 'Pessoas mantidas (autoridades e servidores)', e);
@@ -95,6 +97,7 @@ export function EntityList({ content, data, onShowInText }: Props) {
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [keepAuthorities, setKeepAuthorities] = useState(true);
 
   const visible = useMemo(() => {
     const q = fold(query.trim());
@@ -138,6 +141,27 @@ export function EntityList({ content, data, onShowInText }: Props) {
         <strong>{counts.suggestions}</strong>{' '}
         {counts.suggestions === 1 ? 'sugestão não aplicada' : 'sugestões não aplicadas'}
       </p>
+      {counts.people > 0 && (
+        <div className="panel all-people">
+          <button
+            type="button"
+            className="primary"
+            onClick={() =>
+              void run((c) => pseudonymizeAllPeople(c, { includeKept: !keepAuthorities }))
+            }
+          >
+            Pseudonimizar todas as pessoas
+          </button>
+          <label className="checkbox">
+            <input
+              type="checkbox"
+              checked={keepAuthorities}
+              onChange={(e) => setKeepAuthorities(e.target.checked)}
+            />
+            Manter as autoridades em claro (Delegado, Escrivão, Perito…)
+          </label>
+        </div>
+      )}
       <div className="toolbar list-filters">
         <input
           type="search"

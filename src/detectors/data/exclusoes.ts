@@ -69,7 +69,8 @@ homicidio tentado tentada tentativa consumado lesao corporal roubo furto trafico
 ameacas violencia feminicidio latrocinio receptacao porte posse ilegal arma armas fogo drogas
 entorpecentes dano injuria calunia difamacao sequestro extorsao estelionato titulo eleitor
 eleitoral passaporte carteira trabalho previdencia social natureza tentativa fls folha folhas
-pagina
+pagina arquivo arquivos arquivado arquivamento anexo anexos documentos digitalizado digitalizada
+assinatura assinado assinada impresso impressao emitido emitida gerado sistema usuario pagina paginas
 `
   .split(/\s+/)
   .filter(Boolean);

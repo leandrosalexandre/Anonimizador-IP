@@ -1,27 +1,32 @@
 import { useId, useState, useSyncExternalStore } from 'react';
-import { TYPE_LABEL, labelOf, normalizeRole } from '../../review/labels';
+import { TYPE_LABEL, TYPE_TITLE, labelOf, normalizeRole } from '../../review/labels';
 import {
   acceptSuggestion,
   addCustomRole,
   assignRole,
+  changeType,
   cleanName,
   confirm,
   discard,
   keepSeparate,
   link,
+  removeVariant,
+  sameLabelOwner,
   setCanonical,
   setDecision,
   setIndex,
   splitVariant,
   unify,
+  unifyInto,
 } from '../../review/model';
+import { ENTITY_TYPES, type EntityType } from '../../detectors/types';
 import {
   WARNING_TEXT,
   contextAround,
   entityWarnings,
   suspiciousWords,
 } from '../../review/warnings';
-import { getSettings, subscribeSettings } from '../../settings/settings';
+import { getSettings, subscribeSettings, updateSettings } from '../../settings/settings';
 import { formatFolhas, type ReviewData } from '../../review/useReviewData';
 import { userMessage } from '../../utils/errors';
 import type { StoredEntity, VaultContent } from '../../vault/types';
@@ -127,7 +132,7 @@ export function EntityDetail({ entity, content, data, onShowInText, onClose }: P
               <button
                 type="button"
                 className="danger-outline"
-                onClick={() => void run((c) => discard(c, entity.id))}
+                onClick={() => setConfirmDiscard(true)}
               >
                 Descartar
               </button>
@@ -226,17 +231,12 @@ export function EntityDetail({ entity, content, data, onShowInText, onClose }: P
               ))}
             <option value={NEW_ROLE}>Criar papel…</option>
           </select>
-          <label htmlFor={`${id}-index`}>Número</label>
-          <input
-            id={`${id}-index`}
-            type="number"
-            min={1}
-            inputMode="numeric"
-            value={entity.index ?? ''}
-            onChange={(e) => {
-              const n = Number(e.target.value);
-              if (Number.isInteger(n) && n >= 1) void run((c) => setIndex(c, entity.id, n));
-            }}
+          <IndexForm
+            key={`${entity.role ?? ''}-${entity.index ?? ''}`}
+            entity={entity}
+            content={content}
+            data={data}
+            run={run}
           />
         </div>
       )}
@@ -269,27 +269,32 @@ export function EntityDetail({ entity, content, data, onShowInText, onClose }: P
         </form>
       )}
 
+      {entity.type === 'PESSOA' && !entity.suggested && (
+        <SamePerson entity={entity} people={people} data={data} run={run} />
+      )}
+
       {entity.type !== 'PESSOA' &&
+        entity.type !== 'CIDADE' &&
         entity.type !== 'NUM_PROCESSO' &&
         entity.type !== 'NUM_BO' &&
         entity.type !== 'NUM_IP' && (
-          <div className="inline-form">
-            <label htmlFor={`${id}-link`}>Pertence a</label>
-            <select
-              id={`${id}-link`}
-              value={entity.linkedTo ?? ''}
-              onChange={(e) => void run((c) => link(c, entity.id, e.target.value || null))}
-            >
-              <option value="">— ninguém —</option>
-              {people.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.decision === 'pseudonymize' ? `${labelOf(p, data.byId)} ` : ''}
-                  {p.canonical}
-                </option>
-              ))}
-            </select>
-          </div>
+          <LinkOwner entity={entity} people={people} data={data} run={run} />
         )}
+
+      <div className="inline-form">
+        <label htmlFor={`${id}-type`}>Tipo</label>
+        <select
+          id={`${id}-type`}
+          value={entity.type}
+          onChange={(e) => void run((c) => changeType(c, entity.id, e.target.value as EntityType))}
+        >
+          {ENTITY_TYPES.map((t) => (
+            <option key={t} value={t}>
+              {t === 'CIDADE' ? 'Cidade ou lugar (fica em claro)' : TYPE_TITLE[t].replace(/s$/, '')}
+            </option>
+          ))}
+        </select>
+      </div>
 
       <form
         className="inline-form"
@@ -316,9 +321,22 @@ export function EntityDetail({ entity, content, data, onShowInText, onClose }: P
           <li key={v}>
             <span>{v}</span>
             {entity.variants.length > 1 && (
-              <button type="button" onClick={() => void run((c) => splitVariant(c, entity.id, v))}>
-                Separar
-              </button>
+              <span className="actions">
+                <button
+                  type="button"
+                  onClick={() => void run((c) => splitVariant(c, entity.id, v))}
+                >
+                  Separar
+                </button>
+                <button
+                  type="button"
+                  className="danger-outline"
+                  aria-label={`Apagar a variante ${v}`}
+                  onClick={() => void run((c) => removeVariant(c, entity.id, v))}
+                >
+                  Apagar
+                </button>
+              </span>
             )}
           </li>
         ))}
@@ -343,25 +361,15 @@ export function EntityDetail({ entity, content, data, onShowInText, onClose }: P
             Confirmar sugestão
           </button>
         )}
-        {confirmDiscard ? (
-          <>
-            <button type="button" onClick={() => setConfirmDiscard(false)}>
-              Cancelar
-            </button>
-            <button
-              type="button"
-              className="danger"
-              onClick={() => void run((c) => discard(c, entity.id))}
-            >
-              Confirmar descarte
-            </button>
-          </>
-        ) : (
+        {!confirmDiscard && (
           <button type="button" className="danger-outline" onClick={() => setConfirmDiscard(true)}>
             Descartar (não é dado pessoal)
           </button>
         )}
       </div>
+      {confirmDiscard && (
+        <DiscardForm entity={entity} run={run} onCancel={() => setConfirmDiscard(false)} />
+      )}
     </div>
   );
 }
@@ -430,5 +438,269 @@ function CleanName({
         </button>
       </div>
     </div>
+  );
+}
+
+type Run = (op: (c: VaultContent) => VaultContent) => Promise<void>;
+
+const roleTitle = (e: StoredEntity) =>
+  e.decision === 'keep'
+    ? 'Mantidas (autoridades)'
+    : e.role
+      ? normalizeRole(e.role).charAt(0) + normalizeRole(e.role).slice(1).toLocaleLowerCase('pt-BR')
+      : 'Pessoa (sem papel)';
+
+/** Pessoas agrupadas por papel, para os campos de escolha. */
+function byRole(people: readonly StoredEntity[]): [string, StoredEntity[]][] {
+  const groups = new Map<string, StoredEntity[]>();
+  for (const p of people) {
+    if (p.suggested) continue;
+    const key = roleTitle(p);
+    groups.set(key, [...(groups.get(key) ?? []), p]);
+  }
+  return [...groups].sort((a, b) => a[0].localeCompare(b[0], 'pt-BR'));
+}
+
+const personOption = (p: StoredEntity, data: ReviewData) =>
+  `${p.decision === 'pseudonymize' ? `${labelOf(p, data.byId)} ` : ''}${p.canonical}`;
+
+/** Número do marcador: aplicado ao confirmar; se já for de outra pessoa, unifica as duas. */
+function IndexForm({
+  entity,
+  content,
+  data,
+  run,
+}: {
+  entity: StoredEntity;
+  content: VaultContent;
+  data: ReviewData;
+  run: Run;
+}) {
+  const id = useId();
+  const [draft, setDraft] = useState(String(entity.index ?? ''));
+  const n = Number(draft);
+  const valid = Number.isInteger(n) && n >= 1;
+  const owner =
+    valid && n !== entity.index ? sameLabelOwner(content, entity.id, entity, n) : undefined;
+  return (
+    <form
+      className="inline-form index-form"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (valid && n !== entity.index) void run((c) => setIndex(c, entity.id, n));
+      }}
+    >
+      <label htmlFor={`${id}-index`}>Número</label>
+      <input
+        id={`${id}-index`}
+        type="number"
+        min={1}
+        inputMode="numeric"
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+      />
+      <button type="submit" disabled={!valid || n === entity.index}>
+        {owner ? 'Aplicar e unificar' : 'Aplicar'}
+      </button>
+      {owner && (
+        <p className="hint">
+          {labelOf(owner, data.byId)} já é <strong>{owner.canonical}</strong>: as duas serão
+          unificadas numa só pessoa.
+        </p>
+      )}
+    </form>
+  );
+}
+
+/** "É a mesma pessoa que…": unifica esta entidade numa pessoa já existente. */
+function SamePerson({
+  entity,
+  people,
+  data,
+  run,
+}: {
+  entity: StoredEntity;
+  people: readonly StoredEntity[];
+  data: ReviewData;
+  run: Run;
+}) {
+  const id = useId();
+  const [target, setTarget] = useState('');
+  const groups = byRole(people);
+  if (!groups.length) return null;
+  const chosen = people.find((p) => p.id === target);
+  return (
+    <div className="inline-form same-as">
+      <label htmlFor={`${id}-same`}>É a mesma pessoa que</label>
+      <select id={`${id}-same`} value={target} onChange={(e) => setTarget(e.target.value)}>
+        <option value="">— escolha —</option>
+        {groups.map(([title, list]) => (
+          <optgroup key={title} label={title}>
+            {list.map((p) => (
+              <option key={p.id} value={p.id}>
+                {personOption(p, data)}
+              </option>
+            ))}
+          </optgroup>
+        ))}
+      </select>
+      <button
+        type="button"
+        className="primary"
+        disabled={!chosen}
+        onClick={() => chosen && void run((c) => unifyInto(c, chosen.id, entity.id))}
+      >
+        Unificar
+      </button>
+      {chosen && (
+        <p className="hint">
+          “{entity.canonical}” deixa de existir e todas as suas ocorrências passam a ser{' '}
+          {chosen.decision === 'pseudonymize' ? labelOf(chosen, data.byId) : chosen.canonical}.
+        </p>
+      )}
+    </div>
+  );
+}
+
+/** "Pertence a": primeiro o papel (vítima, autor…), depois a pessoa. */
+function LinkOwner({
+  entity,
+  people,
+  data,
+  run,
+}: {
+  entity: StoredEntity;
+  people: readonly StoredEntity[];
+  data: ReviewData;
+  run: Run;
+}) {
+  const id = useId();
+  const groups = byRole(people);
+  const owner = entity.linkedTo ? data.byId.get(entity.linkedTo) : undefined;
+  const [group, setGroup] = useState(owner ? roleTitle(owner) : '');
+  const list = groups.find(([title]) => title === group)?.[1] ?? [];
+  return (
+    <div className="inline-form link-owner">
+      <label htmlFor={`${id}-role`}>Pertence a: papel</label>
+      <select id={`${id}-role`} value={group} onChange={(e) => setGroup(e.target.value)}>
+        <option value="">— escolha o papel —</option>
+        {groups.map(([title]) => (
+          <option key={title} value={title}>
+            {title}
+          </option>
+        ))}
+      </select>
+      <label htmlFor={`${id}-link`}>pessoa</label>
+      <select
+        id={`${id}-link`}
+        value={entity.linkedTo ?? ''}
+        disabled={!group && !entity.linkedTo}
+        onChange={(e) => void run((c) => link(c, entity.id, e.target.value || null))}
+      >
+        <option value="">— ninguém —</option>
+        {owner && !list.includes(owner) && (
+          <option value={owner.id}>{personOption(owner, data)}</option>
+        )}
+        {list.map((p) => (
+          <option key={p.id} value={p.id}>
+            {personOption(p, data)}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+const DISCARD_KINDS = [
+  'bairro',
+  'rua',
+  'cidade',
+  'distrito ou localidade',
+  'órgão ou instituição',
+  'hospital',
+  'empresa',
+  'termo técnico',
+  'rótulo de formulário',
+];
+
+/**
+ * Descartar com o motivo digitado ("bairro", "rua"…). "Ensinar ao app" grava o termo nas
+ * preferências: ele fica em claro e não é detectado de novo, em todos os cofres.
+ */
+function DiscardForm({
+  entity,
+  run,
+  onCancel,
+}: {
+  entity: StoredEntity;
+  run: Run;
+  onCancel: () => void;
+}) {
+  const id = useId();
+  const [kind, setKind] = useState('');
+  const [learn, setLearn] = useState(true);
+  const confirmDiscard = async () => {
+    await run((c) => discard(c, entity.id));
+    const reason = kind.trim();
+    if (!learn || !reason) return;
+    const current = getSettings().learnedTerms;
+    const known = new Set(current.map((t) => t.text.toLocaleLowerCase('pt-BR')));
+    const added = [entity.canonical, ...entity.variants]
+      .map((v) => v.replace(/\s+/g, ' ').trim())
+      .filter((v) => {
+        const k = v.toLocaleLowerCase('pt-BR');
+        if (!v || known.has(k)) return false;
+        known.add(k);
+        return true;
+      })
+      .map((text) => ({ text, kind: reason }));
+    if (added.length) updateSettings({ learnedTerms: [...current, ...added] });
+  };
+  return (
+    <form
+      className="panel discard-form"
+      onSubmit={(e) => {
+        e.preventDefault();
+        void confirmDiscard();
+      }}
+    >
+      <h3>Descartar “{entity.canonical}”</h3>
+      <label htmlFor={`${id}-kind`}>Não é dado pessoal porque é (digite ou escolha)</label>
+      <input
+        id={`${id}-kind`}
+        list={`${id}-kinds`}
+        value={kind}
+        onChange={(e) => setKind(e.target.value)}
+        placeholder="Ex.: bairro, rua, órgão"
+        maxLength={40}
+      />
+      <datalist id={`${id}-kinds`}>
+        {DISCARD_KINDS.map((k) => (
+          <option key={k} value={k} />
+        ))}
+      </datalist>
+      <label className="checkbox">
+        <input
+          type="checkbox"
+          checked={learn}
+          disabled={!kind.trim()}
+          onChange={(e) => setLearn(e.target.checked)}
+        />
+        Ensinar ao app: não detectar “{entity.canonical}” de novo, em nenhum cofre
+      </label>
+      <p className="hint">
+        O termo ensinado fica gravado sem cifra neste aparelho, junto com as preferências, e pode
+        ser apagado em Configurações. Use só para lugares, órgãos e termos, nunca para nomes de
+        pessoas.
+      </p>
+      <div className="actions">
+        <button type="button" onClick={onCancel}>
+          Cancelar
+        </button>
+        <button type="submit" className="danger">
+          Confirmar descarte
+        </button>
+      </div>
+    </form>
   );
 }
