@@ -7,8 +7,8 @@ telemetria nem comunicação com IA — o texto é copiado e colado manualmente.
 A especificação completa está em [`SPEC.md`](./SPEC.md); as decisões técnicas, em
 [`docs/DECISOES.md`](./docs/DECISOES.md).
 
-> **Estado atual:** Fase 1 — cofres criptografados (criar, abrir, bloquear, exportar, importar e
-> apagar). As telas de Documentos em diante ainda são provisórias.
+> **Estado atual:** Fase 2 — cofres criptografados e importação de PDFs (texto, miniaturas e
+> folhas). As telas de Revisão em diante ainda são provisórias.
 
 ## Endereço
 
@@ -61,6 +61,16 @@ atualização.
   `.ipcofre` (cifrado com a mesma senha). No outro aparelho, use **Importar cofre** e digite a
   senha.
 
+## Documentos e folhas
+
+- Em **Documentos**, selecione um ou mais PDFs (no computador, também dá para arrastar). Cada
+  página é lida neste aparelho e classificada como **Texto** ou **Imagem** (escaneada, sem
+  texto; o OCR vem na próxima etapa).
+- O app procura o carimbo de folha de cada página ("Fls. 12", "Fl. 12" ou número no canto
+  superior direito). Se a numeração não for detectada, informe "a página 1 do PDF corresponde à
+  fls. N" ou corrija página por página em **Corrigir fls.**
+- O PDF original fica guardado cifrado no cofre, para o OCR e para levar o cofre a outro aparelho.
+
 ## Desenvolvimento
 
 Requisitos: Node.js 22 ou superior.
@@ -73,7 +83,11 @@ npm run preview    # serve dist/ em http://localhost:4173/Anonimizador-IP/
 npm run lint       # ESLint + Prettier
 npm test           # testes unitários (Vitest)
 npm run test:e2e   # testes E2E (Playwright): offline, CSP, instalabilidade e zero requisições externas
+npm run fixtures   # regera o IP fictício e o gabarito em test/fixtures/
 ```
+
+O **IP fictício** de referência (`test/fixtures/`) tem versões com texto, escaneada e mista, além
+de `gabarito.json` com todas as entidades esperadas. Todos os dados são inventados.
 
 Os testes E2E usam o build de produção, que é onde valem a CSP e o service worker.
 

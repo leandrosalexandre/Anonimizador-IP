@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 
 /** Avisa quando há nova versão do app ou quando ele já está pronto para uso offline. */
@@ -7,6 +8,13 @@ export function UpdatePrompt() {
     offlineReady: [offlineReady, setOfflineReady],
     updateServiceWorker,
   } = useRegisterSW();
+
+  // O aviso de "pronto para offline" é só informativo: some sozinho.
+  useEffect(() => {
+    if (!offlineReady) return;
+    const timer = setTimeout(() => setOfflineReady(false), 6000);
+    return () => clearTimeout(timer);
+  }, [offlineReady, setOfflineReady]);
 
   if (!needRefresh && !offlineReady) return null;
 

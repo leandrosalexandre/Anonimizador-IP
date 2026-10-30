@@ -1,3 +1,6 @@
+import { createReadStream, existsSync, readFileSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
@@ -19,15 +22,61 @@ function cspMetaTag(): Plugin {
   };
 }
 
+const PDFJS_ROOT = fileURLToPath(new URL('./node_modules/pdfjs-dist/', import.meta.url));
+/** Recursos do pdf.js servidos pelo próprio app (SPEC 2.2): mapas de caracteres, fontes padrão,
+ * decodificadores WASM (JBIG2/JPEG 2000, comuns em PDFs escaneados) e perfis de cor. */
+const PDFJS_ASSETS: Record<string, RegExp> = {
+  cmaps: /\.bcmap$/,
+  standard_fonts: /\.(pfb|ttf)$|^LICENSE/,
+  wasm: /^(jbig2|openjpeg|qcms_bg)\.wasm$|^LICENSE/,
+  iccs: /\.icc$|^LICENSE/,
+};
+
+function pdfjsAssets(): Plugin {
+  const files = Object.entries(PDFJS_ASSETS).flatMap(([dir, pattern]) =>
+    readdirSync(join(PDFJS_ROOT, dir))
+      .filter((f) => pattern.test(f))
+      .map((f) => ({ dir, file: f })),
+  );
+  return {
+    name: 'pdfjs-assets',
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const match = /\/pdfjs\/(\w+)\/([\w.-]+)$/.exec(req.url ?? '');
+        const entry = match && files.find((f) => f.dir === match[1] && f.file === match[2]);
+        if (!entry) return next();
+        const path = join(PDFJS_ROOT, entry.dir, entry.file);
+        if (!existsSync(path)) return next();
+        res.setHeader(
+          'Content-Type',
+          entry.file.endsWith('.wasm') ? 'application/wasm' : 'application/octet-stream',
+        );
+        createReadStream(path).pipe(res);
+      });
+    },
+    generateBundle() {
+      for (const { dir, file } of files) {
+        this.emitFile({
+          type: 'asset',
+          fileName: `pdfjs/${dir}/${file}`,
+          source: readFileSync(join(PDFJS_ROOT, dir, file)),
+        });
+      }
+    },
+  };
+}
+
 export default defineConfig({
   base: BASE,
   build: {
     target: 'es2022',
     sourcemap: false,
   },
+  worker: { format: 'es' },
   plugins: [
     react(),
     cspMetaTag(),
+    pdfjsAssets(),
     VitePWA({
       // O usuário decide quando atualizar, para não recarregar no meio de uma revisão.
       registerType: 'prompt',
@@ -62,7 +111,9 @@ export default defineConfig({
       },
       workbox: {
         // Pré-cache de tudo o que o app usa, incluindo WASM e modelos de OCR (Fase 3).
-        globPatterns: ['**/*.{js,mjs,css,html,svg,png,ico,webmanifest,json,wasm,traineddata,gz}'],
+        globPatterns: [
+          '**/*.{js,mjs,css,html,svg,png,ico,webmanifest,json,wasm,traineddata,gz,bcmap,pfb,ttf,icc}',
+        ],
         maximumFileSizeToCacheInBytes: 40 * 1024 * 1024,
         navigateFallback: 'index.html',
         cleanupOutdatedCaches: true,

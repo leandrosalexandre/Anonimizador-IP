@@ -5,6 +5,7 @@ import { PlaceholderPage } from './pages/PlaceholderPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { VaultsPage } from './pages/vaults/VaultsPage';
+import { DocumentsPage } from './pages/documents/DocumentsPage';
 import { AutoLockController } from './components/AutoLockController';
 import { RequireVault } from './components/RequireVault';
 import { VaultStatus } from './components/VaultStatus';
@@ -15,6 +16,8 @@ function pageFor(route: AppRoute): ReactNode {
   switch (route.path) {
     case '/cofres':
       return <VaultsPage />;
+    case '/documentos':
+      return <DocumentsPage />;
     case '/configuracoes':
       return <SettingsPage />;
     default:

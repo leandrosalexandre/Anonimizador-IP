@@ -7,15 +7,15 @@ import {
   VaultAlreadyExistsError,
   importVault,
   parseVaultFile,
+  type ParsedVaultFile,
 } from '../../vault/exchange';
 import { setUnlocked } from '../../vault/session';
-import type { VaultRecord } from '../../vault/types';
 import { PasswordForm } from './PasswordForm';
 
 export function ImportVault({ onImported }: { onImported: () => void }) {
   const id = useId();
   const inputRef = useRef<HTMLInputElement>(null);
-  const [record, setRecord] = useState<VaultRecord | null>(null);
+  const [record, setRecord] = useState<ParsedVaultFile | null>(null);
   const [password, setPassword] = useState<string | null>(null);
   const [conflict, setConflict] = useState<VaultAlreadyExistsError | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -40,7 +40,7 @@ export function ImportVault({ onImported }: { onImported: () => void }) {
     }
   }
 
-  async function finish(rec: VaultRecord, pw: string, replace: boolean) {
+  async function finish(rec: ParsedVaultFile, pw: string, replace: boolean) {
     try {
       const vault = await importVault(rec, pw, { replace });
       await requestPersistentStorage();
@@ -89,7 +89,7 @@ export function ImportVault({ onImported }: { onImported: () => void }) {
       )}
       {record && !conflict && (
         <PasswordForm
-          title={`Senha do cofre “${record.name}”`}
+          title={`Senha do cofre “${record.record.name}”`}
           submitLabel="Importar"
           busyLabel="Conferindo senha…"
           onSubmit={(pw) => finish(record, pw, false)}
@@ -101,7 +101,7 @@ export function ImportVault({ onImported }: { onImported: () => void }) {
           <p id={`${id}-conflict`}>
             Este aparelho já tem o cofre <strong>{conflict.existing.name}</strong> (atualizado em{' '}
             {formatDateTime(conflict.existing.updatedAt)}). O arquivo foi atualizado em{' '}
-            {formatDateTime(record.updatedAt)}.
+            {formatDateTime(record.record.updatedAt)}.
           </p>
           <p>Substituir apaga a versão deste aparelho e mantém a do arquivo.</p>
           <div className="actions">

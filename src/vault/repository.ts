@@ -1,13 +1,21 @@
 import {
   DecryptionError,
   PBKDF2_DEFAULT_ITERATIONS,
+  decrypt,
   decryptJson,
   deriveKey,
+  encrypt,
   encryptJson,
   generateSalt,
 } from './crypto';
 import { getDb } from './db';
-import { emptyVaultContent, type VaultContent, type VaultMeta, type VaultRecord } from './types';
+import {
+  emptyVaultContent,
+  type BlobRecord,
+  type VaultContent,
+  type VaultMeta,
+  type VaultRecord,
+} from './types';
 
 export const MAX_VAULT_NAME_LENGTH = 80;
 
@@ -42,6 +50,15 @@ export class VaultNameError extends Error {
 /** Dado autenticado (AAD) que amarra o conteúdo cifrado ao identificador do cofre. */
 export function payloadContext(vaultId: string): string {
   return `anonimizador-ip:cofre:v1:${vaultId}`;
+}
+
+/** AAD dos arquivos binários: amarra cada blob ao cofre e ao seu identificador. */
+export function blobContext(vaultId: string, blobId: string): string {
+  return `anonimizador-ip:blob:v1:${vaultId}:${blobId}`;
+}
+
+export function blobKey(vaultId: string, blobId: string): string {
+  return `${vaultId}/${blobId}`;
 }
 
 export function toMeta(record: VaultRecord): VaultMeta {
@@ -120,26 +137,77 @@ export async function unlockVault(id: string, password: string): Promise<Unlocke
   return openRecord(await getVaultRecord(id), password);
 }
 
-/** Regrava o conteúdo cifrado (IV novo a cada gravação) e atualiza a data. */
+export interface ContentChanges {
+  /** Arquivos binários novos (cifrados antes de gravar). */
+  putBlobs?: { id: string; bytes: Uint8Array<ArrayBuffer> }[];
+  deleteBlobIds?: string[];
+}
+
+/**
+ * Regrava o conteúdo cifrado (IV novo a cada gravação) e atualiza a data. Blobs novos e
+ * removidos entram na mesma transação, para o cofre nunca ficar inconsistente.
+ */
 export async function saveVaultContent(
   vault: UnlockedVault,
   content: VaultContent,
+  changes: ContentChanges = {},
 ): Promise<UnlockedVault> {
+  const id = vault.meta.id;
+  const record = await getVaultRecord(id);
+  const payload = await encryptJson(vault.key, content, payloadContext(id));
+  const blobs: BlobRecord[] = [];
+  for (const blob of changes.putBlobs ?? []) {
+    const enc = await encrypt(vault.key, blob.bytes, blobContext(id, blob.id));
+    blobs.push({ key: blobKey(id, blob.id), vaultId: id, blobId: blob.id, ...enc });
+  }
+  const updated: VaultRecord = { ...record, updatedAt: new Date().toISOString(), payload };
+
   const db = await getDb();
-  const record = await getVaultRecord(vault.meta.id);
-  const updated: VaultRecord = {
-    ...record,
-    updatedAt: new Date().toISOString(),
-    payload: await encryptJson(vault.key, content, payloadContext(record.id)),
-  };
-  await db.put('vaults', updated);
+  const tx = db.transaction(['vaults', 'blobs'], 'readwrite');
+  const blobStore = tx.objectStore('blobs');
+  await Promise.all([
+    tx.objectStore('vaults').put(updated),
+    ...blobs.map((b) => blobStore.put(b)),
+    ...(changes.deleteBlobIds ?? []).map((b) => blobStore.delete(blobKey(id, b))),
+    tx.done,
+  ]);
   return { meta: toMeta(updated), key: vault.key, content };
 }
 
-export async function deleteVault(id: string): Promise<void> {
-  await (await getDb()).delete('vaults', id);
+export async function readBlob(
+  vault: UnlockedVault,
+  blobId: string,
+): Promise<Uint8Array<ArrayBuffer>> {
+  const record = await (await getDb()).get('blobs', blobKey(vault.meta.id, blobId));
+  if (!record) throw new VaultNotFoundError();
+  return decrypt(vault.key, record, blobContext(vault.meta.id, blobId));
 }
 
-export async function putVaultRecord(record: VaultRecord): Promise<void> {
-  await (await getDb()).put('vaults', record);
+export async function listBlobRecords(vaultId: string): Promise<BlobRecord[]> {
+  return (await getDb()).getAllFromIndex('blobs', 'byVault', vaultId);
+}
+
+export async function deleteVault(id: string): Promise<void> {
+  const db = await getDb();
+  const keys = await db.getAllKeysFromIndex('blobs', 'byVault', id);
+  const tx = db.transaction(['vaults', 'blobs'], 'readwrite');
+  await Promise.all([
+    tx.objectStore('vaults').delete(id),
+    ...keys.map((k) => tx.objectStore('blobs').delete(k)),
+    tx.done,
+  ]);
+}
+
+/** Grava um cofre importado, substituindo todos os seus blobs. */
+export async function putVaultRecord(record: VaultRecord, blobs: BlobRecord[] = []): Promise<void> {
+  const db = await getDb();
+  const oldKeys = await db.getAllKeysFromIndex('blobs', 'byVault', record.id);
+  const tx = db.transaction(['vaults', 'blobs'], 'readwrite');
+  const blobStore = tx.objectStore('blobs');
+  await Promise.all([
+    ...oldKeys.map((k) => blobStore.delete(k)),
+    tx.objectStore('vaults').put(record),
+    ...blobs.map((b) => blobStore.put(b)),
+    tx.done,
+  ]);
 }

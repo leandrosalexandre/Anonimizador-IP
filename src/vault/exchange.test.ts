@@ -62,9 +62,9 @@ describe('exportar e importar .ipcofre', () => {
 
   it('pede confirmação para substituir cofre existente', async () => {
     const vault = await vaultWithContent();
-    const record = parseVaultFile(await exportVault(vault.meta.id));
-    await expect(importVault(record, PASSWORD)).rejects.toBeInstanceOf(VaultAlreadyExistsError);
-    await expect(importVault(record, PASSWORD, { replace: true })).resolves.toBeTruthy();
+    const parsed = parseVaultFile(await exportVault(vault.meta.id));
+    await expect(importVault(parsed, PASSWORD)).rejects.toBeInstanceOf(VaultAlreadyExistsError);
+    await expect(importVault(parsed, PASSWORD, { replace: true })).resolves.toBeTruthy();
     expect(await listVaults()).toHaveLength(1);
   });
 

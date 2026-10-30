@@ -1,6 +1,6 @@
 // Estado do cofre aberto, apenas em memória. Bloquear = descartar a chave e o conteúdo (SPEC 2.5).
 import { useSyncExternalStore } from 'react';
-import { saveVaultContent, type UnlockedVault } from './repository';
+import { saveVaultContent, type ContentChanges, type UnlockedVault } from './repository';
 import type { VaultContent } from './types';
 
 export type LockReason = 'manual' | 'idle' | 'hidden' | 'deleted';
@@ -41,10 +41,31 @@ export function clearLockReason(): void {
   }
 }
 
-/** Grava o novo conteúdo cifrado e atualiza a sessão. */
-export async function updateVaultContent(content: VaultContent): Promise<void> {
-  if (state.status !== 'unlocked') throw new Error('Cofre bloqueado.');
-  const saved = await saveVaultContent(state.vault, content);
+export class VaultLockedError extends Error {
+  constructor() {
+    super('O cofre foi bloqueado. Abra o cofre e tente de novo.');
+    this.name = 'VaultLockedError';
+  }
+}
+
+/** Cofre aberto no momento; erro se estiver bloqueado. */
+export function requireUnlocked(): UnlockedVault {
+  if (state.status !== 'unlocked') throw new VaultLockedError();
+  return state.vault;
+}
+
+/**
+ * Grava o novo conteúdo cifrado e atualiza a sessão. `expectedVaultId` evita gravar no cofre
+ * errado se o usuário trocou de cofre durante uma operação demorada.
+ */
+export async function updateVaultContent(
+  update: (current: VaultContent) => VaultContent,
+  changes: ContentChanges = {},
+  expectedVaultId?: string,
+): Promise<void> {
+  const vault = requireUnlocked();
+  if (expectedVaultId && vault.meta.id !== expectedVaultId) throw new VaultLockedError();
+  const saved = await saveVaultContent(vault, update(vault.content), changes);
   // O cofre pode ter sido bloqueado durante a gravação; nesse caso não reabre.
   if (state.status === 'unlocked' && state.vault.meta.id === saved.meta.id) setUnlocked(saved);
 }

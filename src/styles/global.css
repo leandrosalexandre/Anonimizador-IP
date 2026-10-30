@@ -504,6 +504,204 @@ p.notice {
   white-space: nowrap;
 }
 
+label.button-like {
+  font-weight: 600;
+}
+
+.button-like.disabled {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.dropzone {
+  padding: 1.25rem 1rem;
+  text-align: center;
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+}
+
+.dropzone.dragging {
+  border-color: var(--primary);
+  background: var(--accent-bg);
+}
+
+.dropzone p {
+  margin: 0 0 0.5rem;
+}
+
+@media (pointer: coarse) {
+  .desktop-only {
+    display: none;
+  }
+}
+
+.import-progress {
+  margin-top: 1rem;
+}
+
+progress {
+  width: 100%;
+  height: 0.75rem;
+  accent-color: var(--primary);
+}
+
+.result-list {
+  margin: 1rem 0 0;
+  padding-left: 1.25rem;
+}
+
+.result-list .error {
+  color: var(--danger);
+}
+
+.doc-card {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.doc-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.doc-head h2 {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.doc-head .actions {
+  margin-top: 0;
+}
+
+.folha-offset {
+  margin: 1rem 0;
+  padding: 0.75rem;
+  background: var(--bg);
+  border-radius: var(--radius);
+}
+
+.folha-offset p {
+  margin: 0 0 0.5rem;
+}
+
+.inline-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.inline-form label {
+  margin: 0;
+}
+
+.inline-form input {
+  width: 7rem;
+}
+
+.page-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.page-row {
+  display: grid;
+  grid-template-columns: 84px 1fr;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.thumb {
+  width: 84px;
+  height: 119px;
+  display: grid;
+  place-items: center;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #fff;
+}
+
+.page-info .actions {
+  margin-top: 0.5rem;
+}
+
+.page-labels {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin: 0;
+}
+
+.page-folha {
+  font-weight: 700;
+  font-size: 1.0625rem;
+}
+
+.page-info .meta {
+  margin: 0.125rem 0 0;
+}
+
+.kind-badge {
+  font-size: 0.8125rem;
+  padding: 0.125rem 0.625rem;
+  border-radius: 999px;
+}
+
+.kind-badge.text {
+  background: var(--ok-bg);
+  color: var(--ok);
+}
+
+.kind-badge.image {
+  background: var(--warn-bg);
+  color: var(--warn);
+}
+
+.kind-badge.ocr {
+  background: var(--info-bg);
+}
+
+.page-text-wrap {
+  grid-column: 1 / -1;
+}
+
+.page-text {
+  margin: 0;
+  max-height: 60vh;
+  overflow: auto;
+  padding: 0.75rem;
+  background: var(--bg);
+  border-radius: var(--radius);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: ui-monospace, 'Cascadia Mono', 'Roboto Mono', monospace;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
 /* Tablet em retrato e celulares: navegação em grade, sem rolagem horizontal. */
 @media (max-width: 860px) {
   .app-nav ol {

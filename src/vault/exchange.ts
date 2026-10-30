@@ -4,17 +4,25 @@ import { PBKDF2_MIN_ITERATIONS, IV_BYTES, SALT_BYTES } from './crypto';
 import { base64ToBytes, bytesToBase64 } from './encoding';
 import {
   MAX_VAULT_NAME_LENGTH,
+  blobKey,
   getVaultRecord,
+  listBlobRecords,
   openRecord,
   putVaultRecord,
   type UnlockedVault,
 } from './repository';
 import { getDb } from './db';
-import type { VaultMeta, VaultRecord } from './types';
+import type { BlobRecord, VaultMeta, VaultRecord } from './types';
 
 export const VAULT_FILE_EXTENSION = '.ipcofre';
 export const VAULT_FILE_FORMAT = 'anonimizador-ip/cofre';
-const MAX_FILE_BYTES = 512 * 1024 * 1024;
+const MAX_FILE_BYTES = 1024 * 1024 * 1024;
+
+/** Cofre lido de um arquivo .ipcofre, ainda não gravado. */
+export interface ParsedVaultFile {
+  record: VaultRecord;
+  blobs: BlobRecord[];
+}
 
 interface VaultFileV1 {
   format: typeof VAULT_FILE_FORMAT;
@@ -26,6 +34,8 @@ interface VaultFileV1 {
   kdf: { name: 'PBKDF2'; hash: 'SHA-256'; iterations: number; salt: string };
   cipher: { name: 'AES-GCM'; iv: string };
   payload: string;
+  /** PDFs e miniaturas, cada um cifrado com o próprio IV. */
+  blobs?: { id: string; iv: string; data: string }[];
 }
 
 export class InvalidVaultFileError extends Error {
@@ -60,6 +70,11 @@ export async function exportVault(id: string): Promise<string> {
     },
     cipher: { name: 'AES-GCM', iv: bytesToBase64(record.payload.iv) },
     payload: bytesToBase64(record.payload.ciphertext),
+    blobs: (await listBlobRecords(id)).map((b) => ({
+      id: b.blobId,
+      iv: bytesToBase64(b.iv),
+      data: bytesToBase64(b.ciphertext),
+    })),
   };
   return JSON.stringify(file);
 }
@@ -90,7 +105,7 @@ function decodeBase64(value: unknown, field: string): Uint8Array<ArrayBuffer> {
   }
 }
 
-export function parseVaultFile(text: string): VaultRecord {
+export function parseVaultFile(text: string): ParsedVaultFile {
   if (text.length > MAX_FILE_BYTES) throw new InvalidVaultFileError('Arquivo grande demais.');
   let data: Partial<VaultFileV1>;
   try {
@@ -130,14 +145,37 @@ export function parseVaultFile(text: string): VaultRecord {
   if (salt.length < SALT_BYTES || iv.length !== IV_BYTES || ciphertext.length < 16) {
     throw new InvalidVaultFileError();
   }
+  if (data.blobs !== undefined && !Array.isArray(data.blobs)) throw new InvalidVaultFileError();
+  const blobs: BlobRecord[] = (data.blobs ?? []).map((b) => {
+    if (
+      typeof b !== 'object' ||
+      b === null ||
+      typeof b.id !== 'string' ||
+      !/^[\w-]{1,64}$/.test(b.id)
+    ) {
+      throw new InvalidVaultFileError();
+    }
+    const blobIv = decodeBase64(b.iv, 'iv');
+    if (blobIv.length !== IV_BYTES) throw new InvalidVaultFileError();
+    return {
+      key: blobKey(id, b.id),
+      vaultId: id,
+      blobId: b.id,
+      iv: blobIv,
+      ciphertext: decodeBase64(b.data, 'blob'),
+    };
+  });
   return {
-    id,
-    name,
-    createdAt,
-    updatedAt,
-    formatVersion: 1,
-    kdf: { name: 'PBKDF2', hash: 'SHA-256', iterations: kdf.iterations, salt },
-    payload: { iv, ciphertext },
+    record: {
+      id,
+      name,
+      createdAt,
+      updatedAt,
+      formatVersion: 1,
+      kdf: { name: 'PBKDF2', hash: 'SHA-256', iterations: kdf.iterations, salt },
+      payload: { iv, ciphertext },
+    },
+    blobs,
   };
 }
 
@@ -146,7 +184,7 @@ export function parseVaultFile(text: string): VaultRecord {
  * substitui com `replace: true`. Um nome repetido de outro cofre recebe o sufixo "(importado)".
  */
 export async function importVault(
-  record: VaultRecord,
+  { record, blobs }: ParsedVaultFile,
   password: string,
   options: { replace?: boolean } = {},
 ): Promise<UnlockedVault> {
@@ -172,6 +210,6 @@ export async function importVault(
     name = `${record.name.slice(0, MAX_VAULT_NAME_LENGTH - 16)} (importado${i > 1 ? ` ${i}` : ''})`;
   }
   const stored = { ...record, name };
-  await putVaultRecord(stored);
+  await putVaultRecord(stored, blobs);
   return { ...unlocked, meta: { ...unlocked.meta, name } };
 }

@@ -1,19 +1,26 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
-import type { VaultRecord } from './types';
+import type { BlobRecord, VaultRecord } from './types';
 
 export const DB_NAME = 'anonimizador-ip';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 interface AppDB extends DBSchema {
   vaults: { key: string; value: VaultRecord };
+  blobs: { key: string; value: BlobRecord; indexes: { byVault: string } };
 }
 
 let dbPromise: Promise<IDBPDatabase<AppDB>> | null = null;
 
+export type { AppDB };
+
 export function getDb(): Promise<IDBPDatabase<AppDB>> {
   dbPromise ??= openDB<AppDB>(DB_NAME, DB_VERSION, {
-    upgrade(db) {
-      db.createObjectStore('vaults', { keyPath: 'id' });
+    upgrade(db, oldVersion) {
+      if (oldVersion < 1) db.createObjectStore('vaults', { keyPath: 'id' });
+      if (oldVersion < 2) {
+        const blobs = db.createObjectStore('blobs', { keyPath: 'key' });
+        blobs.createIndex('byVault', 'vaultId');
+      }
     },
     blocking() {
       // Outra aba precisa atualizar o banco: fecha esta conexão para não travá-la.
