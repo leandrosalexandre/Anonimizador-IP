@@ -63,8 +63,8 @@ export function HelpPage() {
         <h2>Dicas</h2>
         <ul>
           <li>
-            O cofre bloqueia sozinho após inatividade e quando o app sai da tela. Ajuste em{' '}
-            <Link to="/configuracoes">Configurações</Link>.
+            O cofre fecha quando você toca em “Bloquear”, após 10 minutos sem uso ou ao fechar o
+            app. Ajuste em <Link to="/configuracoes">Configurações</Link>.
           </li>
           <li>
             Para levar o inquérito a outro aparelho ou guardar uma cópia, use “Exportar” na tela{' '}

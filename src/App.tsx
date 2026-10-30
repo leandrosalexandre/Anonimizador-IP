@@ -17,6 +17,7 @@ import { RequireVault } from './components/RequireVault';
 import { VaultStatus } from './components/VaultStatus';
 import { UpdatePrompt } from './pwa/UpdatePrompt';
 import { OnlineStatus } from './pwa/OnlineStatus';
+import { useSession } from './vault/session';
 
 function pageFor(route: AppRoute): ReactNode {
   switch (route.path) {
@@ -46,6 +47,8 @@ function pageFor(route: AppRoute): ReactNode {
 }
 
 export function App() {
+  const session = useSession();
+  const documentCount = session.status === 'unlocked' ? session.vault.content.documents.length : 0;
   return (
     <div className="app">
       <a className="skip-link" href="#conteudo">
@@ -70,6 +73,15 @@ export function App() {
                   {index + 1}
                 </span>
                 {route.label}
+                {route.path === '/documentos' && documentCount > 0 && (
+                  <span
+                    className="nav-count"
+                    aria-hidden="true"
+                    title={`${documentCount} ${documentCount === 1 ? 'documento anexado' : 'documentos anexados'}`}
+                  >
+                    {documentCount}
+                  </span>
+                )}
               </NavLink>
             </li>
           ))}

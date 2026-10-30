@@ -5,7 +5,7 @@ export type LockOnHide = 'immediate' | '1min' | '5min' | 'never';
 export interface AppSettings {
   /** Minutos sem interação até bloquear o cofre (SPEC 2.5, padrão 10). */
   idleLockMinutes: number;
-  /** Bloqueio ao ocultar ou fechar o app (SPEC 2.5: padrão imediato). */
+  /** Bloqueio ao ocultar o app. Padrão: não bloquear (só manual ou por inatividade; ver DECISOES). */
   lockOnHide: LockOnHide;
   /** Binarização (preto e branco) antes do OCR. Ajuda em cópias manchadas; piora fotos. */
   ocrBinarize: boolean;
@@ -19,7 +19,7 @@ export interface AppSettings {
 
 export const DEFAULT_SETTINGS: AppSettings = {
   idleLockMinutes: 10,
-  lockOnHide: 'immediate',
+  lockOnHide: 'never',
   ocrBinarize: false,
   ocrSearchablePdf: false,
   detectionExclusions: [],
@@ -34,6 +34,8 @@ export const LOCK_ON_HIDE_DELAY_MS: Record<LockOnHide, number | null> = {
 };
 
 const STORAGE_KEY = 'anonimizador-ip:settings';
+/** 2: o padrão de `lockOnHide` deixou de ser "immediate". */
+const STORAGE_VERSION = 2;
 const listeners = new Set<() => void>();
 let cached: AppSettings | null = null;
 
@@ -70,7 +72,12 @@ export function getSettings(): AppSettings {
   if (cached) return cached;
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    cached = sanitize(stored ? JSON.parse(stored) : null);
+    const parsed = (stored ? JSON.parse(stored) : null) as Record<string, unknown> | null;
+    // Antes da versão 2, "immediate" era só o padrão antigo gravado junto com outras preferências.
+    if (parsed && parsed.version !== STORAGE_VERSION && parsed.lockOnHide === 'immediate') {
+      delete parsed.lockOnHide;
+    }
+    cached = sanitize(parsed);
   } catch {
     cached = { ...DEFAULT_SETTINGS };
   }
@@ -80,7 +87,7 @@ export function getSettings(): AppSettings {
 export function updateSettings(patch: Partial<AppSettings>): AppSettings {
   cached = sanitize({ ...getSettings(), ...patch });
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(cached));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...cached, version: STORAGE_VERSION }));
   } catch {
     // Armazenamento indisponível: a preferência vale só nesta sessão.
   }

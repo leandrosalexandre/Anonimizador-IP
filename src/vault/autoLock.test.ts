@@ -49,10 +49,44 @@ describe('bloqueio automático', () => {
     expect(reasons).toEqual(['idle']);
   });
 
-  it('bloqueia imediatamente ao ocultar o app (padrão)', () => {
-    const { reasons } = setup();
+  it('não bloqueia ao ocultar o app (padrão), mas conta o tempo fora como inatividade', () => {
+    let now = 0;
+    const reasons: LockReason[] = [];
+    startAutoLock({
+      getSettings: () => DEFAULT_SETTINGS,
+      lock: (r) => reasons.push(r),
+      now: () => now,
+    });
+    setVisibility('hidden');
+    now += 5 * 60_000;
+    setVisibility('visible');
+    expect(reasons).toEqual([]);
+    setVisibility('hidden');
+    now += 11 * 60_000; // aba congelada: nenhum timer disparou
+    setVisibility('visible');
+    expect(reasons).toEqual(['idle']);
+  });
+
+  it('bloqueia imediatamente ao ocultar, se configurado', () => {
+    const { reasons } = setup({ lockOnHide: 'immediate' });
     setVisibility('hidden');
     expect(reasons).toEqual(['hidden']);
+  });
+
+  it('abrir o seletor de arquivos não bloqueia, mesmo com "Imediatamente"', () => {
+    const { reasons } = setup({ lockOnHide: 'immediate' });
+    const input = document.createElement('input');
+    input.type = 'file';
+    document.body.append(input);
+    input.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    setVisibility('hidden');
+    window.dispatchEvent(new Event('pagehide'));
+    setVisibility('visible');
+    expect(reasons).toEqual([]);
+    // Depois de voltar, sair do app volta a bloquear.
+    setVisibility('hidden');
+    expect(reasons).toEqual(['hidden']);
+    input.remove();
   });
 
   it('respeita o atraso configurado ao ocultar', () => {
@@ -91,7 +125,7 @@ describe('bloqueio automático', () => {
   });
 
   it('bloqueia uma única vez e para de ouvir eventos', () => {
-    const { reasons, stop } = setup();
+    const { reasons, stop } = setup({ lockOnHide: 'immediate' });
     setVisibility('hidden');
     window.dispatchEvent(new Event('pagehide'));
     vi.advanceTimersByTime(60 * 60_000);

@@ -74,8 +74,9 @@ export function SettingsPage() {
           ))}
         </select>
         <p className="hint">
-          Ao colar o texto no app da IA, o Anonimizador sai da tela. Com “Imediatamente”, será
-          preciso digitar a senha de novo ao voltar. Fechar o app sempre bloqueia o cofre.
+          Padrão: não bloquear ao sair da tela. O cofre fecha quando você toca em “Bloquear”, após o
+          tempo de inatividade acima (o tempo fora da tela conta) ou ao fechar o app. Escolher
+          arquivos (PDFs, cofres) nunca bloqueia o cofre.
         </p>
       </div>
 
