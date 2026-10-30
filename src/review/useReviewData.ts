@@ -1,7 +1,7 @@
 // Dados derivados para a revisão e a exportação: páginas com texto, ocorrências de cada entidade
 // (recalculadas sobre o texto atual) e folhas onde cada uma aparece.
 import { useMemo } from 'react';
-import { resolveFolhas } from '../pdf/folhas';
+import { checkFolhas, resolveFolhas } from '../pdf/folhas';
 import type { StoredEntity, VaultContent } from '../vault/types';
 import { labelOf } from './labels';
 import { buildLocator, type Located } from './locate';
@@ -12,6 +12,10 @@ export interface ReviewPage {
   fileName: string;
   pdfPage: number;
   folha: number | null;
+  /** Folha para o texto exportado: só carimbo lido, correção ou deslocamento (nunca inferida). */
+  exportFolha: number | null;
+  /** Folha repetida ou fora de ordem: conferir. */
+  folhaInconsistent: boolean;
   text: string;
 }
 
@@ -36,6 +40,7 @@ export const pageKey = (docId: string, pdfPage: number) => `${docId}|${pdfPage}`
 export function collectPages(content: VaultContent): ReviewPage[] {
   return content.documents.flatMap((doc) => {
     const folhas = resolveFolhas(doc.pages, doc.folhaOffset);
+    const checked = checkFolhas(folhas);
     return doc.pages
       .map((p, i) => ({
         key: pageKey(doc.id, p.pdfPage),
@@ -43,6 +48,8 @@ export function collectPages(content: VaultContent): ReviewPage[] {
         fileName: doc.fileName,
         pdfPage: p.pdfPage,
         folha: folhas[i]?.folha ?? null,
+        exportFolha: checked[i]?.folha ?? null,
+        folhaInconsistent: checked[i]?.inconsistent ?? false,
         text: p.text,
       }))
       .filter((p) => p.text.trim().length > 0);

@@ -109,3 +109,46 @@ export function suggestOffset(pages: readonly FolhaInput[]): number | null {
   if (!best || total < 2 || best[1] / total < 0.6) return null;
   return best[0];
 }
+
+export interface CheckedFolha {
+  /** Folha a usar no texto; null quando não há carimbo legível (nunca inventada). */
+  folha: number | null;
+  /** Repetida ou fora da ordem crescente: conferir. */
+  inconsistent: boolean;
+}
+
+/**
+ * Folhas para o texto exportado: a inferida pela página vizinha não é usada ("fls. ?"), e as
+ * lidas que quebram a sequência crescente (repetidas ou fora de ordem) são marcadas. A maior
+ * sequência crescente de folhas é considerada correta; as demais, a conferir. Correções
+ * manuais e o deslocamento informado pelo usuário nunca são marcados.
+ */
+export function checkFolhas(resolved: readonly ResolvedFolha[]): CheckedFolha[] {
+  const values = resolved.map((r) =>
+    r.folha !== null && r.source !== 'inferred' ? r.folha : null,
+  );
+  const idx = values.flatMap((v, i) => (v === null ? [] : [i]));
+  // Maior subsequência estritamente crescente (O(n²): inquéritos têm centenas de páginas).
+  const len = idx.map(() => 1);
+  const prev = idx.map(() => -1);
+  for (let a = 0; a < idx.length; a++) {
+    for (let b = 0; b < a; b++) {
+      const va = values[idx[a] ?? 0] ?? 0;
+      const vb = values[idx[b] ?? 0] ?? 0;
+      if (vb < va && (len[b] ?? 0) + 1 > (len[a] ?? 0)) {
+        len[a] = (len[b] ?? 0) + 1;
+        prev[a] = b;
+      }
+    }
+  }
+  const keep = new Set<number>();
+  let best = -1;
+  // Em empate, a sequência que termina mais cedo (preserva o início do inquérito).
+  for (let a = 0; a < idx.length; a++) if (best < 0 || (len[a] ?? 0) > (len[best] ?? 0)) best = a;
+  for (let a = best; a >= 0; a = prev[a] ?? -1) keep.add(idx[a] ?? -1);
+  return resolved.map((r, i) => ({
+    folha: values[i] ?? null,
+    inconsistent:
+      values[i] !== null && !keep.has(i) && r.source !== 'manual' && r.source !== 'offset',
+  }));
+}

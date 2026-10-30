@@ -12,6 +12,14 @@ import type {
 } from './types';
 import { fold, isUpper, nameTokens, ocrDigits, onlyDigits, titleCase, tokensMatch } from './text';
 
+/** Papéis de envolvidos: só são mantidos se o cargo aparecer na maioria das ocorrências. */
+const INVOLVED_ROLES: ReadonlySet<PersonRole> = new Set([
+  'VÍTIMA',
+  'AUTOR',
+  'INVESTIGADO',
+  'CONDUZIDO',
+]);
+
 /** Máximo de palavras num nome "limpo" (acima disso, provavelmente pegou texto a mais). */
 const MAX_CLEAN_TOKENS = 7;
 
@@ -267,8 +275,11 @@ export function toEntity(
     cluster.type === 'PESSOA' ? priorityRole(members) : { role: null, conflicts: [] };
   // Profissional identificado pelo contexto (médico, advogado) não é "mantido" como autoridade.
   const professional = role === 'MÉDICO' || role === 'ADVOGADO';
+  // Autoridade ou agente público: basta o cargo junto ao nome uma vez (o nome aparece muitas
+  // vezes sozinho, em assinaturas). Só para envolvidos exige a maioria.
+  const involved = role !== null && INVOLVED_ROLES.has(role);
   const decision: Decision =
-    !professional && authorityVotes > 0 && authorityVotes * 2 >= members.length
+    !professional && authorityVotes > 0 && (!involved || authorityVotes * 2 >= members.length)
       ? 'keep'
       : 'pseudonymize';
   const occurrences: Occurrence[] = members

@@ -25,7 +25,9 @@ async function setup(page: Page) {
 }
 
 const row = (page: Page, name: string) =>
-  page.locator('.entity-row').filter({ has: page.getByText(name, { exact: true }) });
+  page
+    .locator('.entity-row')
+    .filter({ has: page.locator('.row-text > strong').getByText(name, { exact: true }) });
 
 /** Seleciona um trecho do texto da página (como o usuário faria com o dedo ou o mouse). */
 async function selectText(page: Page, needle: string) {
@@ -69,9 +71,9 @@ test('fluxo de revisão completo libera a exportação', async ({ page, baseURL 
   await expect(row(page, 'Maria da Conceição Silva Souza').locator('.chip')).toHaveText(
     '[VÍTIMA 1]',
   );
-  await expect(
-    page.getByRole('region', { name: 'Pessoas mantidas (autoridades e servidores)' }),
-  ).toContainText('Paulo Roberto Cavalcante Mendes');
+  await expect(page.getByRole('region', { name: 'Autoridades', exact: true })).toContainText(
+    'Paulo Roberto Cavalcante Mendes',
+  );
 
   // Atribuir papel: o investigado é o autor.
   const francisco = row(page, 'Francisco Antônio Pereira Lima');

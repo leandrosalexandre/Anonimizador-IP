@@ -1,7 +1,7 @@
 {
   "name": "anonimizador-ip",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
   "description": "PWA offline para pseudonimizar inquéritos policiais antes de análise por IA.",
   "engines": {

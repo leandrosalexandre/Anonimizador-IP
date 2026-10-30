@@ -119,7 +119,7 @@ describe('exportação do IP fictício', () => {
     const split = buildExport(content.entities, data, { ...options, partSize: 6000 });
     expect(split.parts.length).toBeGreaterThan(1);
     split.parts.forEach((p, i) => {
-      expect(p.startsWith(`Parte ${i + 1} de ${split.parts.length}`)).toBe(true);
+      expect(p.startsWith(`PARTE ${i + 1} de ${split.parts.length}`)).toBe(true);
       expect(p).toContain(DEFAULT_AI_INSTRUCTIONS);
     });
     const headers = split.parts.join('').match(/^=== fls\. \d+/gm) ?? [];

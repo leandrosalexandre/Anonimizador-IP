@@ -248,18 +248,36 @@ function suggestLinks(entities: DetectedEntity[], pages: readonly PageText[]): v
   }
 }
 
+/** Linha com dois campos iguais lado a lado ("Mãe: A      Mãe: B"): o OCR juntou colunas. */
+const MULTI_COLUMN_LABEL = /(?:^|\s)(nome|m[ãa]e|pai|vulgo|alcunha|filia[çc][ãa]o)\s*:/giu;
+function isMultiColumn(line: string): boolean {
+  const labels = [...line.matchAll(MULTI_COLUMN_LABEL)].map((m) => fold(m[1] ?? ''));
+  return labels.length > 1 && new Set(labels).size < labels.length;
+}
+
 /**
  * Sugere de quem é cada familiar: a pessoa (não familiar) mais próxima antes dele na mesma
- * página ("Nome: FULANO … Filiação: A / B" → A e B são genitores de FULANO).
+ * página ("Nome: FULANO … Filiação: A / B" → A e B são genitores de FULANO). Não escolhe quando
+ * há dúvida: candidatos diferentes em ocorrências diferentes, ou a linha tem colunas lado a lado
+ * (legendas de fotos de suspeitos) → vínculo incerto, a conferir.
  */
-function suggestRelatives(entities: DetectedEntity[]): void {
+function suggestRelatives(entities: DetectedEntity[], pages: readonly PageText[]): void {
+  const textOf = new Map(pages.map((p) => [`${p.docId}|${p.pdfPage}`, p.text]));
   const people = entities.filter(
     (e) => e.type === 'PESSOA' && e.role !== 'FAMILIAR' && e.decision === 'pseudonymize',
   );
   for (const e of entities) {
     if (e.type !== 'PESSOA' || e.role !== 'FAMILIAR') continue;
-    const votes = new Map<string, number>();
+    const votes = new Map<string, { docId: string; pdfPage: number }>();
+    let uncertain = false;
     for (const o of e.occurrences) {
+      const text = textOf.get(`${o.docId}|${o.pdfPage}`) ?? '';
+      const lineStart = text.lastIndexOf('\n', o.start - 1) + 1;
+      const lineEnd = text.indexOf('\n', o.end);
+      if (isMultiColumn(text.slice(lineStart, lineEnd < 0 ? text.length : lineEnd))) {
+        uncertain = true;
+        continue;
+      }
       let best: { id: string; distance: number } | null = null;
       for (const p of people) {
         for (const po of p.occurrences) {
@@ -268,10 +286,17 @@ function suggestRelatives(entities: DetectedEntity[]): void {
           if (distance <= 400 && (!best || distance < best.distance)) best = { id: p.id, distance };
         }
       }
-      if (best) votes.set(best.id, (votes.get(best.id) ?? 0) + 1);
+      if (best && !votes.has(best.id)) votes.set(best.id, { docId: o.docId, pdfPage: o.pdfPage });
     }
-    const winner = [...votes].sort((a, b) => b[1] - a[1])[0]?.[0];
-    if (winner) e.relatedTo = winner;
+    if (uncertain || votes.size > 1) {
+      e.relationUncertain = true;
+      continue;
+    }
+    const [winner] = votes;
+    if (winner) {
+      e.relatedTo = winner[0];
+      e.relationSource = winner[1];
+    }
   }
 }
 
@@ -318,7 +343,7 @@ export function detectEntities(
   entities.length = 0;
   entities.push(...alive);
   suggestLinks(entities, pages);
-  suggestRelatives(entities);
+  suggestRelatives(entities, pages);
 
   const order = (e: DetectedEntity) => (e.type === 'PESSOA' ? 0 : e.type === 'APELIDO' ? 1 : 2);
   return entities.sort((a, b) => {

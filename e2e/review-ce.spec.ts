@@ -34,9 +34,10 @@ test('IP no formato do Ceará: blocos da revisão e exportação no escopo padr�
   await page.getByRole('link', { name: 'Revisão', exact: true }).click();
   await page.getByRole('button', { name: 'Detectar dados pessoais' }).click();
 
-  // 15 pessoas + 1 apelido; 13 documentos (CPF, RG, telefone, nascimento, título, CNS, prontuário).
+  // 15 pessoas + 1 apelido; 10 documentos (CPF, RG, telefone, título, CNS, prontuário). Datas de
+  // nascimento ficam fora do escopo.
   await expect(page.getByLabel('Totais')).toHaveText(
-    '16 pessoas · 13 documentos · 0 sugestões não aplicadas',
+    '16 pessoas · 10 documentos · 0 sugestões não aplicadas',
   );
   const people = page.getByRole('region', { name: 'Pessoas', exact: true });
   await expect(people.getByRole('region', { name: 'Autores' })).toContainText(
@@ -155,7 +156,27 @@ test('campos da revisão: mesma pessoa, número, pertence a, tipo e pseudonimiza
   // Cargo da autoridade mantida.
   await row('Felipe Augusto Machado Rios').locator('.row-button').click();
   const delegado = page.getByLabel('Detalhes de Felipe Augusto Machado Rios');
-  await expect(delegado.getByLabel('Cargo ou função')).toHaveValue('Delegado de Polícia Civil');
+  await expect(delegado.getByLabel('Função')).toHaveValue('Delegado');
+  await expect(delegado).toContainText('Cargo registrado: Delegado de Polícia Civil');
+  const autoridades = page.getByRole('region', { name: 'Autoridades', exact: true });
+  await expect(autoridades.getByRole('region', { name: 'Delegado' })).toContainText(
+    'Felipe Augusto Machado Rios',
+  );
+  // B7: mudar a função muda a seção na hora; "Outros" pede o nome da função.
+  await delegado.getByLabel('Função').selectOption('Outros');
+  await delegado.getByLabel('Qual função?').fill('Delegado Regional Substituto');
+  await delegado.getByRole('button', { name: 'Salvar' }).first().click();
+  await expect(autoridades.getByRole('region', { name: 'Delegado' })).toContainText(
+    'Felipe Augusto Machado Rios',
+  );
+  await row('Lívia Marques Cordeiro').locator('.row-button').click();
+  const escriva = page.getByLabel('Detalhes de Lívia Marques Cordeiro');
+  await escriva.getByLabel('Função').selectOption('Outros');
+  await escriva.getByLabel('Qual função?').fill('Guarda Municipal');
+  await escriva.getByRole('button', { name: 'Salvar' }).first().click();
+  await expect(
+    autoridades.getByRole('region', { name: 'Outros — Guarda Municipal' }),
+  ).toContainText('Lívia Marques Cordeiro');
 
   // Pertence a: papel e depois pessoa.
   const docs = page.getByRole('region', { name: 'Documentos', exact: true });
@@ -195,8 +216,48 @@ test('campos da revisão: mesma pessoa, número, pertence a, tipo e pseudonimiza
   await expect(page.locator('.learned-list')).toContainText('Maria Ivone Mota — bairro');
   await page.getByRole('link', { name: 'Revisão', exact: true }).click();
 
-  // Botão único.
-  await page.getByRole('button', { name: 'Pseudonimizar todas as pessoas' }).click();
+  // B2: menor de idade em destaque para autores.
+  await row('Ítalo Renan Costa Pereira').locator('.row-button').click();
+  const italo = page.getByLabel('Detalhes de Ítalo Renan Costa Pereira');
+  await expect(italo.locator('.minor-field.prominent')).toBeVisible();
+  await italo.getByLabel('Menor de idade à época do fato').click();
+  await expect(italo.getByLabel('Menor de idade à época do fato')).toBeChecked();
+
+  // B1: excluir apelido, com confirmação.
+  await row('José Wellington Mota Silva').locator('.row-button').click();
+  const ze = page.getByLabel('Detalhes de José Wellington Mota Silva');
+  await ze.getByRole('button', { name: 'Excluir o apelido Zé Galo' }).click();
+  await ze.getByRole('button', { name: 'Excluir', exact: true }).click();
+  await expect(ze.locator('.nickname-item')).toHaveCount(0);
+
+  // B5 e B6: recolher/expandir e marcar todos (estado parcial).
+  const familiares = page.getByRole('region', { name: 'Familiares' });
+  const toggle = familiares.getByRole('button', { name: /^Familiares \(\d+\)/ });
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  await expect(familiares.locator('.entity-row')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Expandir todas' }).click();
+  await expect(familiares.locator('.entity-row').first()).toBeVisible();
+  const allFam = familiares.getByLabel('Marcar todos: Familiares');
+  await allFam.check();
+  await familiares.locator('.entity-row input[type="checkbox"]').first().uncheck();
+  expect(await allFam.evaluate((el) => (el as HTMLInputElement).indeterminate)).toBe(true);
+  await page.getByRole('button', { name: 'Desmarcar' }).click();
+  await page.getByRole('button', { name: 'Recolher todas' }).click();
+  await expect(page.locator('.entity-row')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Expandir todas' }).click();
+
+  // B3: os dois botões.
+  await expect(
+    page.getByText('Só os envolvidos; as autoridades continuam com o nome real.'),
+  ).toBeVisible();
+  await page
+    .getByRole('button', { name: 'Pseudonimizar autores, vítimas, testemunhas e familiares' })
+    .click();
+  await expect(
+    page.getByRole('region', { name: 'Autoridades', exact: true }).locator('.entity-row'),
+  ).toHaveCount(3);
+  await page.getByRole('button', { name: 'Pseudonimizar todos', exact: true }).click();
   await expect(page.locator('.review-progress')).not.toContainText('sem decisão');
   await expect(
     page

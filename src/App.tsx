@@ -103,6 +103,7 @@ export function App() {
         <Link to="/como-usar">Como usar</Link>
         <Link to="/sobre">Sobre e privacidade</Link>
         <span className="meta">Nada sai deste aparelho.</span>
+        <span className="meta app-version">Versão {__APP_VERSION__}</span>
       </footer>
       <AutoLockController />
       <UpdatePrompt />

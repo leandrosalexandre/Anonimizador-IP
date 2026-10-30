@@ -149,6 +149,8 @@ export default defineConfig({
         ],
         maximumFileSizeToCacheInBytes: 40 * 1024 * 1024,
         navigateFallback: 'index.html',
+        // Nome do cache com a versão: ao atualizar, o cache da versão anterior é substituído.
+        cacheId: `anonimizador-ip-v${pkg.version}`,
         cleanupOutdatedCaches: true,
         // Na primeira instalação o SW já controla a página (pronto para offline sem recarregar).
         // Atualizações continuam esperando a confirmação do usuário (skipWaiting desligado).
