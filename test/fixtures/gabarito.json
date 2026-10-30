@@ -1,0 +1,1405 @@
+{
+  "description": "Gabarito do IP fictício de referência. Todos os dados são inventados. Gerado por scripts/fixtures/gen-ip-ficticio.mjs.",
+  "folhaOffset": 2,
+  "files": {
+    "text": "ip-ficticio-texto.pdf",
+    "scanned": "ip-ficticio-escaneado.pdf",
+    "mixed": {
+      "file": "ip-ficticio-misto.pdf",
+      "imagePages": [
+        3,
+        4,
+        8,
+        12
+      ]
+    }
+  },
+  "pages": [
+    {
+      "pdfPage": 1,
+      "folha": 3,
+      "stamp": "Fls. 3",
+      "title": "PORTARIA",
+      "text": "Fls. 3\nESTADO DO CEARÁ\nSECRETARIA DA SEGURANÇA PÚBLICA E DEFESA SOCIAL\nPOLÍCIA CIVIL DO ESTADO DO CEARÁ\nDELEGACIA DE POLÍCIA FICTÍCIA DO 99º DISTRITO\nPORTARIA\nO Delegado de Polícia Civil que esta subscreve, no uso de suas atribuições legais, tendo em vista o Boletim de Ocorrência nº 102-4567/2026, que noticia a prática do crime de roubo majorado (art. 157, § 2º, II, e § 2º-A, I, do Código Penal), ocorrido em 12/10/2026, por volta das 19h30min, na Rua das Acácias Fictícias, tendo como vítima MARIA DA CONCEIÇÃO SILVA SOUZA, RESOLVE instaurar o presente Inquérito Policial nº 900-123/2026.\nDetermino, desde logo, as seguintes diligências:\n1. Autue-se e registre-se esta Portaria.\n2. Ouça-se a vítima e as testemunhas presenciais do fato.\n3. Requisite-se exame pericial no veículo recuperado junto à PEFOCE.\n4. Proceda-se à identificação e qualificação do autor do fato.\nCumpra-se.\nFortaleza/CE, 13 de outubro de 2026.\nPAULO ROBERTO CAVALCANTE MENDES\nDelegado de Polícia Civil\nMatrícula 300.123-1-X\nDocumento fictício gerado para testes. Não contém dados reais."
+    },
+    {
+      "pdfPage": 2,
+      "folha": 4,
+      "stamp": "Fls. 4",
+      "title": "BOLETIM DE OCORRÊNCIA",
+      "text": "Fls. 4\nESTADO DO CEARÁ\nSECRETARIA DA SEGURANÇA PÚBLICA E DEFESA SOCIAL\nPOLÍCIA CIVIL DO ESTADO DO CEARÁ\nDELEGACIA DE POLÍCIA FICTÍCIA DO 99º DISTRITO\nBOLETIM DE OCORRÊNCIA Nº 102-4567/2026\nNatureza: Roubo a transeunte com uso de arma de fogo\nData do fato: 12/10/2026, 19h30min\nLocal: Rua das Acácias Fictícias, nº 145, Apto 302, Bairro Jardim Imaginário, Fortaleza/CE\nCOMUNICANTE / VÍTIMA\nNome: MARIA DA CONCEIÇÃO SILVA SOUZA\nCPF: 529.982.247-25\nRG: 2005009123456 SSP/CE\nData de nascimento: 14/03/1985\nTelefone: (85) 98812-3456\nE-mail: maria.souza.ficticia@exemplo.com.br\nCEP: 60000-123\nRELATO\nA comunicante relata que estacionava seu automóvel VW Gol, cor prata, placa HXP-4821, em frente à sua residência, quando foi abordada por dois homens em uma motocicleta vermelha. O garupa, armado com um revólver, exigiu a entrega do telefone celular e da bolsa. Os autores fugiram em direção à Avenida Central. A vítima reconheceu o garupa como sendo pessoa conhecida no bairro pelo apelido de CHICO BALA.\nAtendente: Marcos Vinícius Araújo\nDocumento fictício gerado para testes. Não contém dados reais."
+    },
+    {
+      "pdfPage": 3,
+      "folha": 5,
+      "stamp": "Fls. 5",
+      "title": "TERMO DE DECLARAÇÕES (1/2)",
+      "text": "Fls. 5\nESTADO DO CEARÁ\nSECRETARIA DA SEGURANÇA PÚBLICA E DEFESA SOCIAL\nPOLÍCIA CIVIL DO ESTADO DO CEARÁ\nDELEGACIA DE POLÍCIA FICTÍCIA DO 99º DISTRITO\nTERMO DE DECLARAÇÕES DA VÍTIMA\nAos treze dias do mês de outubro de 2026, nesta Delegacia, perante a Autoridade Policial, compareceu a vítima abaixo qualificada, que, inquirida, declarou o seguinte.\nNOME: MARIA DA CONCEIÇÃO SILVA SOUZA\nFILIAÇÃO: ANTÔNIO SOUZA e FRANCISCA DA CONCEIÇÃO SILVA\nNatural de: Fortaleza/CE, nascida em 14/03/1985\nEstado civil: casada\nProfissão: professora\nCPF: 52998224725\nEndereço: Rua das Acácias Fictícias, nº 145, Apto 302, Bairro Jardim Imaginário, Fortaleza/CE\nTelefone: 85 98812-3456\nQUE no dia 12/10/2026, por volta das 19h30min, chegava em casa dirigindo seu veículo placa HXP4821; QUE, ao descer do carro, foi abordada por dois indivíduos em uma motocicleta; QUE o garupa apontou um revólver em sua direção e disse \"passa tudo, senão morre\"; QUE entregou seu aparelho celular e sua bolsa, contendo documentos e cartões bancários; QUE reconheceu o garupa como sendo FRANCISCO ANTÔNIO PEREIRA LIMA, vulgo \"Chico Bala\", morador da Travessa Boa Esperança;\nDocumento fictício gerado para testes. Não contém dados reais."
+    },
+    {
+      "pdfPage": 4,
+      "folha": 6,
+      "stamp": "6",
+      "title": "TERMO DE DECLARAÇÕES (2/2)",
+      "text": "6\nESTADO DO CEARÁ\nSECRETARIA DA SEGURANÇA PÚBLICA E DEFESA SOCIAL\nPOLÍCIA CIVIL DO ESTADO DO CEARÁ\nDELEGACIA DE POLÍCIA FICTÍCIA DO 99º DISTRITO\nQUE conhece Francisco Antônio desde criança, pois estudaram na mesma escola; QUE não conseguiu ver o rosto do piloto da motocicleta, que usava capacete; QUE, cerca de uma hora após o fato, recebeu notificação do banco de uma transferência via Pix no valor de R$ 2.300,00, feita a partir do aplicativo instalado em seu celular, para a chave aleatória 7d9f0c2e-4b1a-4c3e-9f8a-1b2c3d4e5f60; QUE o vizinho João Batista presenciou a ação; QUE a motorista de aplicativo Ana Cláudia passava pelo local no momento do fato; QUE deseja representar criminalmente contra os autores.\nNada mais disse nem lhe foi perguntado. Lido e achado conforme, vai devidamente assinado pela declarante MARIA, pela Autoridade Policial e por mim, Escrivã, que o digitei.\nPAULO ROBERTO CAVALCANTE MENDES\nDelegado de Polícia Civil\nMaria da Conceição Silva Souza\nDeclarante\nLUCIANA MARIA TEIXEIRA BARROS\nEscrivã de Polícia Civil\nDocumento fictício gerado para testes. Não contém dados reais."
+    },
+    {
+      "pdfPage": 5,
+      "folha": 7,
+      "stamp": "Fl. 7",
+      "title": "TERMO DE DEPOIMENTO – TESTEMUNHA 1",
+      "text": "Fl. 7\nESTADO DO CEARÁ\nSECRETARIA DA SEGURANÇA PÚBLICA E DEFESA SOCIAL\nPOLÍCIA CIVIL DO ESTADO DO CEARÁ\nDELEGACIA DE POLÍCIA FICTÍCIA DO 99º DISTRITO\nTERMO DE DEPOIMENTO\nTestemunha: JOÃO BATISTA FERREIRA NETO\nRG: 1234567-8 SSP/CE\nCPF: 386.519.274-28\nEndereço: Rua das Acácias Fictícias, nº 151, Bairro Jardim Imaginário, Fortaleza/CE\nTelefone: +55 85 3214-5678\nCompromissado na forma da lei, QUE é vizinho da vítima Maria Souza há mais de dez anos; QUE no dia dos fatos estava na calçada de sua casa quando viu uma motocicleta vermelha parar ao lado do carro da vítima; QUE o garupa desceu armado e tomou os pertences de Maria da Conceição; QUE reconheceu o garupa como sendo o nacional conhecido como \"Chico Bala\", que costuma frequentar a praça do bairro; QUE anotou parte da placa da motocicleta, iniciada pelas letras PNB; QUE não conhece o piloto.\nNada mais disse nem lhe foi perguntado.\nJoão Batista Ferreira Neto\nTestemunha\nDocumento fictício gerado para testes. Não contém dados reais."
+    },
+    {
+      "pdfPage": 6,
+      "folha": 8,
+      "stamp": "Fls. 8",
+      "title": "TERMO DE DEPOIMENTO – TESTEMUNHA 2",
+      "text": "Fls. 8\nESTADO DO CEARÁ\nSECRETARIA DA SEGURANÇA PÚBLICA E DEFESA SOCIAL\nPOLÍCIA CIVIL DO ESTADO DO CEARÁ\nDELEGACIA DE POLÍCIA FICTÍCIA DO 99º DISTRITO\nTERMO DE DEPOIMENTO\nTestemunha: ANA CLÁUDIA RODRIGUES MATOS\nCPF: 24587301671\nNascida em: 21/11/1990\nTelefone: (85) 98123-0099\nCompromissada na forma da lei, QUE trabalha como motorista de aplicativo; QUE no dia 12/10/2026 passava pela Rua das Acácias Fictícias quando viu uma mulher ser assaltada por dois homens em uma motocicleta vermelha; QUE a motocicleta tinha placa no padrão Mercosul e conseguiu ver os caracteres PNB2C47; QUE os autores fugiram em alta velocidade; QUE parou o carro para prestar socorro à vítima e chamou a polícia; QUE não conhecia nenhum dos envolvidos.\nNada mais disse nem lhe foi perguntado.\nAna Cláudia Rodrigues Matos\nTestemunha\nDocumento fictício gerado para testes. Não contém dados reais."
+    },
+    {
+      "pdfPage": 7,
+      "folha": 9,
+      "stamp": "Fls. 9",
+      "title": "AUTO DE APREENSÃO",
+      "text": "Fls. 9\nESTADO DO CEARÁ\nSECRETARIA DA SEGURANÇA PÚBLICA E DEFESA SOCIAL\nPOLÍCIA CIVIL DO ESTADO DO CEARÁ\nDELEGACIA DE POLÍCIA FICTÍCIA DO 99º DISTRITO\nAUTO DE APRESENTAÇÃO E APREENSÃO\nAos quinze dias do mês de outubro de 2026, nesta Delegacia, presente a Autoridade Policial, foram apresentados pelo Inspetor MARCOS VINÍCIUS ARAÚJO os seguintes objetos, encontrados no estabelecimento Auto Peças Nogueira Ltda., situado na Avenida dos Ipês Inventados, nº 2020, Bairro Parque Ilusão, Fortaleza/CE, de propriedade de CARLOS EDUARDO NOGUEIRA BEZERRA, CPF 903.417.625-80:\na) uma motocicleta Honda CG 160, cor vermelha, placa PNB2C47, chassi 9C2KC2210RR004251, Renavam 00912345678;\nb) um revólver calibre .38, marca Taurus, com numeração suprimida, municiado com seis cartuchos intactos;\nc) um aparelho celular marca Samsung, cor preta, com a tela trincada.\nO proprietário do estabelecimento, Carlos Eduardo, afirmou ter comprado a motocicleta de FRANCISCO por R$ 3.000,00, sem documentação.\nPaulo Roberto Cavalcante Mendes\nDelegado de Polícia Civil\nMarcos Vinícius Araújo\nInspetor de Polícia Civil\nDocumento fictício gerado para testes. Não contém dados reais."
+    },
+    {
+      "pdfPage": 8,
+      "folha": 10,
+      "stamp": "Fls. 10",
+      "title": "TERMO DE QUALIFICAÇÃO E INTERROGATÓRIO (1/2)",
+      "text": "Fls. 10\nESTADO DO CEARÁ\nSECRETARIA DA SEGURANÇA PÚBLICA E DEFESA SOCIAL\nPOLÍCIA CIVIL DO ESTADO DO CEARÁ\nDELEGACIA DE POLÍCIA FICTÍCIA DO 99º DISTRITO\nTERMO DE QUALIFICAÇÃO E INTERROGATÓRIO\nInvestigado: FRANCISCO ANTÔNIO PEREIRA LIMA\nAlcunha: CHICO BALA\nMãe: RAIMUNDA PEREIRA LIMA\nPai: JOSÉ LIMA SOBRINHO\nDN: 02/09/1998 (28 anos)\nCPF: 714.602.380-01\nRG: 98765432-1 SSP/CE\nCNH nº: 04512378965\nEndereço: Travessa Boa Esperança, nº 77, Bairro Vila Inventada, Fortaleza/CE, CEP 60000-456\nTelefone: (85) 99765-4321\nAdvogado: RICARDO HENRIQUE MOREIRA ALVES, OAB/CE 12.345\nCientificado de seus direitos constitucionais, inclusive o de permanecer calado, e assistido por seu advogado, o interrogado declarou:\nQUE é verdadeira em parte a imputação; QUE estava na garupa da motocicleta, mas não sabia que o colega iria assaltar; QUE não sabe o nome completo do piloto, conhecido apenas como \"Neguinho\"; QUE vendeu a motocicleta para Carlos Eduardo porque precisava de dinheiro;\nDocumento fictício gerado para testes. Não contém dados reais."
+    },
+    {
+      "pdfPage": 9,
+      "folha": 11,
+      "stamp": "Fls. 11",
+      "title": "TERMO DE QUALIFICAÇÃO E INTERROGATÓRIO (2/2)",
+      "text": "Fls. 11\nESTADO DO CEARÁ\nSECRETARIA DA SEGURANÇA PÚBLICA E DEFESA SOCIAL\nPOLÍCIA CIVIL DO ESTADO DO CEARÁ\nDELEGACIA DE POLÍCIA FICTÍCIA DO 99º DISTRITO\nQUE a conta bancária de Francisco Antônio, agência 1234-5, conta corrente 98765-0, no Banco Fictício S.A., recebeu valores de terceiros, mas nega ter feito a transferência via Pix do celular da vítima; QUE seu telefone é (85)99765-4321; QUE já foi preso anteriormente por furto; QUE não possui arma de fogo; QUE deseja falar somente em juízo sobre os demais fatos.\nNada mais disse nem lhe foi perguntado.\nFrancisco Antônio Pereira Lima\nInterrogado\nRicardo Henrique Moreira Alves\nAdvogado – OAB/CE 12.345\nLuciana Maria Teixeira Barros\nEscrivã de Polícia Civil\nDocumento fictício gerado para testes. Não contém dados reais."
+    },
+    {
+      "pdfPage": 10,
+      "folha": 12,
+      "stamp": "Fls. 12",
+      "title": "LAUDO PERICIAL",
+      "text": "Fls. 12\nESTADO DO CEARÁ\nSECRETARIA DA SEGURANÇA PÚBLICA E DEFESA SOCIAL\nPOLÍCIA CIVIL DO ESTADO DO CEARÁ\nDELEGACIA DE POLÍCIA FICTÍCIA DO 99º DISTRITO\nLAUDO DE EXAME EM VEÍCULO Nº 2026.0099\nÓrgão: Perícia Forense do Estado do Ceará – PEFOCE\nPerito Criminal: HÉLIO COSTA LINS\nRequisitante: Delegacia de Polícia Fictícia do 99º Distrito\nAtendendo à requisição da Autoridade Policial, o perito examinou a motocicleta Honda CG 160, placa PNB2C47, chassi 9C2KC2210RR004251. Constatou-se que o número do chassi gravado no quadro está íntegro e corresponde ao registrado no Renavam 00912345678. Foram encontrados vestígios de remoção do adesivo lateral e arranhões recentes no tanque de combustível.\nConclusão: o veículo não apresenta adulteração dos sinais identificadores. Os danos observados são compatíveis com uso recente e com tentativa de descaracterização da pintura.\nHélio Costa Lins\nPerito Criminal – PEFOCE\nDocumento fictício gerado para testes. Não contém dados reais."
+    },
+    {
+      "pdfPage": 11,
+      "folha": 13,
+      "stamp": "Fls. 13",
+      "title": "OFÍCIO",
+      "text": "Fls. 13\nESTADO DO CEARÁ\nSECRETARIA DA SEGURANÇA PÚBLICA E DEFESA SOCIAL\nPOLÍCIA CIVIL DO ESTADO DO CEARÁ\nDELEGACIA DE POLÍCIA FICTÍCIA DO 99º DISTRITO\nOFÍCIO Nº 456/2026 – DPF99\nAo Senhor Gerente do Banco Fictício S.A.\nSenhor Gerente, para instruir o Inquérito Policial nº 900-123/2026, solicito, com autorização judicial nos autos do processo nº 3012345-91.2026.8.06.0001, o envio do extrato da conta de titularidade de FRANCISCO ANTÔNIO PEREIRA LIMA, CPF 714.602.380-01, agência 1234-5, conta corrente 98765-0, no período de 01/10/2026 a 15/10/2026, bem como a identificação do titular da chave Pix 7d9f0c2e-4b1a-4c3e-9f8a-1b2c3d4e5f60.\nSolicito, ainda, informações sobre transferências recebidas a partir da conta da vítima, vinculada ao e-mail maria.souza.ficticia@exemplo.com.br.\nAtenciosamente,\nPaulo Roberto Cavalcante Mendes\nDelegado de Polícia Civil\nDocumento fictício gerado para testes. Não contém dados reais."
+    },
+    {
+      "pdfPage": 12,
+      "folha": 14,
+      "stamp": "Fls. 14",
+      "title": "TERMO DE DECLARAÇÕES – INFORMANTE",
+      "text": "Fls. 14\nESTADO DO CEARÁ\nSECRETARIA DA SEGURANÇA PÚBLICA E DEFESA SOCIAL\nPOLÍCIA CIVIL DO ESTADO DO CEARÁ\nDELEGACIA DE POLÍCIA FICTÍCIA DO 99º DISTRITO\nTERMO DE DECLARAÇÕES\nInformante: RAIMUNDA PEREIRA LIMA\nCPF: 618.254.930-06\nTelefone: (85) 3288-1144\nNão compromissada por ser genitora do investigado, QUE é mãe de Francisco Antônio; QUE o filho mora com ela na Travessa Boa Esperança; QUE o filho é conhecido no bairro como \"Chico Bala\"; QUE o pai, José Lima Sobrinho, faleceu em 2019; QUE no dia 12/10/2026 o filho saiu de casa por volta das 18h e só retornou de madrugada; QUE não sabe dizer com quem ele estava.\nNada mais disse nem lhe foi perguntado.\nRaimunda Pereira Lima\nInformante\nDocumento fictício gerado para testes. Não contém dados reais."
+    },
+    {
+      "pdfPage": 13,
+      "folha": 15,
+      "stamp": "Fls. 15",
+      "title": "DESPACHO",
+      "text": "Fls. 15\nESTADO DO CEARÁ\nSECRETARIA DA SEGURANÇA PÚBLICA E DEFESA SOCIAL\nPOLÍCIA CIVIL DO ESTADO DO CEARÁ\nDELEGACIA DE POLÍCIA FICTÍCIA DO 99º DISTRITO\nDESPACHO\nConsiderando os depoimentos colhidos às fls. 5 a 8 e o reconhecimento do autor pela vítima, represento ao Juízo da 1ª Vara Criminal da Comarca de Fortaleza pela decretação da prisão preventiva de FRANCISCO ANTÔNIO PEREIRA LIMA, nos autos nº 3012345-91.2026.8.06.0001, com fundamento nos arts. 311 e 312 do Código de Processo Penal.\nIntime-se CARLOS EDUARDO NOGUEIRA BEZERRA para prestar declarações sobre a aquisição da motocicleta, sob pena de responder pelo crime de receptação (art. 180 do Código Penal).\nJunte-se o laudo pericial e o ofício encaminhado ao banco.\nFortaleza/CE, 20 de outubro de 2026.\nPAULO ROBERTO CAVALCANTE MENDES\nDelegado de Polícia Civil\nDocumento fictício gerado para testes. Não contém dados reais."
+    },
+    {
+      "pdfPage": 14,
+      "folha": 16,
+      "stamp": "Fls. 16",
+      "title": "RELATÓRIO FINAL (1/2)",
+      "text": "Fls. 16\nESTADO DO CEARÁ\nSECRETARIA DA SEGURANÇA PÚBLICA E DEFESA SOCIAL\nPOLÍCIA CIVIL DO ESTADO DO CEARÁ\nDELEGACIA DE POLÍCIA FICTÍCIA DO 99º DISTRITO\nRELATÓRIO\nInquérito Policial nº 900-123/2026\nVítima: MARIA DA CONCEIÇÃO SILVA SOUZA\nIndiciado: FRANCISCO ANTÔNIO PEREIRA LIMA, vulgo \"CHICO BALA\"\nInvestigado: CARLOS EDUARDO NOGUEIRA BEZERRA\nIncidência penal: art. 157, § 2º, II, e § 2º-A, I, do Código Penal; art. 180 do Código Penal\nTrata-se de inquérito instaurado por portaria para apurar o roubo praticado contra Maria da Conceição Silva Souza em 12/10/2026, quando dois indivíduos em uma motocicleta subtraíram, mediante grave ameaça exercida com arma de fogo, o telefone celular e a bolsa da vítima, na porta de sua residência.\nA vítima reconheceu Francisco Antônio como o garupa armado. O reconhecimento foi confirmado pela testemunha João Batista Ferreira Neto. A testemunha Ana Cláudia Rodrigues Matos anotou a placa PNB2C47 da motocicleta, posteriormente apreendida no estabelecimento AUTO PEÇAS NOGUEIRA.\nDocumento fictício gerado para testes. Não contém dados reais."
+    },
+    {
+      "pdfPage": 15,
+      "folha": 17,
+      "stamp": "Fls. 17",
+      "title": "RELATÓRIO FINAL (2/2)",
+      "text": "Fls. 17\nESTADO DO CEARÁ\nSECRETARIA DA SEGURANÇA PÚBLICA E DEFESA SOCIAL\nPOLÍCIA CIVIL DO ESTADO DO CEARÁ\nDELEGACIA DE POLÍCIA FICTÍCIA DO 99º DISTRITO\nInterrogado, o indiciado admitiu estar na garupa, mas negou a autoria do roubo e a transferência via Pix. A genitora, Raimunda Pereira Lima, confirmou que o filho saiu de casa antes do horário do fato. O piloto, conhecido apenas como \"Neguinho\", não foi identificado.\nDiante do exposto, INDICIO FRANCISCO ANTÔNIO PEREIRA LIMA nas penas do art. 157, § 2º, II, e § 2º-A, I, do Código Penal, e sugiro o prosseguimento das investigações quanto a Carlos Eduardo Nogueira Bezerra, pela possível prática de receptação.\nRemetam-se os autos ao Poder Judiciário.\nFortaleza/CE, 28 de outubro de 2026.\nPAULO ROBERTO CAVALCANTE MENDES\nDelegado de Polícia Civil\nMatrícula 300.123-1-X\nDocumento fictício gerado para testes. Não contém dados reais."
+    }
+  ],
+  "entities": [
+    {
+      "id": "vitima1",
+      "type": "PESSOA",
+      "role": "VÍTIMA",
+      "index": 1,
+      "canonical": "Maria da Conceição Silva Souza",
+      "variants": [
+        "MARIA DA CONCEIÇÃO SILVA SOUZA",
+        "Maria da Conceição Silva Souza",
+        "Maria Souza",
+        "Maria da Conceição",
+        "MARIA"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 1,
+          "folha": 3,
+          "text": "MARIA DA CONCEIÇÃO SILVA SOUZA"
+        },
+        {
+          "pdfPage": 2,
+          "folha": 4,
+          "text": "MARIA DA CONCEIÇÃO SILVA SOUZA"
+        },
+        {
+          "pdfPage": 3,
+          "folha": 5,
+          "text": "MARIA DA CONCEIÇÃO SILVA SOUZA"
+        },
+        {
+          "pdfPage": 4,
+          "folha": 6,
+          "text": "MARIA"
+        },
+        {
+          "pdfPage": 4,
+          "folha": 6,
+          "text": "Maria da Conceição Silva Souza"
+        },
+        {
+          "pdfPage": 5,
+          "folha": 7,
+          "text": "Maria Souza"
+        },
+        {
+          "pdfPage": 5,
+          "folha": 7,
+          "text": "Maria da Conceição"
+        },
+        {
+          "pdfPage": 14,
+          "folha": 16,
+          "text": "MARIA DA CONCEIÇÃO SILVA SOUZA"
+        },
+        {
+          "pdfPage": 14,
+          "folha": 16,
+          "text": "Maria da Conceição Silva Souza"
+        }
+      ]
+    },
+    {
+      "id": "autor1",
+      "type": "PESSOA",
+      "role": "AUTOR",
+      "index": 1,
+      "canonical": "Francisco Antônio Pereira Lima",
+      "variants": [
+        "FRANCISCO ANTÔNIO PEREIRA LIMA",
+        "Francisco Antônio Pereira Lima",
+        "Francisco Antônio",
+        "FRANCISCO"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 3,
+          "folha": 5,
+          "text": "FRANCISCO ANTÔNIO PEREIRA LIMA"
+        },
+        {
+          "pdfPage": 4,
+          "folha": 6,
+          "text": "Francisco Antônio"
+        },
+        {
+          "pdfPage": 7,
+          "folha": 9,
+          "text": "FRANCISCO"
+        },
+        {
+          "pdfPage": 8,
+          "folha": 10,
+          "text": "FRANCISCO ANTÔNIO PEREIRA LIMA"
+        },
+        {
+          "pdfPage": 9,
+          "folha": 11,
+          "text": "Francisco Antônio"
+        },
+        {
+          "pdfPage": 9,
+          "folha": 11,
+          "text": "Francisco Antônio Pereira Lima"
+        },
+        {
+          "pdfPage": 11,
+          "folha": 13,
+          "text": "FRANCISCO ANTÔNIO PEREIRA LIMA"
+        },
+        {
+          "pdfPage": 12,
+          "folha": 14,
+          "text": "Francisco Antônio"
+        },
+        {
+          "pdfPage": 13,
+          "folha": 15,
+          "text": "FRANCISCO ANTÔNIO PEREIRA LIMA"
+        },
+        {
+          "pdfPage": 14,
+          "folha": 16,
+          "text": "FRANCISCO ANTÔNIO PEREIRA LIMA"
+        },
+        {
+          "pdfPage": 14,
+          "folha": 16,
+          "text": "Francisco Antônio"
+        },
+        {
+          "pdfPage": 15,
+          "folha": 17,
+          "text": "FRANCISCO ANTÔNIO PEREIRA LIMA"
+        }
+      ]
+    },
+    {
+      "id": "investigado1",
+      "type": "PESSOA",
+      "role": "INVESTIGADO",
+      "index": 1,
+      "canonical": "Carlos Eduardo Nogueira Bezerra",
+      "variants": [
+        "CARLOS EDUARDO NOGUEIRA BEZERRA",
+        "Carlos Eduardo Nogueira Bezerra",
+        "Carlos Eduardo"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 7,
+          "folha": 9,
+          "text": "CARLOS EDUARDO NOGUEIRA BEZERRA"
+        },
+        {
+          "pdfPage": 7,
+          "folha": 9,
+          "text": "Carlos Eduardo"
+        },
+        {
+          "pdfPage": 8,
+          "folha": 10,
+          "text": "Carlos Eduardo"
+        },
+        {
+          "pdfPage": 13,
+          "folha": 15,
+          "text": "CARLOS EDUARDO NOGUEIRA BEZERRA"
+        },
+        {
+          "pdfPage": 14,
+          "folha": 16,
+          "text": "CARLOS EDUARDO NOGUEIRA BEZERRA"
+        },
+        {
+          "pdfPage": 15,
+          "folha": 17,
+          "text": "Carlos Eduardo Nogueira Bezerra"
+        }
+      ]
+    },
+    {
+      "id": "testemunha1",
+      "type": "PESSOA",
+      "role": "TESTEMUNHA",
+      "index": 1,
+      "canonical": "João Batista Ferreira Neto",
+      "variants": [
+        "JOÃO BATISTA FERREIRA NETO",
+        "João Batista Ferreira Neto",
+        "João Batista"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 4,
+          "folha": 6,
+          "text": "João Batista"
+        },
+        {
+          "pdfPage": 5,
+          "folha": 7,
+          "text": "JOÃO BATISTA FERREIRA NETO"
+        },
+        {
+          "pdfPage": 5,
+          "folha": 7,
+          "text": "João Batista Ferreira Neto"
+        },
+        {
+          "pdfPage": 14,
+          "folha": 16,
+          "text": "João Batista Ferreira Neto"
+        }
+      ]
+    },
+    {
+      "id": "testemunha2",
+      "type": "PESSOA",
+      "role": "TESTEMUNHA",
+      "index": 2,
+      "canonical": "Ana Cláudia Rodrigues Matos",
+      "variants": [
+        "ANA CLÁUDIA RODRIGUES MATOS",
+        "Ana Cláudia Rodrigues Matos",
+        "Ana Cláudia"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 4,
+          "folha": 6,
+          "text": "Ana Cláudia"
+        },
+        {
+          "pdfPage": 6,
+          "folha": 8,
+          "text": "ANA CLÁUDIA RODRIGUES MATOS"
+        },
+        {
+          "pdfPage": 6,
+          "folha": 8,
+          "text": "Ana Cláudia Rodrigues Matos"
+        },
+        {
+          "pdfPage": 14,
+          "folha": 16,
+          "text": "Ana Cláudia Rodrigues Matos"
+        }
+      ]
+    },
+    {
+      "id": "informante1",
+      "type": "PESSOA",
+      "role": "INFORMANTE",
+      "index": 1,
+      "canonical": "Raimunda Pereira Lima",
+      "variants": [
+        "RAIMUNDA PEREIRA LIMA",
+        "Raimunda Pereira Lima",
+        "Raimunda"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 8,
+          "folha": 10,
+          "text": "RAIMUNDA PEREIRA LIMA"
+        },
+        {
+          "pdfPage": 12,
+          "folha": 14,
+          "text": "RAIMUNDA PEREIRA LIMA"
+        },
+        {
+          "pdfPage": 12,
+          "folha": 14,
+          "text": "Raimunda Pereira Lima"
+        },
+        {
+          "pdfPage": 15,
+          "folha": 17,
+          "text": "Raimunda Pereira Lima"
+        }
+      ]
+    },
+    {
+      "id": "familiar1",
+      "type": "PESSOA",
+      "role": "FAMILIAR",
+      "index": 1,
+      "canonical": "José Lima Sobrinho",
+      "variants": [
+        "JOSÉ LIMA SOBRINHO",
+        "José Lima Sobrinho"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 8,
+          "folha": 10,
+          "text": "JOSÉ LIMA SOBRINHO"
+        },
+        {
+          "pdfPage": 12,
+          "folha": 14,
+          "text": "José Lima Sobrinho"
+        }
+      ]
+    },
+    {
+      "id": "familiar2",
+      "type": "PESSOA",
+      "role": "FAMILIAR",
+      "index": 2,
+      "canonical": "Francisca da Conceição Silva",
+      "variants": [
+        "FRANCISCA DA CONCEIÇÃO SILVA",
+        "Francisca da Conceição Silva"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 3,
+          "folha": 5,
+          "text": "FRANCISCA DA CONCEIÇÃO SILVA"
+        }
+      ]
+    },
+    {
+      "id": "familiar3",
+      "type": "PESSOA",
+      "role": "FAMILIAR",
+      "index": 3,
+      "canonical": "Antônio Souza",
+      "variants": [
+        "ANTÔNIO SOUZA",
+        "Antônio Souza"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 3,
+          "folha": 5,
+          "text": "ANTÔNIO SOUZA"
+        }
+      ]
+    },
+    {
+      "id": "advogado1",
+      "type": "PESSOA",
+      "role": "ADVOGADO",
+      "index": 1,
+      "canonical": "Ricardo Henrique Moreira Alves",
+      "variants": [
+        "RICARDO HENRIQUE MOREIRA ALVES",
+        "Ricardo Henrique Moreira Alves"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 8,
+          "folha": 10,
+          "text": "RICARDO HENRIQUE MOREIRA ALVES"
+        },
+        {
+          "pdfPage": 9,
+          "folha": 11,
+          "text": "Ricardo Henrique Moreira Alves"
+        }
+      ]
+    },
+    {
+      "id": "apelido_autor1",
+      "type": "APELIDO",
+      "role": "AUTOR",
+      "index": 1,
+      "linkedTo": "autor1",
+      "canonical": "Chico Bala",
+      "variants": [
+        "CHICO BALA",
+        "Chico Bala"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 2,
+          "folha": 4,
+          "text": "CHICO BALA"
+        },
+        {
+          "pdfPage": 3,
+          "folha": 5,
+          "text": "Chico Bala"
+        },
+        {
+          "pdfPage": 5,
+          "folha": 7,
+          "text": "Chico Bala"
+        },
+        {
+          "pdfPage": 8,
+          "folha": 10,
+          "text": "CHICO BALA"
+        },
+        {
+          "pdfPage": 12,
+          "folha": 14,
+          "text": "Chico Bala"
+        },
+        {
+          "pdfPage": 14,
+          "folha": 16,
+          "text": "CHICO BALA"
+        }
+      ]
+    },
+    {
+      "id": "apelido_piloto",
+      "type": "APELIDO",
+      "role": "AUTOR",
+      "index": 2,
+      "canonical": "Neguinho",
+      "variants": [
+        "Neguinho"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 8,
+          "folha": 10,
+          "text": "Neguinho"
+        },
+        {
+          "pdfPage": 15,
+          "folha": 17,
+          "text": "Neguinho"
+        }
+      ]
+    },
+    {
+      "id": "empresa1",
+      "type": "EMPRESA_PRIVADA",
+      "index": 1,
+      "canonical": "Auto Peças Nogueira Ltda.",
+      "variants": [
+        "Auto Peças Nogueira Ltda.",
+        "AUTO PEÇAS NOGUEIRA"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 7,
+          "folha": 9,
+          "text": "Auto Peças Nogueira Ltda."
+        },
+        {
+          "pdfPage": 14,
+          "folha": 16,
+          "text": "AUTO PEÇAS NOGUEIRA"
+        }
+      ]
+    },
+    {
+      "id": "delegado",
+      "type": "PESSOA",
+      "role": "DELEGADO",
+      "decision": "keep",
+      "canonical": "Paulo Roberto Cavalcante Mendes",
+      "variants": [
+        "PAULO ROBERTO CAVALCANTE MENDES",
+        "Paulo Roberto Cavalcante Mendes"
+      ],
+      "occurrences": [
+        {
+          "pdfPage": 1,
+          "folha": 3,
+          "text": "PAULO ROBERTO CAVALCANTE MENDES"
+        },
+        {
+          "pdfPage": 4,
+          "folha": 6,
+          "text": "PAULO ROBERTO CAVALCANTE MENDES"
+        },
+        {
+          "pdfPage": 7,
+          "folha": 9,
+          "text": "Paulo Roberto Cavalcante Mendes"
+        },
+        {
+          "pdfPage": 11,
+          "folha": 13,
+          "text": "Paulo Roberto Cavalcante Mendes"
+        },
+        {
+          "pdfPage": 13,
+          "folha": 15,
+          "text": "PAULO ROBERTO CAVALCANTE MENDES"
+        },
+        {
+          "pdfPage": 15,
+          "folha": 17,
+          "text": "PAULO ROBERTO CAVALCANTE MENDES"
+        }
+      ]
+    },
+    {
+      "id": "escriva",
+      "type": "PESSOA",
+      "role": "ESCRIVÃO",
+      "decision": "keep",
+      "canonical": "Luciana Maria Teixeira Barros",
+      "variants": [
+        "LUCIANA MARIA TEIXEIRA BARROS",
+        "Luciana Maria Teixeira Barros"
+      ],
+      "occurrences": [
+        {
+          "pdfPage": 4,
+          "folha": 6,
+          "text": "LUCIANA MARIA TEIXEIRA BARROS"
+        },
+        {
+          "pdfPage": 9,
+          "folha": 11,
+          "text": "Luciana Maria Teixeira Barros"
+        }
+      ]
+    },
+    {
+      "id": "inspetor",
+      "type": "PESSOA",
+      "role": "INSPETOR",
+      "decision": "keep",
+      "canonical": "Marcos Vinícius Araújo",
+      "variants": [
+        "MARCOS VINÍCIUS ARAÚJO",
+        "Marcos Vinícius Araújo"
+      ],
+      "occurrences": [
+        {
+          "pdfPage": 2,
+          "folha": 4,
+          "text": "Marcos Vinícius Araújo"
+        },
+        {
+          "pdfPage": 7,
+          "folha": 9,
+          "text": "MARCOS VINÍCIUS ARAÚJO"
+        },
+        {
+          "pdfPage": 7,
+          "folha": 9,
+          "text": "Marcos Vinícius Araújo"
+        }
+      ]
+    },
+    {
+      "id": "perito",
+      "type": "PESSOA",
+      "role": "PERITO",
+      "decision": "keep",
+      "canonical": "Hélio Costa Lins",
+      "variants": [
+        "HÉLIO COSTA LINS",
+        "Hélio Costa Lins"
+      ],
+      "occurrences": [
+        {
+          "pdfPage": 10,
+          "folha": 12,
+          "text": "HÉLIO COSTA LINS"
+        },
+        {
+          "pdfPage": 10,
+          "folha": 12,
+          "text": "Hélio Costa Lins"
+        }
+      ]
+    },
+    {
+      "id": "cpf_vitima",
+      "type": "CPF",
+      "linkedTo": "vitima1",
+      "canonical": "529.982.247-25",
+      "variants": [
+        "529.982.247-25",
+        "52998224725"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 2,
+          "folha": 4,
+          "text": "529.982.247-25"
+        },
+        {
+          "pdfPage": 3,
+          "folha": 5,
+          "text": "52998224725"
+        }
+      ]
+    },
+    {
+      "id": "cpf_autor",
+      "type": "CPF",
+      "linkedTo": "autor1",
+      "canonical": "714.602.380-01",
+      "variants": [
+        "714.602.380-01"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 8,
+          "folha": 10,
+          "text": "714.602.380-01"
+        },
+        {
+          "pdfPage": 11,
+          "folha": 13,
+          "text": "714.602.380-01"
+        }
+      ]
+    },
+    {
+      "id": "cpf_test1",
+      "type": "CPF",
+      "linkedTo": "testemunha1",
+      "canonical": "386.519.274-28",
+      "variants": [
+        "386.519.274-28"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 5,
+          "folha": 7,
+          "text": "386.519.274-28"
+        }
+      ]
+    },
+    {
+      "id": "cpf_test2",
+      "type": "CPF",
+      "linkedTo": "testemunha2",
+      "canonical": "24587301671",
+      "variants": [
+        "24587301671"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 6,
+          "folha": 8,
+          "text": "24587301671"
+        }
+      ]
+    },
+    {
+      "id": "cpf_invest",
+      "type": "CPF",
+      "linkedTo": "investigado1",
+      "canonical": "903.417.625-80",
+      "variants": [
+        "903.417.625-80"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 7,
+          "folha": 9,
+          "text": "903.417.625-80"
+        }
+      ]
+    },
+    {
+      "id": "cpf_informante",
+      "type": "CPF",
+      "linkedTo": "informante1",
+      "canonical": "618.254.930-06",
+      "variants": [
+        "618.254.930-06"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 12,
+          "folha": 14,
+          "text": "618.254.930-06"
+        }
+      ]
+    },
+    {
+      "id": "rg_vitima",
+      "type": "RG",
+      "linkedTo": "vitima1",
+      "canonical": "2005009123456",
+      "variants": [
+        "2005009123456"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 2,
+          "folha": 4,
+          "text": "2005009123456"
+        }
+      ]
+    },
+    {
+      "id": "rg_autor",
+      "type": "RG",
+      "linkedTo": "autor1",
+      "canonical": "98765432-1",
+      "variants": [
+        "98765432-1"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 8,
+          "folha": 10,
+          "text": "98765432-1"
+        }
+      ]
+    },
+    {
+      "id": "rg_test1",
+      "type": "RG",
+      "linkedTo": "testemunha1",
+      "canonical": "1234567-8",
+      "variants": [
+        "1234567-8"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 5,
+          "folha": 7,
+          "text": "1234567-8"
+        }
+      ]
+    },
+    {
+      "id": "cnh_autor",
+      "type": "CNH",
+      "linkedTo": "autor1",
+      "canonical": "04512378965",
+      "variants": [
+        "04512378965"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 8,
+          "folha": 10,
+          "text": "04512378965"
+        }
+      ]
+    },
+    {
+      "id": "tel_vitima",
+      "type": "TELEFONE",
+      "linkedTo": "vitima1",
+      "canonical": "(85) 98812-3456",
+      "variants": [
+        "(85) 98812-3456",
+        "85 98812-3456"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 2,
+          "folha": 4,
+          "text": "(85) 98812-3456"
+        },
+        {
+          "pdfPage": 3,
+          "folha": 5,
+          "text": "85 98812-3456"
+        }
+      ]
+    },
+    {
+      "id": "tel_autor",
+      "type": "TELEFONE",
+      "linkedTo": "autor1",
+      "canonical": "(85) 99765-4321",
+      "variants": [
+        "(85) 99765-4321",
+        "(85)99765-4321"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 8,
+          "folha": 10,
+          "text": "(85) 99765-4321"
+        },
+        {
+          "pdfPage": 9,
+          "folha": 11,
+          "text": "(85)99765-4321"
+        }
+      ]
+    },
+    {
+      "id": "tel_test1",
+      "type": "TELEFONE",
+      "linkedTo": "testemunha1",
+      "canonical": "+55 85 3214-5678",
+      "variants": [
+        "+55 85 3214-5678"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 5,
+          "folha": 7,
+          "text": "+55 85 3214-5678"
+        }
+      ]
+    },
+    {
+      "id": "tel_test2",
+      "type": "TELEFONE",
+      "linkedTo": "testemunha2",
+      "canonical": "(85) 98123-0099",
+      "variants": [
+        "(85) 98123-0099"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 6,
+          "folha": 8,
+          "text": "(85) 98123-0099"
+        }
+      ]
+    },
+    {
+      "id": "tel_informante",
+      "type": "TELEFONE",
+      "linkedTo": "informante1",
+      "canonical": "(85) 3288-1144",
+      "variants": [
+        "(85) 3288-1144"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 12,
+          "folha": 14,
+          "text": "(85) 3288-1144"
+        }
+      ]
+    },
+    {
+      "id": "email_vitima",
+      "type": "EMAIL",
+      "linkedTo": "vitima1",
+      "canonical": "maria.souza.ficticia@exemplo.com.br",
+      "variants": [
+        "maria.souza.ficticia@exemplo.com.br"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 2,
+          "folha": 4,
+          "text": "maria.souza.ficticia@exemplo.com.br"
+        },
+        {
+          "pdfPage": 11,
+          "folha": 13,
+          "text": "maria.souza.ficticia@exemplo.com.br"
+        }
+      ]
+    },
+    {
+      "id": "pix_autor",
+      "type": "CHAVE_PIX",
+      "linkedTo": "autor1",
+      "canonical": "7d9f0c2e-4b1a-4c3e-9f8a-1b2c3d4e5f60",
+      "variants": [
+        "7d9f0c2e-4b1a-4c3e-9f8a-1b2c3d4e5f60"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 4,
+          "folha": 6,
+          "text": "7d9f0c2e-4b1a-4c3e-9f8a-1b2c3d4e5f60"
+        },
+        {
+          "pdfPage": 11,
+          "folha": 13,
+          "text": "7d9f0c2e-4b1a-4c3e-9f8a-1b2c3d4e5f60"
+        }
+      ]
+    },
+    {
+      "id": "conta_autor",
+      "type": "CONTA_BANCARIA",
+      "linkedTo": "autor1",
+      "canonical": "agência 1234-5, conta corrente 98765-0",
+      "variants": [
+        "agência 1234-5, conta corrente 98765-0"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 9,
+          "folha": 11,
+          "text": "agência 1234-5, conta corrente 98765-0"
+        },
+        {
+          "pdfPage": 11,
+          "folha": 13,
+          "text": "agência 1234-5, conta corrente 98765-0"
+        }
+      ]
+    },
+    {
+      "id": "placa_vitima",
+      "type": "PLACA",
+      "linkedTo": "vitima1",
+      "canonical": "HXP-4821",
+      "variants": [
+        "HXP-4821",
+        "HXP4821"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 2,
+          "folha": 4,
+          "text": "HXP-4821"
+        },
+        {
+          "pdfPage": 3,
+          "folha": 5,
+          "text": "HXP4821"
+        }
+      ]
+    },
+    {
+      "id": "placa_moto",
+      "type": "PLACA",
+      "linkedTo": "autor1",
+      "canonical": "PNB2C47",
+      "variants": [
+        "PNB2C47"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 6,
+          "folha": 8,
+          "text": "PNB2C47"
+        },
+        {
+          "pdfPage": 7,
+          "folha": 9,
+          "text": "PNB2C47"
+        },
+        {
+          "pdfPage": 10,
+          "folha": 12,
+          "text": "PNB2C47"
+        },
+        {
+          "pdfPage": 14,
+          "folha": 16,
+          "text": "PNB2C47"
+        }
+      ]
+    },
+    {
+      "id": "chassi_moto",
+      "type": "CHASSI_RENAVAM",
+      "linkedTo": "autor1",
+      "canonical": "9C2KC2210RR004251",
+      "variants": [
+        "9C2KC2210RR004251"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 7,
+          "folha": 9,
+          "text": "9C2KC2210RR004251"
+        },
+        {
+          "pdfPage": 10,
+          "folha": 12,
+          "text": "9C2KC2210RR004251"
+        }
+      ]
+    },
+    {
+      "id": "renavam_moto",
+      "type": "CHASSI_RENAVAM",
+      "linkedTo": "autor1",
+      "canonical": "00912345678",
+      "variants": [
+        "00912345678"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 7,
+          "folha": 9,
+          "text": "00912345678"
+        },
+        {
+          "pdfPage": 10,
+          "folha": 12,
+          "text": "00912345678"
+        }
+      ]
+    },
+    {
+      "id": "end_vitima",
+      "type": "ENDERECO",
+      "linkedTo": "vitima1",
+      "canonical": "Rua das Acácias Fictícias, nº 145, Apto 302, Bairro Jardim Imaginário, Fortaleza/CE",
+      "variants": [
+        "Rua das Acácias Fictícias, nº 145, Apto 302, Bairro Jardim Imaginário, Fortaleza/CE",
+        "Rua das Acácias Fictícias"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 1,
+          "folha": 3,
+          "text": "Rua das Acácias Fictícias"
+        },
+        {
+          "pdfPage": 2,
+          "folha": 4,
+          "text": "Rua das Acácias Fictícias, nº 145, Apto 302, Bairro Jardim Imaginário, Fortaleza/CE"
+        },
+        {
+          "pdfPage": 3,
+          "folha": 5,
+          "text": "Rua das Acácias Fictícias, nº 145, Apto 302, Bairro Jardim Imaginário, Fortaleza/CE"
+        },
+        {
+          "pdfPage": 6,
+          "folha": 8,
+          "text": "Rua das Acácias Fictícias"
+        }
+      ]
+    },
+    {
+      "id": "end_autor",
+      "type": "ENDERECO",
+      "linkedTo": "autor1",
+      "canonical": "Travessa Boa Esperança, nº 77, Bairro Vila Inventada, Fortaleza/CE",
+      "variants": [
+        "Travessa Boa Esperança, nº 77, Bairro Vila Inventada, Fortaleza/CE",
+        "Travessa Boa Esperança"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 3,
+          "folha": 5,
+          "text": "Travessa Boa Esperança"
+        },
+        {
+          "pdfPage": 8,
+          "folha": 10,
+          "text": "Travessa Boa Esperança, nº 77, Bairro Vila Inventada, Fortaleza/CE"
+        },
+        {
+          "pdfPage": 12,
+          "folha": 14,
+          "text": "Travessa Boa Esperança"
+        }
+      ]
+    },
+    {
+      "id": "end_test1",
+      "type": "ENDERECO",
+      "linkedTo": "testemunha1",
+      "canonical": "Rua das Acácias Fictícias, nº 151, Bairro Jardim Imaginário, Fortaleza/CE",
+      "variants": [
+        "Rua das Acácias Fictícias, nº 151, Bairro Jardim Imaginário, Fortaleza/CE"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 5,
+          "folha": 7,
+          "text": "Rua das Acácias Fictícias, nº 151, Bairro Jardim Imaginário, Fortaleza/CE"
+        }
+      ]
+    },
+    {
+      "id": "end_invest",
+      "type": "ENDERECO",
+      "linkedTo": "investigado1",
+      "canonical": "Avenida dos Ipês Inventados, nº 2020, Bairro Parque Ilusão, Fortaleza/CE",
+      "variants": [
+        "Avenida dos Ipês Inventados, nº 2020, Bairro Parque Ilusão, Fortaleza/CE",
+        "Av. dos Ipês Inventados"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 7,
+          "folha": 9,
+          "text": "Avenida dos Ipês Inventados, nº 2020, Bairro Parque Ilusão, Fortaleza/CE"
+        }
+      ]
+    },
+    {
+      "id": "cep_vitima",
+      "type": "CEP",
+      "linkedTo": "vitima1",
+      "canonical": "60000-123",
+      "variants": [
+        "60000-123"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 2,
+          "folha": 4,
+          "text": "60000-123"
+        }
+      ]
+    },
+    {
+      "id": "cep_autor",
+      "type": "CEP",
+      "linkedTo": "autor1",
+      "canonical": "60000-456",
+      "variants": [
+        "60000-456"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 8,
+          "folha": 10,
+          "text": "60000-456"
+        }
+      ]
+    },
+    {
+      "id": "dn_vitima",
+      "type": "DATA_NASCIMENTO",
+      "linkedTo": "vitima1",
+      "canonical": "14/03/1985",
+      "variants": [
+        "14/03/1985"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 2,
+          "folha": 4,
+          "text": "14/03/1985"
+        },
+        {
+          "pdfPage": 3,
+          "folha": 5,
+          "text": "14/03/1985"
+        }
+      ]
+    },
+    {
+      "id": "dn_autor",
+      "type": "DATA_NASCIMENTO",
+      "linkedTo": "autor1",
+      "canonical": "02/09/1998",
+      "variants": [
+        "02/09/1998"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 8,
+          "folha": 10,
+          "text": "02/09/1998"
+        }
+      ]
+    },
+    {
+      "id": "dn_test2",
+      "type": "DATA_NASCIMENTO",
+      "linkedTo": "testemunha2",
+      "canonical": "21/11/1990",
+      "variants": [
+        "21/11/1990"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 6,
+          "folha": 8,
+          "text": "21/11/1990"
+        }
+      ]
+    },
+    {
+      "id": "bo",
+      "type": "NUM_BO",
+      "canonical": "102-4567/2026",
+      "variants": [
+        "102-4567/2026"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 1,
+          "folha": 3,
+          "text": "102-4567/2026"
+        },
+        {
+          "pdfPage": 2,
+          "folha": 4,
+          "text": "102-4567/2026"
+        }
+      ]
+    },
+    {
+      "id": "ip",
+      "type": "NUM_IP",
+      "canonical": "900-123/2026",
+      "variants": [
+        "900-123/2026"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 1,
+          "folha": 3,
+          "text": "900-123/2026"
+        },
+        {
+          "pdfPage": 11,
+          "folha": 13,
+          "text": "900-123/2026"
+        },
+        {
+          "pdfPage": 14,
+          "folha": 16,
+          "text": "900-123/2026"
+        }
+      ]
+    },
+    {
+      "id": "processo",
+      "type": "NUM_PROCESSO",
+      "canonical": "3012345-91.2026.8.06.0001",
+      "variants": [
+        "3012345-91.2026.8.06.0001"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 11,
+          "folha": 13,
+          "text": "3012345-91.2026.8.06.0001"
+        },
+        {
+          "pdfPage": 13,
+          "folha": 15,
+          "text": "3012345-91.2026.8.06.0001"
+        }
+      ]
+    }
+  ]
+}
