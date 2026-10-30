@@ -11,6 +11,7 @@ import {
   addManual,
   applyDetection,
   assignRole,
+  changeType,
   cleanName,
   confirm,
   discard,
@@ -18,11 +19,15 @@ import {
   link,
   markExported,
   merge,
+  pseudonymizeAllPeople,
+  removeVariant,
   resetReview,
   reviewProgress,
   setDecision,
+  setIndex,
   splitVariant,
   unify,
+  unifyInto,
 } from './model';
 import type { StoredEntity } from '../vault/types';
 
@@ -79,8 +84,10 @@ describe('revisão', () => {
     c = assignRole(c, joao.id, 'VÍTIMA');
     expect(c.entities.find((e) => e.id === joao.id)?.index).toBe(2);
     expect(duplicateLabels(c.entities)).toEqual([]);
+    // Dar a João o número de outra vítima = é a mesma pessoa: unifica, sem marcador repetido.
     c = assignRole(c, joao.id, 'VÍTIMA', 1);
-    expect(duplicateLabels(c.entities)).toEqual(['[VÍTIMA 1]']);
+    expect(duplicateLabels(c.entities)).toEqual([]);
+    expect(c.entities.some((e) => e.id === joao.id)).toBe(false);
   });
 
   it('manter e voltar a pseudonimizar', () => {
@@ -241,5 +248,78 @@ describe('unificação e limpeza na revisão', () => {
       'Natureza do Fato',
     ]);
     expect(resetReview(c).entities).toEqual([]);
+  });
+});
+
+describe('campos da revisão (pedido do usuário)', () => {
+  const TEXT2 =
+    'Vítima: JOSÉ GERARDO DE SOUZA, CPF 529.982.247-25.\n' +
+    'RELATÓRIO: QUE Gerardo Souza foi ouvido. Testemunha: ANA PAULA ROCHA.\n' +
+    'Natural de Santana do Acaraú. QUE encontrou Raimundo Bezerra Mota.';
+  const fresh = () =>
+    applyDetection(emptyVaultContent(), detectEntities([{ docId: 'd', pdfPage: 1, text: TEXT2 }]));
+  const pseud = (c: VaultContent) => {
+    const byId = new Map(c.entities.map((e) => [e.id, e]));
+    return substitute(TEXT2, buildLocator(c.entities).locate(TEXT2), (id) => {
+      const e = byId.get(id);
+      return e && e.decision === 'pseudonymize' ? labelOf(e, byId) : null;
+    });
+  };
+
+  it('"É a mesma pessoa que…" unifica e todas as ocorrências viram o mesmo marcador', () => {
+    let c = fresh();
+    const vitima = byCanonical(c, /José Gerardo/);
+    const { content, id } = addManual(c, 'Raimundo Bezerra Mota', 'PESSOA');
+    c = unifyInto(content, vitima.id, id);
+    expect(c.entities.some((e) => e.id === id)).toBe(false);
+    expect(pseud(c)).toContain('QUE encontrou [VÍTIMA 1].');
+  });
+
+  it('dar à pessoa o número de outra ("é a VÍTIMA 1") unifica sem duplicar', () => {
+    let c = fresh();
+    const ana = byCanonical(c, /Ana Paula/);
+    c = assignRole(c, ana.id, 'VÍTIMA');
+    expect(c.entities.find((e) => e.id === ana.id)?.index).toBe(2);
+    c = setIndex(c, ana.id, 1);
+    expect(c.entities.filter((e) => e.role === 'VÍTIMA')).toHaveLength(1);
+    expect(pseud(c)).toContain('Testemunha: [VÍTIMA 1].');
+  });
+
+  it('apagar uma variante a mais', () => {
+    let c = fresh();
+    const { content, id } = addManual(c, 'JOSÉ GERARDO DE SOUZA Arquivos', 'PESSOA', {
+      addToId: byCanonical(c, /José Gerardo/).id,
+    });
+    c = removeVariant(content, id, 'JOSÉ GERARDO DE SOUZA Arquivos');
+    expect(byCanonical(c, /José Gerardo/).variants).not.toContain('JOSÉ GERARDO DE SOUZA Arquivos');
+    expect(c.config.dismissed).toContain('JOSÉ GERARDO DE SOUZA Arquivos');
+  });
+
+  it('marcar como cidade: fica em claro e não volta como pessoa', () => {
+    let c = applyDetection(
+      emptyVaultContent(),
+      detectEntities([{ docId: 'd', pdfPage: 1, text: 'QUE encontrou Raimundo Bezerra Mota.' }]),
+    );
+    const r = byCanonical(c, /Raimundo/);
+    c = changeType(c, r.id, 'CIDADE');
+    expect(c.entities[0]).toMatchObject({ type: 'CIDADE', decision: 'keep', index: null });
+    const again = applyDetection(
+      c,
+      detectEntities([{ docId: 'd', pdfPage: 1, text: 'QUE encontrou Raimundo Bezerra Mota.' }]),
+    );
+    expect(again.entities.filter((e) => e.type === 'PESSOA')).toHaveLength(0);
+    expect(addManual(c, 'Santana do Acaraú', 'CIDADE').content.entities.at(-1)?.decision).toBe(
+      'keep',
+    );
+  });
+
+  it('"Pseudonimizar todas as pessoas" confirma todas, mantendo as autoridades', () => {
+    const c = pseudonymizeAllPeople(detected());
+    const people = c.entities.filter((e) => e.type === 'PESSOA');
+    expect(people.every((e) => e.reviewed)).toBe(true);
+    expect(byCanonical(c, /Paulo/).decision).toBe('keep');
+    expect(reviewProgress(c.entities).pendingPeople).toBe(0);
+    const all = pseudonymizeAllPeople(detected(), { includeKept: true });
+    expect(byCanonical(all, /Paulo/).decision).toBe('pseudonymize');
   });
 });

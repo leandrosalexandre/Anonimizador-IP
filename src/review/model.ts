@@ -72,8 +72,17 @@ export function applyDetection(
   const idMap = new Map<string, string>();
   const matched = new Set<string>();
 
+  // Variantes que o usuário reclassificou (ex.: pessoa → cidade) não voltam com o tipo antigo.
+  const reclassified = new Map<string, EntityType>();
+  for (const e of content.entities) {
+    if (e.reviewed) for (const v of e.variants) reclassified.set(vkey(v), e.type);
+  }
+
   for (const d of detected) {
-    const variants = d.variants.filter((v) => !dismissed.has(vkey(v)));
+    const variants = d.variants.filter((v) => {
+      const other = reclassified.get(vkey(v));
+      return !dismissed.has(vkey(v)) && (other === undefined || other === d.type);
+    });
     if (!variants.length) continue;
     const keys = new Set(variants.map(vkey));
     const existing = entities.find(
@@ -162,6 +171,11 @@ export function assignRole(
   index?: number,
 ): VaultContent {
   const normalized = role ? normalizeRole(role) : null;
+  if (index !== undefined) {
+    const entity = content.entities.find((e) => e.id === id);
+    const owner = entity && sameLabelOwner(content, id, { ...entity, role: normalized }, index);
+    if (owner) return merge(content, [owner.id, id]);
+  }
   return update(content, id, (e) => {
     const next = { ...e, role: normalized };
     const sameScope = indexScope(e) === indexScope(next);
@@ -176,8 +190,117 @@ export function assignRole(
   });
 }
 
+/** Outra entidade que já usa o mesmo marcador (mesmo papel/tipo e número). */
+export function sameLabelOwner(
+  content: VaultContent,
+  id: string,
+  scope: Pick<StoredEntity, 'type' | 'role'>,
+  index: number,
+): StoredEntity | undefined {
+  return content.entities.find(
+    (e) =>
+      e.id !== id &&
+      e.decision === 'pseudonymize' &&
+      !e.suggested &&
+      e.index === index &&
+      indexScope(e) === indexScope(scope),
+  );
+}
+
+/**
+ * Define o número do marcador. Se outra pessoa já tem esse marcador ("é a VÍTIMA 1"), as duas
+ * são a mesma: esta é unificada na que já tinha o número, sem duplicar.
+ */
 export function setIndex(content: VaultContent, id: string, index: number): VaultContent {
+  const entity = content.entities.find((e) => e.id === id);
+  if (!entity) return content;
+  const owner = sameLabelOwner(content, id, entity, index);
+  if (owner) return merge(content, [owner.id, id]);
   return update(content, id, (e) => ({ ...e, index, reviewed: true }));
+}
+
+/** "É a mesma pessoa que…": esta entidade some e as variantes vão para a escolhida. */
+export function unifyInto(content: VaultContent, targetId: string, id: string): VaultContent {
+  if (targetId === id) return content;
+  return merge(content, [targetId, id]);
+}
+
+/** Apaga uma variante (texto a mais); ela não volta numa nova detecção. */
+export function removeVariant(content: VaultContent, id: string, variant: string): VaultContent {
+  const entity = content.entities.find((e) => e.id === id);
+  if (!entity || entity.variants.length < 2) return content;
+  const variants = entity.variants.filter((v) => v !== variant);
+  const canonical =
+    vkey(entity.canonical) === vkey(variant)
+      ? ([...variants].sort((a, b) => b.length - a.length)[0] ?? entity.canonical)
+      : entity.canonical;
+  const dismissed = [...new Set([...(content.config.dismissed ?? []), variant])];
+  return update({ ...content, config: { ...content.config, dismissed } }, id, (e) => ({
+    ...e,
+    variants,
+    canonical,
+    reviewed: true,
+  }));
+}
+
+/**
+ * Muda o tipo da entidade (ex.: uma "pessoa" que é uma cidade). Cidades e lugares ficam em claro
+ * por padrão; os demais tipos são pseudonimizados com o próximo número livre.
+ */
+export function changeType(content: VaultContent, id: string, type: EntityType): VaultContent {
+  const entity = content.entities.find((e) => e.id === id);
+  if (!entity || entity.type === type) return content;
+  const kept = type === 'CIDADE';
+  const entities = content.entities.map((e) => {
+    if (e.id === id) {
+      const next: StoredEntity = {
+        ...e,
+        type,
+        role: type === 'PESSOA' ? e.role : null,
+        linkedTo: type === 'PESSOA' ? null : e.linkedTo,
+        decision: kept ? 'keep' : 'pseudonymize',
+        reviewed: true,
+        suggested: false,
+        ambiguousWith: [],
+        index: null,
+      };
+      if (!kept) next.index = nextIndex(content.entities, next, id);
+      return next;
+    }
+    // Dados que pertenciam a esta "pessoa" ficam sem dono.
+    return {
+      ...e,
+      linkedTo: e.linkedTo === id && type !== 'PESSOA' ? null : e.linkedTo,
+      ambiguousWith: e.ambiguousWith.filter((a) => a !== id),
+    };
+  });
+  return compactIndexes(withEntities(content, entities));
+}
+
+/**
+ * Botão único: pseudonimiza e confirma todas as pessoas (e apelidos). As autoridades mantidas
+ * (Delegado, Escrivão…) continuam mantidas, salvo se `includeKept`.
+ */
+export function pseudonymizeAllPeople(
+  content: VaultContent,
+  options: { includeKept?: boolean } = {},
+): VaultContent {
+  let entities = content.entities;
+  for (const e of content.entities) {
+    if ((e.type !== 'PESSOA' && e.type !== 'APELIDO') || e.suggested) continue;
+    const keep = e.decision === 'keep' && !options.includeKept;
+    entities = entities.map((x) => {
+      if (x.id !== e.id) return x;
+      if (keep) return { ...x, reviewed: true };
+      return {
+        ...x,
+        decision: 'pseudonymize',
+        reviewed: true,
+        index: x.index ?? nextIndex(entities, x, x.id),
+      };
+    });
+  }
+  return compactIndexes(withEntities(content, entities));
 }
 
 /** Pseudonimizar ou manter (autoridades, órgãos públicos). */
@@ -251,7 +374,11 @@ export function merge(content: VaultContent, ids: readonly string[]): VaultConte
     if (!absorbed.has(e.id)) continue;
     for (const v of e.variants) if (!variants.some((x) => vkey(x) === vkey(v))) variants.push(v);
   }
-  const canonical = [...variants].sort((a, b) => b.length - a.length)[0] ?? target.canonical;
+  const canonical =
+    content.entities
+      .filter((e) => e.id === target.id || absorbed.has(e.id))
+      .map((e) => e.canonical)
+      .sort((a, b) => b.length - a.length)[0] ?? target.canonical;
   const roles = content.entities
     .filter((e) => (e.id === target.id || absorbed.has(e.id)) && e.role)
     .map((e) => normalizeRole(e.role ?? ''));
@@ -267,7 +394,11 @@ export function merge(content: VaultContent, ids: readonly string[]): VaultConte
         ? {
             ...e,
             variants,
-            canonical: target.canonical.length >= canonical.length ? target.canonical : canonical,
+            // A pessoa escolhida como destino ("é a VÍTIMA 1") mantém o seu nome, salvo se o
+            // outro for o mesmo nome mais completo.
+            canonical: nameTokens(target.canonical).every((t) => nameTokens(canonical).includes(t))
+              ? canonical
+              : target.canonical,
             reviewed: true,
             suggested: false,
             ...(conflicts.length > 1 ? { roleConflicts: conflicts } : {}),
@@ -457,14 +588,14 @@ export function addManual(
     index: null,
     canonical: value,
     variants: [value],
-    decision: 'pseudonymize',
+    decision: type === 'CIDADE' ? 'keep' : 'pseudonymize',
     reviewed: true,
     linkedTo: null,
     ambiguousWith: [],
     source: 'manual',
     confidence: 1,
   };
-  entity.index = nextIndex(content.entities, entity);
+  if (entity.decision === 'pseudonymize') entity.index = nextIndex(content.entities, entity);
   return {
     content: { ...content, config, entities: [...content.entities, entity] },
     id: entity.id,

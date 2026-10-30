@@ -1,6 +1,11 @@
 import { useId, useState, useSyncExternalStore } from 'react';
 import { DEFAULT_EXCLUSIONS } from '../detectors/data/exclusoes';
-import { DEFAULT_ENABLED_TYPES, ENTITY_TYPES, type EntityType } from '../detectors/types';
+import {
+  DEFAULT_ENABLED_TYPES,
+  ENTITY_TYPES,
+  MANUAL_ONLY_TYPES,
+  type EntityType,
+} from '../detectors/types';
 import { TYPE_TITLE } from '../review/labels';
 import { DEFAULT_AI_INSTRUCTIONS } from '../export/build';
 import { TypedConfirm } from '../components/TypedConfirm';
@@ -281,7 +286,7 @@ function TypesPanel({
   value: readonly EntityType[];
   onChange: (types: EntityType[]) => void;
 }) {
-  const optional = ENTITY_TYPES.filter((t) => t !== 'PESSOA');
+  const optional = ENTITY_TYPES.filter((t) => t !== 'PESSOA' && !MANUAL_ONLY_TYPES.includes(t));
   const isDefault =
     value.length === DEFAULT_ENABLED_TYPES.length &&
     DEFAULT_ENABLED_TYPES.every((t) => value.includes(t));

@@ -115,7 +115,12 @@ atualização.
    indicam nome com mais de 7 palavras, palavra suspeita (rótulo, lugar, termo médico), papéis
    diferentes nas peças e **possível mesma pessoa** (botões **Unificar** e **Manter separados**).
    **Limpar nome** corta palavras que não fazem parte do nome e unifica com a pessoa certa.
-   **Confirmar sugestões** aceita um grupo inteiro. **Recomeçar a revisão do zero** refaz a
+   **É a mesma pessoa que…** unifica com uma pessoa já existente (escolhida por papel); dar a uma
+   pessoa o número de outra ("é a VÍTIMA 1") também unifica. Cada variante pode ser apagada. Em
+   CPF, RG e demais dados, **Pertence a** pede o papel e depois a pessoa. O campo **Tipo** muda o
+   tipo da entidade, inclusive para **Cidade ou lugar** (fica em claro).
+   **Pseudonimizar todas as pessoas** confirma todas de uma vez (as autoridades continuam
+   mantidas). **Confirmar sugestões** aceita um grupo inteiro. **Recomeçar a revisão do zero** refaz a
    detecção apagando as decisões (útil em cofres revisados com uma versão anterior do app).
 4. Na aba **Texto**, confira os destaques página a página. Toque num destaque para abrir a entidade;
    selecione um trecho que a detecção perdeu para marcá-lo. Ligue **Original × pseudonimizado**

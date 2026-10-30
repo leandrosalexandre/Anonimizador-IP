@@ -213,3 +213,19 @@ describe('novo escopo padrão', () => {
     expect(isValidCns('104123456780019')).toBe(false);
   });
 });
+
+describe('nome repetido e texto colado ao nome', () => {
+  it('"JOSÉ GERARDO DE SOUZA" repetido na linha seguinte com rótulo ou "Arquivos" é uma só pessoa', () => {
+    const entities = detectEntities([
+      page(
+        'Vítima: JOSÉ GERARDO DE SOUZA\nJOSÉ GERARDO DE SOUZA Nascimento: 01/01/1970\n' +
+          'JOSÉ GERARDO DE SOUZA Arquivos digitalizados\nRELATÓRIO\nJOSÉ GERARDO DE SOUZA\nArquivo 3',
+      ),
+    ]);
+    const all = entities.filter((e) => e.type === 'PESSOA');
+    expect(all).toHaveLength(1);
+    expect(all[0]?.canonical).toBe('José Gerardo de Souza');
+    expect(all[0]?.variants).toEqual(['JOSÉ GERARDO DE SOUZA']);
+    expect(all[0]?.occurrences).toHaveLength(4);
+  });
+});

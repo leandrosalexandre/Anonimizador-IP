@@ -24,8 +24,12 @@ export const ENTITY_TYPES = [
   'NUM_IP',
   'APELIDO',
   'EMPRESA_PRIVADA',
+  'CIDADE',
   'OUTRO',
 ] as const;
+
+/** Tipos marcados só na revisão (nunca detectados automaticamente). */
+export const MANUAL_ONLY_TYPES: readonly EntityType[] = ['CIDADE'];
 export type EntityType = (typeof ENTITY_TYPES)[number];
 
 export const PERSON_ROLES = [
