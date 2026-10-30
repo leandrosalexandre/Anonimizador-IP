@@ -113,6 +113,8 @@ export interface DetectionOptions {
   exclusions?: readonly string[];
   /** Nomes que devem ser sempre mantidos (configuração do cofre). */
   keepNames?: readonly string[];
+  /** Termos ensinados pelo usuário como "não é dado pessoal" (bairros, ruas…), em claro. */
+  learnedTerms?: readonly string[];
   /** Tipos a pseudonimizar; os demais não viram entidade (padrão: DEFAULT_ENABLED_TYPES). */
   types?: readonly EntityType[];
 }

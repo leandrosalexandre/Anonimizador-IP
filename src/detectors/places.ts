@@ -73,9 +73,28 @@ export function nextLabelStart(text: string, from: number): number {
   return w ? from + (w.index ?? 0) : colon;
 }
 
-/** Trechos da página que não podem fazer parte de nomes de pessoas. */
-export function blockedRanges(text: string): Range[] {
+let learnedCache: { key: string; re: RegExp | null } | null = null;
+function learnedRe(terms: readonly string[]): RegExp | null {
+  const key = terms.join('\n');
+  if (learnedCache?.key === key) return learnedCache.re;
+  const patterns = [...new Set(terms.map((t) => t.trim()).filter((t) => t.length >= 2))]
+    .sort((a, b) => b.length - a.length)
+    .map(accentInsensitive);
+  const re = patterns.length
+    ? new RegExp(`(?<![\\p{L}\\p{N}])(?:${patterns.join('|')})(?![\\p{L}\\p{N}])`, 'giu')
+    : null;
+  learnedCache = { key, re };
+  return re;
+}
+
+/**
+ * Trechos da página que não podem fazer parte de nomes de pessoas. `learned`: termos ensinados
+ * na revisão ("Vila Nova Esperança" é bairro).
+ */
+export function blockedRanges(text: string, learned: readonly string[] = []): Range[] {
   const out: [number, number][] = [];
+  const re = learnedRe(learned);
+  if (re) for (const m of text.matchAll(re)) out.push([m.index, m.index + m[0].length]);
   for (const m of text.matchAll(MUNICIPALITY_RE)) {
     const index = m.index ?? 0;
     const groupIndex = m.slice(1).findIndex((g) => g !== undefined);

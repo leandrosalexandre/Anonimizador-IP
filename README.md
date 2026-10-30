@@ -119,6 +119,8 @@ atualização.
    pessoa o número de outra ("é a VÍTIMA 1") também unifica. Cada variante pode ser apagada. Em
    CPF, RG e demais dados, **Pertence a** pede o papel e depois a pessoa. O campo **Tipo** muda o
    tipo da entidade, inclusive para **Cidade ou lugar** (fica em claro).
+   Ao **Descartar**, escreva o motivo ("bairro", "rua"…) e marque **Ensinar ao app**: o termo
+   deixa de ser detectado em todos os cofres (lista em Configurações → Termos aprendidos).
    **Pseudonimizar todas as pessoas** confirma todas de uma vez (as autoridades continuam
    mantidas). **Confirmar sugestões** aceita um grupo inteiro. **Recomeçar a revisão do zero** refaz a
    detecção apagando as decisões (útil em cofres revisados com uma versão anterior do app).

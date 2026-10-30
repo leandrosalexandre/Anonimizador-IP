@@ -49,8 +49,12 @@ export interface NameContext {
   blocked: readonly Range[];
 }
 
-export function nameContext(text: string, exclusions: ReadonlySet<string>): NameContext {
-  return { exclusions, blocked: blockedRanges(text) };
+export function nameContext(
+  text: string,
+  exclusions: ReadonlySet<string>,
+  learned: readonly string[] = [],
+): NameContext {
+  return { exclusions, blocked: blockedRanges(text, learned) };
 }
 
 const wordKey = (w: string) => fold(w).replace(/[.'’:,;]+$/u, '');

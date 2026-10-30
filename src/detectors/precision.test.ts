@@ -229,3 +229,15 @@ describe('nome repetido e texto colado ao nome', () => {
     expect(all[0]?.occurrences).toHaveLength(4);
   });
 });
+
+describe('termos ensinados na revisão', () => {
+  it('bairro com nome de pessoa ensinado ("Antônio Bezerra") não é mais detectado, sem acento', () => {
+    const text = 'QUE mora no ANTONIO BEZERRA, perto da Vila Esperança, com Ana Paula Rocha.';
+    const people = (learnedTerms: string[]) =>
+      detectPage(text, { learnedTerms })
+        .filter((c) => c.type === 'PESSOA')
+        .map((c) => c.text);
+    expect(people([])).toContain('ANTONIO BEZERRA');
+    expect(people(['Antônio Bezerra'])).toEqual(['Ana Paula Rocha']);
+  });
+});

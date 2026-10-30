@@ -44,4 +44,14 @@ describe('preferências', () => {
     );
     expect(getSettings().lockOnHide).toBe('immediate');
   });
+
+  it('guarda termos aprendidos válidos', () => {
+    updateSettings({
+      learnedTerms: [
+        { text: ' Vila Nova Esperança ', kind: 'bairro' },
+        { text: '', kind: 'rua' },
+      ],
+    });
+    expect(getSettings().learnedTerms).toEqual([{ text: 'Vila Nova Esperança', kind: 'bairro' }]);
+  });
 });

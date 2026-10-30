@@ -26,7 +26,7 @@ import {
   entityWarnings,
   suspiciousWords,
 } from '../../review/warnings';
-import { getSettings, subscribeSettings } from '../../settings/settings';
+import { getSettings, subscribeSettings, updateSettings } from '../../settings/settings';
 import { formatFolhas, type ReviewData } from '../../review/useReviewData';
 import { userMessage } from '../../utils/errors';
 import type { StoredEntity, VaultContent } from '../../vault/types';
@@ -132,7 +132,7 @@ export function EntityDetail({ entity, content, data, onShowInText, onClose }: P
               <button
                 type="button"
                 className="danger-outline"
-                onClick={() => void run((c) => discard(c, entity.id))}
+                onClick={() => setConfirmDiscard(true)}
               >
                 Descartar
               </button>
@@ -361,25 +361,15 @@ export function EntityDetail({ entity, content, data, onShowInText, onClose }: P
             Confirmar sugestão
           </button>
         )}
-        {confirmDiscard ? (
-          <>
-            <button type="button" onClick={() => setConfirmDiscard(false)}>
-              Cancelar
-            </button>
-            <button
-              type="button"
-              className="danger"
-              onClick={() => void run((c) => discard(c, entity.id))}
-            >
-              Confirmar descarte
-            </button>
-          </>
-        ) : (
+        {!confirmDiscard && (
           <button type="button" className="danger-outline" onClick={() => setConfirmDiscard(true)}>
             Descartar (não é dado pessoal)
           </button>
         )}
       </div>
+      {confirmDiscard && (
+        <DiscardForm entity={entity} run={run} onCancel={() => setConfirmDiscard(false)} />
+      )}
     </div>
   );
 }
@@ -618,5 +608,99 @@ function LinkOwner({
         ))}
       </select>
     </div>
+  );
+}
+
+const DISCARD_KINDS = [
+  'bairro',
+  'rua',
+  'cidade',
+  'distrito ou localidade',
+  'órgão ou instituição',
+  'hospital',
+  'empresa',
+  'termo técnico',
+  'rótulo de formulário',
+];
+
+/**
+ * Descartar com o motivo digitado ("bairro", "rua"…). "Ensinar ao app" grava o termo nas
+ * preferências: ele fica em claro e não é detectado de novo, em todos os cofres.
+ */
+function DiscardForm({
+  entity,
+  run,
+  onCancel,
+}: {
+  entity: StoredEntity;
+  run: Run;
+  onCancel: () => void;
+}) {
+  const id = useId();
+  const [kind, setKind] = useState('');
+  const [learn, setLearn] = useState(true);
+  const confirmDiscard = async () => {
+    await run((c) => discard(c, entity.id));
+    const reason = kind.trim();
+    if (!learn || !reason) return;
+    const current = getSettings().learnedTerms;
+    const known = new Set(current.map((t) => t.text.toLocaleLowerCase('pt-BR')));
+    const added = [entity.canonical, ...entity.variants]
+      .map((v) => v.replace(/\s+/g, ' ').trim())
+      .filter((v) => {
+        const k = v.toLocaleLowerCase('pt-BR');
+        if (!v || known.has(k)) return false;
+        known.add(k);
+        return true;
+      })
+      .map((text) => ({ text, kind: reason }));
+    if (added.length) updateSettings({ learnedTerms: [...current, ...added] });
+  };
+  return (
+    <form
+      className="panel discard-form"
+      onSubmit={(e) => {
+        e.preventDefault();
+        void confirmDiscard();
+      }}
+    >
+      <h3>Descartar “{entity.canonical}”</h3>
+      <label htmlFor={`${id}-kind`}>Não é dado pessoal porque é (digite ou escolha)</label>
+      <input
+        id={`${id}-kind`}
+        list={`${id}-kinds`}
+        value={kind}
+        onChange={(e) => setKind(e.target.value)}
+        placeholder="Ex.: bairro, rua, órgão"
+        maxLength={40}
+      />
+      <datalist id={`${id}-kinds`}>
+        {DISCARD_KINDS.map((k) => (
+          <option key={k} value={k} />
+        ))}
+      </datalist>
+      <label className="checkbox">
+        <input
+          type="checkbox"
+          checked={learn}
+          disabled={!kind.trim()}
+          onChange={(e) => setLearn(e.target.checked)}
+        />
+        Ensinar ao app: não detectar “{entity.canonical}” de novo, em nenhum cofre
+      </label>
+      <p className="hint">
+        O termo ensinado fica gravado sem cifra neste aparelho, junto com as preferências, e pode
+        ser apagado em Configurações. Use só para lugares, órgãos e termos, nunca para nomes de
+        pessoas.
+      </p>
+      <div className="actions">
+        <button type="button" onClick={onCancel}>
+          Cancelar
+        </button>
+        <button type="submit" className="danger">
+          Confirmar descarte
+        </button>
+      </div>
+    </form>
   );
 }

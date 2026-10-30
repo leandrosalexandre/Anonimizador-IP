@@ -123,6 +123,7 @@ function ExportView({ content }: { content: VaultContent }) {
             exclusions: settings.detectionExclusions,
             ignored: content.config.residualIgnored ?? [],
             types: settings.enabledTypes,
+            learnedTerms: settings.learnedTerms.map((t) => t.text),
           })
         : [],
     [
@@ -130,6 +131,7 @@ function ExportView({ content }: { content: VaultContent }) {
       data,
       settings.detectionExclusions,
       settings.enabledTypes,
+      settings.learnedTerms,
       content.config.residualIgnored,
     ],
   );

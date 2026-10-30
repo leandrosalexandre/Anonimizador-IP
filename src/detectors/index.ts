@@ -35,7 +35,7 @@ export type { Candidate, DetectedEntity, DetectionOptions, PageText } from './ty
  */
 export function detectPage(text: string, options: DetectionOptions = {}): Candidate[] {
   const exclusions = buildExclusions(options.exclusions);
-  const ctx = nameContext(text, exclusions);
+  const ctx = nameContext(text, exclusions, options.learnedTerms);
   const people = [
     ...detectQualification(text, ctx),
     ...detectTriggers(text, ctx),

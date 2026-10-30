@@ -154,6 +154,23 @@ test('campos da revisão: mesma pessoa, número, pertence a, tipo e pseudonimiza
     'José Wilson Silva',
   );
 
+  // Descartar ensinando o motivo ("bairro"): o app não detecta mais o termo.
+  await row('Maria Ivone Mota').locator('.row-button').click();
+  const ivone = page.getByLabel('Detalhes de Maria Ivone Mota');
+  await ivone.getByRole('button', { name: 'Descartar (não é dado pessoal)' }).click();
+  await ivone.getByLabel('Não é dado pessoal porque é').fill('bairro');
+  await expect(ivone.getByLabel(/Ensinar ao app/)).toBeChecked();
+  await ivone.getByRole('button', { name: 'Confirmar descarte' }).click();
+  await expect(row('Maria Ivone Mota')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Recomeçar a revisão do zero' }).click();
+  await page.getByRole('button', { name: 'Recomeçar', exact: true }).click();
+  await expect(page.getByLabel('Totais')).toBeVisible();
+  await expect(row('Maria Ivone Mota')).toHaveCount(0);
+  await expect(row('Damião Fernandes Rocha')).toHaveCount(1);
+  await page.getByRole('link', { name: 'Configurações' }).click();
+  await expect(page.locator('.learned-list')).toContainText('Maria Ivone Mota — bairro');
+  await page.getByRole('link', { name: 'Revisão', exact: true }).click();
+
   // Botão único.
   await page.getByRole('button', { name: 'Pseudonimizar todas as pessoas' }).click();
   await expect(page.locator('.review-progress')).not.toContainText('sem decisão');

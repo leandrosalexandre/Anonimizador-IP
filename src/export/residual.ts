@@ -3,7 +3,7 @@
 // lista de exclusão e prenomes da lista. Marcadores e trechos mantidos de propósito não contam.
 import { detectPage } from '../detectors';
 import { buildExclusions, FIRST_NAMES } from '../detectors/lexicon';
-import { fold } from '../detectors/text';
+import { findAll, fold } from '../detectors/text';
 import type { EntityType } from '../detectors/types';
 import type { ReviewData } from '../review/useReviewData';
 import type { ExportPage } from './build';
@@ -47,6 +47,7 @@ export function scanResidual(
     exclusions?: readonly string[];
     ignored?: readonly string[];
     types?: readonly EntityType[];
+    learnedTerms?: readonly string[];
   } = {},
 ): ResidualItem[] {
   const exclusions = buildExclusions(options.exclusions);
@@ -98,13 +99,16 @@ export function scanResidual(
         from = i + kept.length;
       }
     }
-    const text = blank(page.text, [...markers, ...keptSpans]);
+    // Termos ensinados como "não é dado pessoal" (bairros, ruas…) também não contam.
+    const learnedSpans = (options.learnedTerms ?? []).flatMap((t) => findAll(page.text, t));
+    const text = blank(page.text, [...markers, ...keptSpans, ...learnedSpans]);
     const taken: [number, number][] = [];
     const free = (s: number, e: number) => !taken.some(([a, b]) => a < e && s < b);
 
     const detectOptions = {
       exclusions: options.exclusions ?? [],
       ...(options.types ? { types: options.types } : {}),
+      ...(options.learnedTerms ? { learnedTerms: options.learnedTerms } : {}),
     };
     for (const c of detectPage(text, detectOptions)) {
       if (c.authority) continue;

@@ -18,6 +18,16 @@ export interface AppSettings {
   aiInstructions: string | null;
   /** Tipos de dado a pseudonimizar (nomes de pessoas sempre). */
   enabledTypes: EntityType[];
+  /**
+   * Termos ensinados na revisão como "não é dado pessoal" (bairro, rua, órgão…), com o motivo
+   * digitado. Valem para todos os cofres; ficam em claro como as demais preferências.
+   */
+  learnedTerms: LearnedTerm[];
+}
+
+export interface LearnedTerm {
+  text: string;
+  kind: string;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -28,6 +38,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   detectionExclusions: [],
   aiInstructions: null,
   enabledTypes: [...DEFAULT_ENABLED_TYPES],
+  learnedTerms: [],
 };
 export const IDLE_LOCK_OPTIONS = [1, 2, 5, 10, 15, 30, 60] as const;
 export const LOCK_ON_HIDE_DELAY_MS: Record<LockOnHide, number | null> = {
@@ -75,6 +86,15 @@ function sanitize(value: unknown): AppSettings {
           ...ENTITY_TYPES.filter((t) => t !== 'PESSOA' && raw.enabledTypes?.includes(t)),
         ]
       : [...DEFAULT_ENABLED_TYPES],
+    learnedTerms: Array.isArray(raw.learnedTerms)
+      ? raw.learnedTerms
+          .filter(
+            (t): t is LearnedTerm =>
+              !!t && typeof t.text === 'string' && typeof t.kind === 'string' && !!t.text.trim(),
+          )
+          .map((t) => ({ text: t.text.trim().slice(0, 120), kind: t.kind.trim().slice(0, 40) }))
+          .slice(0, 2000)
+      : [],
   };
 }
 
