@@ -1,4 +1,4 @@
-import { useId, useState, useSyncExternalStore } from 'react';
+import { useId, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { TYPE_LABEL, TYPE_TITLE, labelOf, normalizeRole } from '../../review/labels';
 import {
   acceptSuggestion,
@@ -18,11 +18,14 @@ import {
   splitVariant,
   unify,
   unifyInto,
+  addNickname,
+  setPosition,
+  setRelation,
 } from '../../review/model';
 import { ENTITY_TYPES, type EntityType } from '../../detectors/types';
 import {
   WARNING_TEXT,
-  contextAround,
+  paragraphAround,
   entityWarnings,
   suspiciousWords,
 } from '../../review/warnings';
@@ -42,29 +45,62 @@ interface Props {
   onClose?: () => void;
 }
 
+/** Onde aparece: o parágrafo inteiro de cada página em que a entidade é citada. */
 function Snippets({ entity, data, onShowInText }: Pick<Props, 'entity' | 'data' | 'onShowInText'>) {
+  const [all, setAll] = useState(false);
   const pages = data.stats.get(entity.id)?.pages ?? [];
   if (!pages.length) return <p className="hint">Nenhuma ocorrência no texto atual.</p>;
+  const shown = all ? pages : pages.slice(0, 5);
   return (
-    <ul className="snippets">
-      {pages.slice(0, 8).map((key) => {
-        const page = data.byKey.get(key);
-        const hit = data.located.get(key)?.find((l) => l.entityId === entity.id);
-        if (!page || !hit) return null;
-        const { before, hit: found, after } = contextAround(page.text, hit.start, hit.end);
-        return (
-          <li key={key}>
-            <button type="button" className="link" onClick={() => onShowInText(key)}>
-              {page.folha !== null ? `fls. ${page.folha}` : `PDF p. ${page.pdfPage}`}
-            </button>{' '}
-            <span className="meta">
-              …{before} <mark className="snippet-hit">{found}</mark> {after}…
-            </span>
-          </li>
-        );
-      })}
-      {pages.length > 8 && <li className="meta">e mais {pages.length - 8} páginas</li>}
-    </ul>
+    <>
+      <ul className="snippets paragraphs">
+        {shown.map((key) => {
+          const page = data.byKey.get(key);
+          const hits = (data.located.get(key) ?? []).filter((l) => l.entityId === entity.id);
+          const first = hits[0];
+          if (!page || !first) return null;
+          const range = paragraphAround(page.text, first.start, first.end);
+          const inside = hits.filter((h) => h.start >= range.start && h.end <= range.end);
+          const parts: ReactNode[] = [];
+          let pos = range.start;
+          for (const h of inside) {
+            parts.push(page.text.slice(pos, h.start));
+            parts.push(
+              <mark key={h.start} className="snippet-hit">
+                {page.text.slice(h.start, h.end)}
+              </mark>,
+            );
+            pos = h.end;
+          }
+          parts.push(page.text.slice(pos, range.end));
+          return (
+            <li key={key}>
+              <p className="snippet-where">
+                <strong>{page.folha !== null ? `fls. ${page.folha}` : 'fls. ?'}</strong>
+                <span className="meta">
+                  {' '}
+                  · PDF p. {page.pdfPage} · {page.fileName}
+                  {hits.length > 1 ? ` · ${hits.length} citações nesta página` : ''}
+                </span>{' '}
+                <button type="button" className="link" onClick={() => onShowInText(key)}>
+                  Ver no texto
+                </button>
+              </p>
+              <blockquote className="snippet-paragraph">
+                {range.start > 0 ? '… ' : ''}
+                {parts}
+                {range.end < page.text.length ? ' …' : ''}
+              </blockquote>
+            </li>
+          );
+        })}
+      </ul>
+      {pages.length > 5 && (
+        <button type="button" className="link" onClick={() => setAll(!all)}>
+          {all ? 'Mostrar menos' : `Mostrar todas as ${pages.length} páginas`}
+        </button>
+      )}
+    </>
   );
 }
 
@@ -271,6 +307,27 @@ export function EntityDetail({ entity, content, data, onShowInText, onClose }: P
 
       {entity.type === 'PESSOA' && !entity.suggested && (
         <SamePerson entity={entity} people={people} data={data} run={run} />
+      )}
+
+      {entity.type === 'PESSOA' && !entity.suggested && entity.decision === 'keep' && (
+        <PositionField key={entity.position ?? ''} entity={entity} run={run} />
+      )}
+
+      {entity.type === 'PESSOA' &&
+        !entity.suggested &&
+        entity.decision === 'pseudonymize' &&
+        (isRole(entity, 'FAMILIAR') || isRole(entity, 'ADVOGADO')) && (
+          <RelationField
+            key={`${entity.relation ?? ''}-${entity.relatedTo ?? ''}`}
+            entity={entity}
+            people={people}
+            data={data}
+            run={run}
+          />
+        )}
+
+      {entity.type === 'PESSOA' && !entity.suggested && (
+        <NicknameField entity={entity} content={content} data={data} run={run} />
       )}
 
       {entity.type !== 'PESSOA' &&
@@ -701,6 +758,222 @@ function DiscardForm({
           Confirmar descarte
         </button>
       </div>
+    </form>
+  );
+}
+
+const isRole = (e: StoredEntity, role: string) => !!e.role && normalizeRole(e.role) === role;
+
+const KINSHIP = [
+  'mãe',
+  'pai',
+  'genitor(a)',
+  'avó',
+  'avô',
+  'irmão',
+  'irmã',
+  'filho',
+  'filha',
+  'tio',
+  'tia',
+  'sobrinho',
+  'sobrinha',
+  'primo',
+  'prima',
+  'neto',
+  'neta',
+  'cônjuge',
+  'companheiro(a)',
+  'padrasto',
+  'madrasta',
+  'enteado(a)',
+  'responsável legal',
+];
+
+const POSITIONS = [
+  'Delegado de Polícia Civil',
+  'Oficial Investigador de Polícia',
+  'Escrivão de Polícia',
+  'Inspetor de Polícia',
+  'Agente de Polícia',
+  'Perito Criminal',
+  'Perito Médico-Legista',
+  'Policial Militar',
+  'Comissário',
+  'Juiz de Direito',
+  'Promotor de Justiça',
+  'Defensor Público',
+  'Atendente',
+];
+
+/** Parentesco do familiar ("mãe") ou cliente do advogado, e de quem ("de [TESTEMUNHA 1]"). */
+function RelationField({
+  entity,
+  people,
+  data,
+  run,
+}: {
+  entity: StoredEntity;
+  people: readonly StoredEntity[];
+  data: ReviewData;
+  run: Run;
+}) {
+  const id = useId();
+  const lawyer = isRole(entity, 'ADVOGADO');
+  const [relation, setRelationDraft] = useState(entity.relation ?? (lawyer ? 'advogado' : ''));
+  const owner = entity.relatedTo ? data.byId.get(entity.relatedTo) : undefined;
+  const [group, setGroup] = useState(owner ? roleTitle(owner) : '');
+  const [target, setTarget] = useState(entity.relatedTo ?? '');
+  const groups = byRole(people.filter((p) => p.decision === 'pseudonymize'));
+  const list = groups.find(([title]) => title === group)?.[1] ?? [];
+  const changed =
+    relation.trim() !== (entity.relation ?? '') || target !== (entity.relatedTo ?? '');
+  return (
+    <form
+      className="panel relation-form"
+      onSubmit={(e) => {
+        e.preventDefault();
+        void run((c) => setRelation(c, entity.id, relation, target || null));
+      }}
+    >
+      <h3>{lawyer ? 'Advogado de quem' : 'Parentesco'}</h3>
+      {!lawyer && (
+        <>
+          <label htmlFor={`${id}-rel`}>É (digite ou escolha)</label>
+          <input
+            id={`${id}-rel`}
+            list={`${id}-kin`}
+            value={relation}
+            onChange={(e) => setRelationDraft(e.target.value)}
+            placeholder="Ex.: mãe, pai, avó, tio, irmão"
+            maxLength={40}
+          />
+          <datalist id={`${id}-kin`}>
+            {KINSHIP.map((k) => (
+              <option key={k} value={k} />
+            ))}
+          </datalist>
+        </>
+      )}
+      <label htmlFor={`${id}-ofrole`}>{lawyer ? 'Cliente: papel' : 'De quem: papel'}</label>
+      <select id={`${id}-ofrole`} value={group} onChange={(e) => setGroup(e.target.value)}>
+        <option value="">— escolha o papel —</option>
+        {groups.map(([title]) => (
+          <option key={title} value={title}>
+            {title}
+          </option>
+        ))}
+      </select>
+      <label htmlFor={`${id}-of`}>{lawyer ? 'Cliente' : 'De quem'}</label>
+      <select id={`${id}-of`} value={target} onChange={(e) => setTarget(e.target.value)}>
+        <option value="">— ninguém —</option>
+        {owner && !list.includes(owner) && (
+          <option value={owner.id}>{personOption(owner, data)}</option>
+        )}
+        {list.map((p) => (
+          <option key={p.id} value={p.id}>
+            {personOption(p, data)}
+          </option>
+        ))}
+      </select>
+      <div className="actions">
+        <button type="submit" className="primary" disabled={!changed}>
+          Salvar
+        </button>
+      </div>
+      {(entity.relation || owner) && (
+        <p className="hint">
+          Na legenda do texto exportado: {labelOf(entity, data.byId)} ={' '}
+          {lawyer ? 'advogado' : 'familiar'} ({entity.relation ?? ''}
+          {owner && owner.decision === 'pseudonymize' ? ` de ${labelOf(owner, data.byId)}` : ''}).
+        </p>
+      )}
+    </form>
+  );
+}
+
+/** Cargo de quem é mantido em claro (Delegado, Escrivão, Oficial Investigador…). */
+function PositionField({ entity, run }: { entity: StoredEntity; run: Run }) {
+  const id = useId();
+  const [position, setPositionDraft] = useState(entity.position ?? '');
+  return (
+    <form
+      className="inline-form"
+      onSubmit={(e) => {
+        e.preventDefault();
+        void run((c) => setPosition(c, entity.id, position));
+      }}
+    >
+      <label htmlFor={`${id}-pos`}>Cargo ou função</label>
+      <input
+        id={`${id}-pos`}
+        className="wide"
+        list={`${id}-positions`}
+        value={position}
+        onChange={(e) => setPositionDraft(e.target.value)}
+        placeholder="Ex.: Delegado de Polícia Civil, Escrivão"
+        maxLength={60}
+      />
+      <datalist id={`${id}-positions`}>
+        {POSITIONS.map((p) => (
+          <option key={p} value={p} />
+        ))}
+      </datalist>
+      <button type="submit" disabled={position.trim() === (entity.position ?? '')}>
+        Salvar
+      </button>
+    </form>
+  );
+}
+
+/** Apelidos da pessoa: os vinculados e um campo para digitar outro ("vulgo"). */
+function NicknameField({
+  entity,
+  content,
+  data,
+  run,
+}: {
+  entity: StoredEntity;
+  content: VaultContent;
+  data: ReviewData;
+  run: Run;
+}) {
+  const id = useId();
+  const [nickname, setNickname] = useState('');
+  const linked = content.entities.filter((e) => e.type === 'APELIDO' && e.linkedTo === entity.id);
+  return (
+    <form
+      className="inline-form nickname-form"
+      onSubmit={(e) => {
+        e.preventDefault();
+        const value = nickname.trim();
+        if (value.length < 2) return;
+        void run((c) => addNickname(c, entity.id, value));
+        setNickname('');
+      }}
+    >
+      <label htmlFor={`${id}-nick`}>Apelido (vulgo)</label>
+      {linked.length > 0 && (
+        <span className="meta">
+          {linked
+            .map((a) =>
+              a.decision === 'pseudonymize'
+                ? `${a.canonical} → ${labelOf(a, data.byId)}`
+                : a.canonical,
+            )
+            .join('; ')}
+        </span>
+      )}
+      <input
+        id={`${id}-nick`}
+        value={nickname}
+        onChange={(e) => setNickname(e.target.value)}
+        placeholder="Ex.: Galego"
+        maxLength={60}
+      />
+      <button type="submit" disabled={nickname.trim().length < 2}>
+        Adicionar apelido
+      </button>
     </form>
   );
 }

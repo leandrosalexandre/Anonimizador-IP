@@ -133,6 +133,30 @@ test('campos da revisão: mesma pessoa, número, pertence a, tipo e pseudonimiza
   await expect(row('Henrique Moura Leite')).toHaveCount(0);
   await expect(autores).toHaveCount(2);
 
+  // Parentesco: a mãe da testemunha (a detecção já sugere "genitor(a)" da testemunha).
+  await row('Francisca Araújo Nunes').locator('.row-button').click();
+  const mae = page.getByLabel('Detalhes de Francisca Araújo Nunes');
+  await expect(mae.getByLabel('É (digite ou escolha)')).toHaveValue('genitor(a)');
+  await expect(mae.getByLabel('De quem', { exact: true })).toHaveValue(/.+/);
+  await mae.getByLabel('É (digite ou escolha)').fill('mãe');
+  await mae.getByRole('button', { name: 'Salvar' }).first().click();
+  await expect(row('Francisca Araújo Nunes')).toContainText('mãe de [TESTEMUNHA 1]');
+
+  // Apelido digitado no autor.
+  await row('José Wellington Mota Silva').locator('.row-button').click();
+  const autor = page.getByLabel('Detalhes de José Wellington Mota Silva');
+  await autor.getByLabel('Apelido (vulgo)').fill('Galeguinho');
+  await autor.getByRole('button', { name: 'Adicionar apelido' }).click();
+  await expect(autor).toContainText('Galeguinho → [APELIDO DE AUTOR 1]');
+  // Onde aparece: o parágrafo inteiro, com folha e página do PDF.
+  await expect(autor.locator('.snippet-paragraph').first()).toContainText('ACUSADOS:');
+  await expect(autor.locator('.snippet-where').first()).toContainText('fls. 2');
+
+  // Cargo da autoridade mantida.
+  await row('Felipe Augusto Machado Rios').locator('.row-button').click();
+  const delegado = page.getByLabel('Detalhes de Felipe Augusto Machado Rios');
+  await expect(delegado.getByLabel('Cargo ou função')).toHaveValue('Delegado de Polícia Civil');
+
   // Pertence a: papel e depois pessoa.
   const docs = page.getByRole('region', { name: 'Documentos', exact: true });
   await docs

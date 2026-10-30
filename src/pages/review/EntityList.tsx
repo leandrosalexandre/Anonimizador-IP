@@ -43,6 +43,9 @@ const ROLE_TITLES: Record<string, string> = {
   COMUNICANTE: 'Comunicantes',
   ADVOGADO: 'Advogados',
   MÉDICO: 'Médicos',
+  ENFERMEIRO: 'Enfermeiros',
+  'TÉCNICO DE ENFERMAGEM': 'Técnicos de enfermagem',
+  'AUXILIAR DE ENFERMAGEM': 'Auxiliares de enfermagem',
   PERITO: 'Peritos',
   FAMILIAR: 'Familiares',
   PESSOA: 'Terceiros',
@@ -344,6 +347,14 @@ function EntityGroup({
                   <span className="row-text">
                     <strong>{e.canonical}</strong>
                     <span className="meta">
+                      {e.position ? `${e.position} · ` : ''}
+                      {e.relation || e.relatedTo
+                        ? `${e.relation ?? ''}${
+                            e.relatedTo && data.labelFor(e.relatedTo)
+                              ? ` de ${data.labelFor(e.relatedTo)}`
+                              : ''
+                          } · `
+                        : ''}
                       {stats?.count ?? 0} ocorr.
                       {stats?.folhas.length ? ` · fls. ${formatFolhas(stats.folhas)}` : ''}
                       {others.length

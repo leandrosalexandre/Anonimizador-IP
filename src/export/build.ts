@@ -48,6 +48,11 @@ const ROLE_DESCRIPTION: Record<string, string> = {
   COMUNICANTE: 'comunicante',
   ADVOGADO: 'advogado',
   FAMILIAR: 'familiar',
+  MÉDICO: 'médico',
+  PERITO: 'perito',
+  ENFERMEIRO: 'enfermeiro',
+  'AUXILIAR DE ENFERMAGEM': 'auxiliar de enfermagem',
+  'TÉCNICO DE ENFERMAGEM': 'técnico de enfermagem',
   PESSOA: 'pessoa sem papel definido',
 };
 
@@ -60,13 +65,23 @@ export function buildLegend(
     .filter((e) => e.type === 'PESSOA' && e.decision === 'pseudonymize')
     .map((e) => {
       const role = e.role ? normalizeRole(e.role) : 'PESSOA';
-      return { label: labelFor(e.id) ?? '', role, index: e.index ?? 0 };
+      // "[FAMILIAR 1] = familiar (mãe de [TESTEMUNHA 1])"
+      const of = e.relatedTo ? labelFor(e.relatedTo) : null;
+      const relation = e.relation
+        ? ` (${e.relation}${of ? ` de ${of}` : ''})`
+        : of
+          ? ` (de ${of})`
+          : '';
+      return { label: labelFor(e.id) ?? '', role, index: e.index ?? 0, relation };
     })
     .filter((p) => p.label)
     .sort((a, b) => a.role.localeCompare(b.role, 'pt-BR') || a.index - b.index);
   if (!people.length) return null;
   return `Legenda: ${people
-    .map((p) => `${p.label} = ${ROLE_DESCRIPTION[p.role] ?? p.role.toLocaleLowerCase('pt-BR')}`)
+    .map(
+      (p) =>
+        `${p.label} = ${ROLE_DESCRIPTION[p.role] ?? p.role.toLocaleLowerCase('pt-BR')}${p.relation}`,
+    )
     .join('; ')}.`;
 }
 

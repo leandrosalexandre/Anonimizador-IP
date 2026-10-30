@@ -1437,3 +1437,31 @@ mark.reid-unknown {
   grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
   gap: 0.25rem 1rem;
 }
+
+/* Onde aparece: parágrafo inteiro */
+.snippets.paragraphs {
+  list-style: none;
+  padding: 0;
+}
+
+.snippets.paragraphs li {
+  margin: 0 0 0.75rem;
+}
+
+.snippet-where {
+  margin: 0 0 0.25rem;
+}
+
+.snippet-paragraph {
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  border-left: 3px solid var(--border);
+  background: var(--surface);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 0.9375rem;
+}
+
+.relation-form h3 {
+  margin-top: 0;
+}

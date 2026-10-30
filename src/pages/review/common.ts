@@ -21,6 +21,9 @@ export function highlightClass(entity: StoredEntity | undefined): string {
     COMUNICANTE: 'vitima',
     ADVOGADO: 'advogado',
     MÉDICO: 'advogado',
+    ENFERMEIRO: 'advogado',
+    'TÉCNICO DE ENFERMAGEM': 'advogado',
+    'AUXILIAR DE ENFERMAGEM': 'advogado',
     PERITO: 'advogado',
     FAMILIAR: 'familiar',
   };

@@ -15,7 +15,7 @@
 import { AUTHORITY_TITLE } from './data/exclusoes';
 import { FIRST_NAMES, SURNAMES } from './lexicon';
 import { blockedRanges, labelStartsField, nextLabelStart, overlapsAny, type Range } from './places';
-import { PARTICLES, fold, isUpper } from './text';
+import { PARTICLES, fold, isUpper, titleCase } from './text';
 import type { Candidate, PersonRole } from './types';
 
 /** Máximo de palavras (sem partículas) num nome. */
@@ -262,6 +262,22 @@ const LIST_SEP = /^[ \t]*(?:,|;|\/|\be\b|\bE\b)[ \t]*/u;
 
 let groupCounter = 0;
 
+const capitalize = (s: string) => titleCase(s.trim().replace(/\s+/g, ' '));
+
+/** Parentesco pelo rótulo ou gatilho: "Mãe:" → mãe; "filho de" e "Filiação:" → genitor(a). */
+function relationOf(label: string): string {
+  const f = fold(label)
+    .replace(/^(?:o|a|seu|sua)\s+/, '')
+    .trim();
+  if (/^(?:mae|genitora)$/.test(f)) return 'mãe';
+  if (/^(?:pai|genitor)$/.test(f)) return 'pai';
+  if (/^(?:filiacao|filh)/.test(f)) return 'genitor(a)';
+  return label
+    .toLocaleLowerCase('pt-BR')
+    .replace(/^(?:o|a|seu|sua)\s+/, '')
+    .trim();
+}
+
 /** Lê um ou mais nomes a partir de `offset`, conforme o tipo de rótulo ou gatilho. */
 function readNames(
   text: string,
@@ -305,7 +321,11 @@ export function detectQualification(text: string, ctx: NameContext): Candidate[]
         'qualificacao',
         role && role !== 'KEEP' ? role : undefined,
       );
-      if (role === 'KEEP') c.authority = true;
+      if (role === 'KEEP') {
+        c.authority = true;
+        c.position = capitalize(m[1] ?? '');
+      }
+      if (role === 'FAMILIAR') c.relation = relationOf(m[1] ?? '');
       if (group) c.group = group;
       out.push(c);
     }
@@ -388,6 +408,7 @@ export function detectTriggers(text: string, ctx: NameContext): Candidate[] {
         trigger.role ?? undefined,
       );
       if (trigger.weak && !strongSequence(span.text)) c.suggestion = true;
+      if (trigger.role === 'FAMILIAR') c.relation = relationOf(m[groupIndex + 1] ?? '');
       if (group) c.group = group;
       out.push(c);
     }
@@ -493,6 +514,7 @@ export function markAuthorities(text: string, candidates: Candidate[]): void {
     const after1 = titleAfter.exec(nextLine)?.[0] ?? titleAfter.exec(sameLineAfter)?.[0];
     if (before1 || after1 || /^(?:mat(?:r[íi]cula)?\.?|DPC)\b/iu.test(nextLine)) {
       c.authority = true;
+      if (before1 ?? after1) c.position = capitalize(before1 ?? after1 ?? '');
       if (PERITO_TITLE.test(before1 ?? after1 ?? '')) c.role = 'PERITO';
     }
     // Médico: "Dr. FULANO - CRM 12345", "médico FULANO", "Médico: Dr. FULANO".

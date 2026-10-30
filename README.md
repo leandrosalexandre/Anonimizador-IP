@@ -119,6 +119,10 @@ atualização.
    pessoa o número de outra ("é a VÍTIMA 1") também unifica. Cada variante pode ser apagada. Em
    CPF, RG e demais dados, **Pertence a** pede o papel e depois a pessoa. O campo **Tipo** muda o
    tipo da entidade, inclusive para **Cidade ou lugar** (fica em claro).
+   Familiares têm **parentesco e de quem** ("mãe" de [TESTEMUNHA 1], que vai para a legenda);
+   advogados, **de quem**; autoridades mantidas, **cargo** (Delegado, Oficial Investigador,
+   Escrivão…). Qualquer pessoa pode ganhar um **apelido** digitado. **Onde aparece** mostra o
+   parágrafo inteiro de cada citação, com folha e página do PDF.
    Ao **Descartar**, escreva o motivo ("bairro", "rua"…) e marque **Ensinar ao app**: o termo
    deixa de ser detectado em todos os cofres (lista em Configurações → Termos aprendidos).
    **Pseudonimizar todas as pessoas** confirma todas de uma vez (as autoridades continuam

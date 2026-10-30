@@ -65,3 +65,33 @@ export function contextAround(
     after: afterWords.join(' '),
   };
 }
+
+/**
+ * Parágrafo inteiro em volta da ocorrência (entre linhas em branco). Sem linhas em branco
+ * (texto de PDF), as 3 linhas antes e depois. No máximo ~900 caracteres.
+ */
+export function paragraphAround(
+  text: string,
+  start: number,
+  end: number,
+  max = 900,
+): { start: number; end: number } {
+  const blankBefore = /\n[ \t]*\n(?![\s\S]*\n[ \t]*\n)/.exec(text.slice(0, start));
+  let from = blankBefore ? blankBefore.index + blankBefore[0].length : 0;
+  const after = text.slice(end).search(/\n[ \t]*\n/);
+  let to = after >= 0 ? end + after : text.length;
+  if (to - from > max) {
+    const lines = (i: number, dir: -1 | 1, n: number) => {
+      let pos = i;
+      for (let k = 0; k < n; k++) {
+        const next = dir < 0 ? text.lastIndexOf('\n', pos - 1) : text.indexOf('\n', pos + 1);
+        if (next < 0) return dir < 0 ? 0 : text.length;
+        pos = next;
+      }
+      return dir < 0 ? pos + 1 : pos;
+    };
+    from = Math.max(from, lines(start, -1, 3), start - max / 2);
+    to = Math.min(to, lines(end, 1, 3), end + max / 2);
+  }
+  return { start: from, end: to };
+}

@@ -248,6 +248,33 @@ function suggestLinks(entities: DetectedEntity[], pages: readonly PageText[]): v
   }
 }
 
+/**
+ * Sugere de quem é cada familiar: a pessoa (não familiar) mais próxima antes dele na mesma
+ * página ("Nome: FULANO … Filiação: A / B" → A e B são genitores de FULANO).
+ */
+function suggestRelatives(entities: DetectedEntity[]): void {
+  const people = entities.filter(
+    (e) => e.type === 'PESSOA' && e.role !== 'FAMILIAR' && e.decision === 'pseudonymize',
+  );
+  for (const e of entities) {
+    if (e.type !== 'PESSOA' || e.role !== 'FAMILIAR') continue;
+    const votes = new Map<string, number>();
+    for (const o of e.occurrences) {
+      let best: { id: string; distance: number } | null = null;
+      for (const p of people) {
+        for (const po of p.occurrences) {
+          if (po.docId !== o.docId || po.pdfPage !== o.pdfPage || po.end > o.start) continue;
+          const distance = o.start - po.end;
+          if (distance <= 400 && (!best || distance < best.distance)) best = { id: p.id, distance };
+        }
+      }
+      if (best) votes.set(best.id, (votes.get(best.id) ?? 0) + 1);
+    }
+    const winner = [...votes].sort((a, b) => b[1] - a[1])[0]?.[0];
+    if (winner) e.relatedTo = winner;
+  }
+}
+
 /** Detecção completa sobre as páginas de um ou mais documentos do cofre. */
 export function detectEntities(
   pages: readonly PageText[],
@@ -291,6 +318,7 @@ export function detectEntities(
   entities.length = 0;
   entities.push(...alive);
   suggestLinks(entities, pages);
+  suggestRelatives(entities);
 
   const order = (e: DetectedEntity) => (e.type === 'PESSOA' ? 0 : e.type === 'APELIDO' ? 1 : 2);
   return entities.sort((a, b) => {

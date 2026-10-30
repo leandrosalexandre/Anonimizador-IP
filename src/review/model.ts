@@ -125,6 +125,8 @@ export function applyDetection(
       confidence: d.confidence,
       ...(d.suggestion ? { suggested: true } : {}),
       ...(d.roleConflicts.length ? { roleConflicts: [...d.roleConflicts] } : {}),
+      ...(d.relation ? { relation: d.relation } : {}),
+      ...(d.position ? { position: d.position } : {}),
     };
     if (entity.decision === 'pseudonymize') entity.index = nextIndex(entities, entity);
     entities.push(entity);
@@ -150,6 +152,7 @@ export function applyDetection(
     const e = alive.find((x) => x.id === id);
     if (!e) continue;
     if (!e.linkedTo && d.linkedTo) e.linkedTo = idMap.get(d.linkedTo) ?? null;
+    if (!e.relatedTo && d.relatedTo) e.relatedTo = idMap.get(d.relatedTo) ?? null;
     const amb = d.ambiguousWith
       .map((a) => idMap.get(a))
       .filter((a): a is string => !!a && a !== e.id && !isSeparate(content, e.id, a));
@@ -360,7 +363,46 @@ function replaceReferences(
     ...e,
     linkedTo: e.linkedTo && from.has(e.linkedTo) ? to : e.linkedTo,
     ambiguousWith: e.ambiguousWith.filter((a) => !from.has(a) && a !== to),
+    ...(e.relatedTo && from.has(e.relatedTo) ? { relatedTo: to === e.id ? null : to } : {}),
   }));
+}
+
+/**
+ * Relação com outra pessoa: parentesco do familiar ("mãe" de [TESTEMUNHA 1]) ou de quem é o
+ * advogado. Aparece na revisão e na legenda do texto exportado (sem nenhum dado real).
+ */
+export function setRelation(
+  content: VaultContent,
+  id: string,
+  relation: string,
+  relatedTo: string | null,
+): VaultContent {
+  const value = relation.trim().toLocaleLowerCase('pt-BR').slice(0, 40);
+  return update(content, id, (e) => ({
+    ...e,
+    relation: value,
+    relatedTo: relatedTo && relatedTo !== id ? relatedTo : null,
+    reviewed: true,
+  }));
+}
+
+/** Cargo ou função de quem é mantido em claro (Delegado, Escrivão, Oficial Investigador…). */
+export function setPosition(content: VaultContent, id: string, position: string): VaultContent {
+  return update(content, id, (e) => ({
+    ...e,
+    position: position.trim().slice(0, 60),
+    reviewed: true,
+  }));
+}
+
+/** Apelido digitado na revisão: vira uma entidade APELIDO vinculada à pessoa. */
+export function addNickname(
+  content: VaultContent,
+  personId: string,
+  nickname: string,
+): VaultContent {
+  const { content: added, id } = addManual(content, nickname, 'APELIDO');
+  return link(added, id, personId);
 }
 
 /** Mescla várias entidades na primeira: une as variantes e mantém papel, número e decisão dela. */

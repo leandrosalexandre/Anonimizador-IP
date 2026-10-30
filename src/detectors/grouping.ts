@@ -243,6 +243,20 @@ function priorityRole(members: readonly LocatedCandidate[]): {
   return { role: roles[0] ?? null, conflicts: roles.length > 1 ? roles : [] };
 }
 
+/** Valor mais frequente de um campo opcional entre os membros ({} se nenhum tiver). */
+function mostCommon(
+  key: 'relation' | 'position',
+  members: readonly LocatedCandidate[],
+): { relation?: string; position?: string } {
+  const counts = new Map<string, number>();
+  for (const m of members) {
+    const v = m[key];
+    if (v) counts.set(v, (counts.get(v) ?? 0) + 1);
+  }
+  const best = [...counts].sort((a, b) => b[1] - a[1])[0]?.[0];
+  return best ? { [key]: best } : {};
+}
+
 export function toEntity(
   cluster: Cluster,
   exclusions: ReadonlySet<string> = new Set(),
@@ -278,5 +292,7 @@ export function toEntity(
     detectors: [...new Set(members.flatMap((m) => m.detector.split('+')))],
     suggestion: members.every((m) => m.suggestion),
     roleConflicts,
+    ...mostCommon('relation', members),
+    ...mostCommon('position', members),
   };
 }
