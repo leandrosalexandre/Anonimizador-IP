@@ -1,4 +1,5 @@
 import { useId, useState, useSyncExternalStore } from 'react';
+import { DEFAULT_EXCLUSIONS } from '../detectors/data/exclusoes';
 import { TypedConfirm } from '../components/TypedConfirm';
 import {
   IDLE_LOCK_OPTIONS,
@@ -104,6 +105,11 @@ export function SettingsPage() {
         </p>
       </div>
 
+      <ExclusionsPanel
+        value={settings.detectionExclusions}
+        onSave={(detectionExclusions) => updateSettings({ detectionExclusions })}
+      />
+
       <div className="panel">
         <h2>Apagar tudo</h2>
         <p>
@@ -137,5 +143,60 @@ export function SettingsPage() {
         )}
       </div>
     </section>
+  );
+}
+
+function ExclusionsPanel({
+  value,
+  onSave,
+}: {
+  value: string[];
+  onSave: (terms: string[]) => void;
+}) {
+  const id = useId();
+  const [draft, setDraft] = useState(value.join('\n'));
+  const [saved, setSaved] = useState(false);
+  const parsed = draft
+    .split('\n')
+    .map((t) => t.trim())
+    .filter(Boolean);
+  const changed = parsed.join('\n') !== value.join('\n');
+
+  return (
+    <div className="panel">
+      <h2>Termos que não são nomes de pessoas</h2>
+      <p className="hint">
+        A detecção já ignora {DEFAULT_EXCLUSIONS.length} palavras comuns em inquéritos (cargos,
+        órgãos, termos jurídicos, meses, logradouros). Acrescente outras, uma por linha: nomes de
+        bairros, empresas públicas ou palavras que aparecem como falsos nomes. Não coloque aqui
+        nomes de pessoas: para manter autoridades, use a decisão “manter” na revisão.
+      </p>
+      <label htmlFor={id}>Termos extras</label>
+      <textarea
+        id={id}
+        className="terms-editor"
+        value={draft}
+        onChange={(e) => {
+          setDraft(e.target.value);
+          setSaved(false);
+        }}
+        rows={5}
+        spellCheck={false}
+      />
+      <div className="actions">
+        <button
+          type="button"
+          className="primary"
+          disabled={!changed}
+          onClick={() => {
+            onSave(parsed);
+            setSaved(true);
+          }}
+        >
+          Salvar termos
+        </button>
+        {saved && <span className="hint">Salvo. Vale para as próximas detecções.</span>}
+      </div>
+    </div>
   );
 }

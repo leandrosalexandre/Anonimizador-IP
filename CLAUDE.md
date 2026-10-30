@@ -11,4 +11,4 @@ Resumo das regras (detalhes no SPEC):
 - Nunca usar dados reais em testes; usar o IP fictício de `test/fixtures/` (Fase 8).
 - Decisões técnicas tomadas ao longo das fases ficam registradas em `docs/DECISOES.md`.
 
-Comandos (a partir da Fase 0): `npm run dev`, `npm run build`, `npm run lint`, `npm test` (Vitest), `npm run test:e2e` (Playwright), `npm run fixtures` (IP fictício), `npm run bench:ocr` (medição do OCR).
+Comandos (a partir da Fase 0): `npm run dev`, `npm run build`, `npm run lint`, `npm test` (Vitest), `npm run test:e2e` (Playwright), `npm run fixtures` (IP fictício), `npm run bench:ocr` (medição do OCR), `npm run metrics` (detecção × gabarito).

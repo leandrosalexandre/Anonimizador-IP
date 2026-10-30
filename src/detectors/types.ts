@@ -1,0 +1,95 @@
+// Tipos de entidade e papéis (SPEC 4).
+
+export const ENTITY_TYPES = [
+  'PESSOA',
+  'CPF',
+  'CNPJ',
+  'RG',
+  'CNH',
+  'TELEFONE',
+  'EMAIL',
+  'ENDERECO',
+  'CEP',
+  'PLACA',
+  'CHASSI_RENAVAM',
+  'CONTA_BANCARIA',
+  'CHAVE_PIX',
+  'DATA_NASCIMENTO',
+  'NUM_PROCESSO',
+  'NUM_BO',
+  'NUM_IP',
+  'APELIDO',
+  'EMPRESA_PRIVADA',
+  'OUTRO',
+] as const;
+export type EntityType = (typeof ENTITY_TYPES)[number];
+
+export const PERSON_ROLES = [
+  'VÍTIMA',
+  'AUTOR',
+  'INVESTIGADO',
+  'CONDUZIDO',
+  'TESTEMUNHA',
+  'INFORMANTE',
+  'COMUNICANTE',
+  'ADVOGADO',
+  'PESSOA',
+  'FAMILIAR',
+] as const;
+export type PersonRole = (typeof PERSON_ROLES)[number];
+
+export type Decision = 'pseudonymize' | 'keep';
+
+/** Trecho do texto de uma página que parece ser dado pessoal. */
+export interface Candidate {
+  type: EntityType;
+  start: number;
+  end: number;
+  text: string;
+  /** 0 a 1. */
+  confidence: number;
+  /** Detector que encontrou (para depuração e métricas). */
+  detector: string;
+  /** Papel sugerido (pessoas), conforme o rótulo ou o gatilho. */
+  role?: PersonRole;
+  /** Autoridade ou servidor no exercício da função: sugerir "manter". */
+  authority?: boolean;
+}
+
+export interface PageText {
+  docId: string;
+  pdfPage: number;
+  text: string;
+}
+
+export interface Occurrence {
+  docId: string;
+  pdfPage: number;
+  start: number;
+  end: number;
+  text: string;
+}
+
+/** Entidade sugerida pela detecção, antes da revisão (Fase 5). */
+export interface DetectedEntity {
+  id: string;
+  type: EntityType;
+  role: PersonRole | null;
+  canonical: string;
+  variants: string[];
+  decision: Decision;
+  confidence: number;
+  occurrences: Occurrence[];
+  /** Pessoa a que o dado pertence (CPF, telefone, endereço, apelido…), quando sugerido. */
+  linkedTo: string | null;
+  /** Casos ambíguos (ex.: "João" pode ser mais de uma pessoa): vão para revisão como sugestão. */
+  ambiguousWith: string[];
+  detectors: string[];
+}
+
+export interface DetectionOptions {
+  /** Termos extras que não são nomes de pessoas (configurações). */
+  exclusions?: readonly string[];
+  /** Nomes que devem ser sempre mantidos (configuração do cofre). */
+  keepNames?: readonly string[];
+}

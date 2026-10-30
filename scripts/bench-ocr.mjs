@@ -1,10 +1,11 @@
 // Mede o OCR no IP fictício escaneado (15 páginas), no app de produção e sem internet:
 // tempo por página, taxa de erro de caracteres (CER) e acerto de nomes e números do gabarito.
-// Uso: npm run build && npm run bench:ocr [-- --mixed]
+// Uso: npm run build && npm run bench:ocr [-- --mixed] [-- --save]
+// --save grava o texto reconhecido em test/fixtures/ocr-escaneado.json (usado nos testes da detecção).
 // Obs.: a emulação de CPU lenta do Chrome não afeta Web Workers, onde o OCR roda; para medir no
 // tablet, use o tempo médio que o próprio app mostra ao fim do OCR.
 import { spawn } from 'node:child_process';
-import { readFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { chromium } from '@playwright/test';
 
 const PORT = 4180;
@@ -74,6 +75,7 @@ try {
   let charsErr = 0;
   let charsTotal = 0;
   const pageTexts = new Map();
+  const rawTexts = new Map();
   for (const n of imagePages) {
     const row = page.getByRole('listitem', { name: `Página ${n} do PDF`, exact: true });
     await row.getByRole('button', { name: 'Ver texto' }).click();
@@ -90,12 +92,19 @@ try {
     charsErr += err;
     charsTotal += ref.length;
     pageTexts.set(n, ocr);
+    rawTexts.set(n, text);
     rows.push({
       pdf: n,
       fls: folha,
       folhaOk: folha === `fls. ${expected.folha}` && /detectada/.test(source ?? ''),
       cer: `${((err / ref.length) * 100).toFixed(1)}%`,
     });
+  }
+
+  if (process.argv.includes('--save')) {
+    const out = imagePages.map((n) => ({ pdfPage: n, text: rawTexts.get(n) }));
+    await writeFile(new URL('ocr-escaneado.json', FIXTURES), JSON.stringify(out, null, 2) + '\n');
+    console.log('Texto do OCR gravado em test/fixtures/ocr-escaneado.json');
   }
 
   // Acerto de entidades: a ocorrência aparece no texto reconhecido da página?

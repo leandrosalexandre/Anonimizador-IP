@@ -789,6 +789,16 @@ mark.low-confidence {
   line-height: 1.5;
 }
 
+textarea.terms-editor {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+
 /* Tablet em retrato e telas estreitas: imagem e texto empilhados. */
 @media (max-width: 900px), (orientation: portrait) {
   .review-grid {

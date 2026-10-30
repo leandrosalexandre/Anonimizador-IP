@@ -11,6 +11,8 @@ export interface AppSettings {
   ocrBinarize: boolean;
   /** Oferece um PDF pesquisável (imagem + camada de texto) ao fim do OCR. */
   ocrSearchablePdf: boolean;
+  /** Termos extras que não são nomes de pessoas (lista de exclusão da detecção). */
+  detectionExclusions: string[];
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -18,6 +20,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   lockOnHide: 'immediate',
   ocrBinarize: false,
   ocrSearchablePdf: false,
+  detectionExclusions: [],
 };
 export const IDLE_LOCK_OPTIONS = [1, 2, 5, 10, 15, 30, 60] as const;
 export const LOCK_ON_HIDE_DELAY_MS: Record<LockOnHide, number | null> = {
@@ -46,6 +49,13 @@ function sanitize(value: unknown): AppSettings {
     lockOnHide,
     ocrBinarize: raw.ocrBinarize === true,
     ocrSearchablePdf: raw.ocrSearchablePdf === true,
+    detectionExclusions: Array.isArray(raw.detectionExclusions)
+      ? raw.detectionExclusions
+          .filter((t): t is string => typeof t === 'string')
+          .map((t) => t.trim())
+          .filter(Boolean)
+          .slice(0, 500)
+      : [],
   };
 }
 

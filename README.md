@@ -7,8 +7,8 @@ telemetria nem comunicação com IA — o texto é copiado e colado manualmente.
 A especificação completa está em [`SPEC.md`](./SPEC.md); as decisões técnicas, em
 [`docs/DECISOES.md`](./docs/DECISOES.md).
 
-> **Estado atual:** Fase 3 — cofres criptografados, importação de PDFs e OCR offline das páginas
-> escaneadas, com tela de conferência. As telas de Revisão em diante ainda são provisórias.
+> **Estado atual:** Fase 4 — cofres criptografados, importação de PDFs, OCR offline e detecção
+> automática de dados pessoais (módulo pronto e medido; a tela de Revisão vem na Fase 5).
 
 ## Endereço
 
@@ -98,6 +98,7 @@ npm test           # testes unitários (Vitest)
 npm run test:e2e   # testes E2E (Playwright): offline, CSP, instalabilidade e zero requisições externas
 npm run fixtures   # regera o IP fictício e o gabarito em test/fixtures/
 npm run bench:ocr  # mede o OCR no IP fictício escaneado (tempo, CER, acerto de entidades)
+npm run metrics    # precisão e cobertura da detecção de dados pessoais contra o gabarito
 ```
 
 O **IP fictício** de referência (`test/fixtures/`) tem versões com texto, escaneada e mista, além

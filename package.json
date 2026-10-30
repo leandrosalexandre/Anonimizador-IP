@@ -19,7 +19,8 @@
     "test:e2e": "playwright test",
     "icons": "node scripts/gen-icons.mjs",
     "fixtures": "node scripts/fixtures/gen-ip-ficticio.mjs",
-    "bench:ocr": "node scripts/bench-ocr.mjs"
+    "bench:ocr": "node scripts/bench-ocr.mjs",
+    "metrics": "vitest run test/detection.test.ts --silent=false"
   },
   "dependencies": {
     "idb": "^8.0.4",
@@ -41,6 +42,7 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
+    "brazilian-gender-assumption": "^0.1.2",
     "eslint": "^10.13.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-react-hooks": "^7.1.1",
