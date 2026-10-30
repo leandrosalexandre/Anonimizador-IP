@@ -84,6 +84,8 @@ function absorb(winner: Candidate, loser: Candidate): Candidate {
     // Basta um sinal forte para o nome deixar de ser só sugestão.
     ...(winner.suggestion && loser.suggestion ? { suggestion: true } : { suggestion: false }),
     ...((winner.group ?? loser.group) ? { group: winner.group ?? loser.group } : {}),
+    ...((winner.relation ?? loser.relation) ? { relation: winner.relation ?? loser.relation } : {}),
+    ...((winner.position ?? loser.position) ? { position: winner.position ?? loser.position } : {}),
     detector:
       winner.detector === loser.detector ? winner.detector : `${winner.detector}+${loser.detector}`,
   };

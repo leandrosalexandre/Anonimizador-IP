@@ -42,6 +42,9 @@ export const PERSON_ROLES = [
   'COMUNICANTE',
   'ADVOGADO',
   'MÉDICO',
+  'ENFERMEIRO',
+  'TÉCNICO DE ENFERMAGEM',
+  'AUXILIAR DE ENFERMAGEM',
   'PERITO',
   'PESSOA',
   'FAMILIAR',
@@ -71,6 +74,10 @@ export interface Candidate {
   suggestion?: boolean;
   /** Nomes do mesmo grupo (pai e mãe numa filiação) são sempre pessoas distintas. */
   group?: string;
+  /** Parentesco sugerido pelo rótulo ou gatilho ("mãe", "pai", "genitor(a)", "irmão"). */
+  relation?: string;
+  /** Cargo de quem é autoridade ("Delegado de Polícia Civil", "Escrivã"). */
+  position?: string;
 }
 
 export interface PageText {
@@ -106,6 +113,11 @@ export interface DetectedEntity {
   suggestion: boolean;
   /** Papéis diferentes encontrados nas peças (o escolhido é o mais relevante). */
   roleConflicts: PersonRole[];
+  /** Parentesco sugerido e a pessoa de quem é familiar (id de outra entidade detectada). */
+  relation?: string;
+  relatedTo?: string | null;
+  /** Cargo sugerido de quem é mantido (autoridade). */
+  position?: string;
 }
 
 export interface DetectionOptions {
@@ -148,6 +160,9 @@ export const ROLE_PRIORITY: readonly PersonRole[] = [
   'INFORMANTE',
   'COMUNICANTE',
   'MÉDICO',
+  'ENFERMEIRO',
+  'TÉCNICO DE ENFERMAGEM',
+  'AUXILIAR DE ENFERMAGEM',
   'PERITO',
   'ADVOGADO',
   'FAMILIAR',

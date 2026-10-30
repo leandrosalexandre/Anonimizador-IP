@@ -100,6 +100,12 @@ export interface StoredEntity {
   suggested?: boolean;
   /** Papéis diferentes encontrados nas peças (mostrados como conflito na revisão). */
   roleConflicts?: string[];
+  /** Relação com outra pessoa: parentesco do familiar ("mãe") ou "advogado". */
+  relation?: string;
+  /** Pessoa a quem se refere a relação ("mãe de [TESTEMUNHA 1]", "advogado de [AUTOR 1]"). */
+  relatedTo?: string | null;
+  /** Cargo ou função de quem é mantido em claro ("Delegado de Polícia Civil", "Escrivão"). */
+  position?: string;
 }
 
 /**

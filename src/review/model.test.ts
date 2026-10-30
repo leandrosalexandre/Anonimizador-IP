@@ -6,9 +6,12 @@ const ALL = { types: ENTITY_TYPES };
 import { emptyVaultContent, type VaultContent } from '../vault/types';
 import { duplicateLabels, labelOf, nextIndex } from './labels';
 import { buildLocator, substitute } from './locate';
+import { buildLegend } from '../export/build';
+import { paragraphAround } from './warnings';
 import {
   acceptSuggestion,
   addManual,
+  addNickname,
   applyDetection,
   assignRole,
   changeType,
@@ -25,6 +28,8 @@ import {
   reviewProgress,
   setDecision,
   setIndex,
+  setPosition,
+  setRelation,
   splitVariant,
   unify,
   unifyInto,
@@ -321,5 +326,52 @@ describe('campos da revisão (pedido do usuário)', () => {
     expect(reviewProgress(c.entities).pendingPeople).toBe(0);
     const all = pseudonymizeAllPeople(detected(), { includeKept: true });
     expect(byCanonical(all, /Paulo/).decision).toBe('pseudonymize');
+  });
+});
+
+describe('parentesco, cargo, apelido e contexto', () => {
+  const TEXT3 =
+    'Testemunha: ANA PAULA ROCHA, filha de MARIA HELENA ROCHA.\n' +
+    'Autor: JOÃO PEDRO ALVES.\n' +
+    'Delegado de Polícia Civil: PAULO ROBERTO LIMA';
+  const fresh = () =>
+    applyDetection(emptyVaultContent(), detectEntities([{ docId: 'd', pdfPage: 1, text: TEXT3 }]));
+
+  it('a detecção já sugere o parentesco, de quem, e o cargo da autoridade', () => {
+    const c = fresh();
+    const mae = byCanonical(c, /Maria Helena/);
+    expect(mae).toMatchObject({ role: 'FAMILIAR', relation: 'genitor(a)' });
+    expect(mae.relatedTo).toBe(byCanonical(c, /Ana Paula/).id);
+    expect(byCanonical(c, /Paulo Roberto/).position).toBe('Delegado de Polícia Civil');
+  });
+
+  it('parentesco digitado aparece na legenda: "mãe de [TESTEMUNHA 1]"', () => {
+    let c = fresh();
+    const mae = byCanonical(c, /Maria Helena/);
+    c = setRelation(c, mae.id, 'Mãe', byCanonical(c, /Ana Paula/).id);
+    const byId = new Map(c.entities.map((e) => [e.id, e]));
+    const legend = buildLegend(c.entities, (id) => {
+      const e = byId.get(id);
+      return e && e.decision === 'pseudonymize' ? labelOf(e, byId) : null;
+    });
+    expect(legend).toContain('[FAMILIAR 1] = familiar (mãe de [TESTEMUNHA 1])');
+    c = setPosition(c, byCanonical(c, /Paulo Roberto/).id, 'Oficial Investigador de Polícia');
+    expect(byCanonical(c, /Paulo Roberto/).position).toBe('Oficial Investigador de Polícia');
+  });
+
+  it('apelido digitado vira [APELIDO DE AUTOR 1]', () => {
+    let c = fresh();
+    c = addNickname(c, byCanonical(c, /João Pedro/).id, 'Galego');
+    const byId = new Map(c.entities.map((e) => [e.id, e]));
+    const apelido = c.entities.find((e) => e.type === 'APELIDO');
+    expect(apelido && labelOf(apelido, byId)).toBe('[APELIDO DE AUTOR 1]');
+  });
+
+  it('parágrafo inteiro em volta da citação', () => {
+    const text =
+      'Primeiro parágrafo.\n\nQUE viu Maria chegar;\nQUE Maria chorava.\n\nOutro parágrafo.';
+    const i = text.indexOf('Maria');
+    const r = paragraphAround(text, i, i + 5);
+    expect(text.slice(r.start, r.end)).toBe('QUE viu Maria chegar;\nQUE Maria chorava.');
   });
 });
