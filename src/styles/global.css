@@ -1185,6 +1185,110 @@ mark.snippet-hit {
   max-height: 70vh;
 }
 
+/* ---------- Reidentificação ---------- */
+
+textarea.analysis-input {
+  width: 100%;
+  min-height: 14rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+
+.format-choice {
+  margin: 0.75rem 0 0;
+  padding: 0;
+  border: none;
+}
+
+.format-choice legend {
+  font-weight: 600;
+}
+
+.unknown-list,
+.replaced-list {
+  margin: 0.25rem 0 0;
+  padding-left: 1.25rem;
+}
+
+.reid-result {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+}
+
+mark.reid-ok {
+  background: var(--ok-bg);
+  color: var(--text);
+  border-radius: 3px;
+}
+
+mark.reid-unknown {
+  background: var(--danger-bg);
+  color: var(--danger);
+  font-weight: 700;
+  outline: 2px solid var(--danger);
+  border-radius: 3px;
+}
+
+.print-only {
+  display: none;
+}
+
+@media print {
+  :root {
+    color-scheme: light;
+  }
+
+  body {
+    background: #fff;
+    color: #000;
+  }
+
+  .app-header,
+  .app-nav,
+  .no-print,
+  .toast,
+  .skip-link {
+    display: none !important;
+  }
+
+  .app-main {
+    max-width: none;
+    padding: 0;
+  }
+
+  .print-area {
+    border: none;
+    padding: 0;
+    background: #fff;
+  }
+
+  .print-only {
+    display: block;
+  }
+
+  .reid-result {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 12pt;
+    color: #000;
+  }
+
+  mark.reid-ok {
+    background: none;
+    color: #000;
+  }
+
+  mark.reid-unknown {
+    background: none;
+    color: #000;
+    outline: 1px solid #000;
+  }
+}
+
 /* Tablet em retrato e telas estreitas: imagem e texto empilhados. */
 @media (max-width: 900px), (orientation: portrait) {
   .review-grid {

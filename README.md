@@ -7,9 +7,9 @@ telemetria nem comunicação com IA — o texto é copiado e colado manualmente.
 A especificação completa está em [`SPEC.md`](./SPEC.md); as decisões técnicas, em
 [`docs/DECISOES.md`](./docs/DECISOES.md).
 
-> **Estado atual:** Fase 6 — cofres criptografados, importação de PDFs, OCR offline, detecção e
-> revisão de dados pessoais e exportação do texto pseudonimizado. A reidentificação (Fase 7) vem a
-> seguir.
+> **Estado atual:** Fase 7 — fluxo completo: cofres criptografados, importação de PDFs, OCR
+> offline, detecção e revisão de dados pessoais, exportação pseudonimizada e reidentificação da
+> análise. A Fase 8 (polimento, testes finais e publicação) vem a seguir.
 
 ## Endereço
 
@@ -108,6 +108,14 @@ Em **Exportar** (liberado depois da revisão):
    parece dado pessoal. Para cada item, **Pseudonimizar** ou **Não é dado pessoal**. Copiar e
    baixar só são liberados depois disso.
 3. **Copiar** (por parte), **Baixar .txt** ou **Baixar .md** e colar na IA.
+
+## Reidentificação
+
+Em **Reidentificar**, cole a análise devolvida pela IA (ou importe um `.txt`/`.md`). O app troca os
+marcadores pelos nomes e dados reais, mesmo com pequenas variações da IA ("Vítima 1", "VITIMA 1",
+"as vítimas 1 e 2"), e destaca em vermelho os **marcadores desconhecidos**, que não existem no
+cofre e podem ter sido inventados. Depois, copie (com aviso: o texto tem nomes reais), baixe ou
+imprima/salve em PDF. A análise pode ser guardada no cofre, cifrada.
 
 ## Desenvolvimento
 

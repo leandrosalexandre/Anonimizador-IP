@@ -9,6 +9,7 @@ import { DocumentsPage } from './pages/documents/DocumentsPage';
 import { PageReviewPage } from './pages/documents/PageReviewPage';
 import { ReviewPage } from './pages/review/ReviewPage';
 import { ExportPage } from './pages/export/ExportPage';
+import { ReidentifyPage } from './pages/reidentify/ReidentifyPage';
 import { AutoLockController } from './components/AutoLockController';
 import { RequireVault } from './components/RequireVault';
 import { VaultStatus } from './components/VaultStatus';
@@ -25,6 +26,8 @@ function pageFor(route: AppRoute): ReactNode {
       return <ReviewPage />;
     case '/exportar':
       return <ExportPage />;
+    case '/reidentificar':
+      return <ReidentifyPage />;
     case '/configuracoes':
       return <SettingsPage />;
     default:

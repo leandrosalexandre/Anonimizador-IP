@@ -93,11 +93,23 @@ export interface StoredEntity {
   confidence: number;
 }
 
+/**
+ * Análise devolvida pela IA, guardada como veio (pseudonimizada). A reidentificação é refeita ao
+ * abrir, para não duplicar nomes reais no cofre e acompanhar correções da revisão.
+ */
+export interface StoredAnalysis {
+  id: string;
+  title: string;
+  createdAt: string;
+  text: string;
+}
+
 /** Conteúdo cifrado do cofre. */
 export interface VaultContent {
   version: 1;
   documents: StoredDocument[];
   entities: StoredEntity[];
+  analyses?: StoredAnalysis[];
   config: {
     customRoles: string[];
     keepNames: string[];
