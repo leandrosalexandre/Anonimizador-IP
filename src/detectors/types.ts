@@ -116,6 +116,10 @@ export interface DetectedEntity {
   /** Parentesco sugerido e a pessoa de quem é familiar (id de outra entidade detectada). */
   relation?: string;
   relatedTo?: string | null;
+  /** Página de onde veio o vínculo sugerido. */
+  relationSource?: { docId: string; pdfPage: number };
+  /** Vínculo duvidoso: não foi escolhido (conferir). */
+  relationUncertain?: boolean;
   /** Cargo sugerido de quem é mantido (autoridade). */
   position?: string;
 }
@@ -147,7 +151,6 @@ export const DEFAULT_ENABLED_TYPES: readonly EntityType[] = [
   'PASSAPORTE',
   'PRONTUARIO',
   'TELEFONE',
-  'DATA_NASCIMENTO',
 ];
 
 /** Prioridade dos papéis quando a mesma pessoa aparece com papéis diferentes (maior primeiro). */

@@ -125,8 +125,11 @@ atualização.
    parágrafo inteiro de cada citação, com folha e página do PDF.
    Ao **Descartar**, escreva o motivo ("bairro", "rua"…) e marque **Ensinar ao app**: o termo
    deixa de ser detectado em todos os cofres (lista em Configurações → Termos aprendidos).
-   **Pseudonimizar todas as pessoas** confirma todas de uma vez (as autoridades continuam
-   mantidas). **Confirmar sugestões** aceita um grupo inteiro. **Recomeçar a revisão do zero** refaz a
+   **Pseudonimizar todos** inclui as autoridades; **Pseudonimizar autores, vítimas, testemunhas e
+   familiares** mantém as autoridades com o nome real. As seções podem ser recolhidas e
+   expandidas, e cada uma tem **Marcar todos**. As autoridades ficam separadas por função
+   (Delegado, Escrivão, Perito, Inspetor / Oficial Investigador, Policial Militar, Juiz, Promotor,
+   Outros). Cada pessoa tem a caixa **Menor de idade à época do fato** (vai para a legenda). **Confirmar sugestões** aceita um grupo inteiro. **Recomeçar a revisão do zero** refaz a
    detecção apagando as decisões (útil em cofres revisados com uma versão anterior do app).
 4. Na aba **Texto**, confira os destaques página a página. Toque num destaque para abrir a entidade;
    selecione um trecho que a detecção perdeu para marcá-lo. Ligue **Original × pseudonimizado**
@@ -143,6 +146,11 @@ Em **Exportar** (liberado depois da revisão):
    parece dado pessoal. Para cada item, **Pseudonimizar** ou **Não é dado pessoal**. Copiar e
    baixar só são liberados depois disso.
 3. **Copiar** (por parte), **Baixar .txt** ou **Baixar .md** e colar na IA.
+4. Confira a última linha: "=== FIM DO DOCUMENTO — N páginas, M caracteres ===" (ou "=== FIM DA
+   PARTE …"). Se ela não estiver no texto colado, algo foi cortado. Folhas sem carimbo legível
+   saem como "fls. ?" e as repetidas ou fora de ordem como "fls. 4? [VERIFICAR: …]", sempre com
+   a página do PDF, e são listadas num aviso no topo. Na legenda, vínculos de parentesco dizem a
+   folha de onde vieram, e os duvidosos aparecem como "familiar (vínculo incerto) [VERIFICAR]".
 
 ## Reidentificação
 

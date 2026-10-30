@@ -163,7 +163,7 @@ export function detectPassaporte(text: string): Candidate[] {
 
 export function detectProntuario(text: string): Candidate[] {
   const re =
-    /\b(?:prontu[áa]rio(?:\s+m[ée]dico)?|registro\s+hospitalar|n[º°]\s*(?:do\s+)?atendimento)\s*(?:n[º°o.]*)?\s*[:-]?\s*([A-Z]{0,3}\d[\d./-]{1,18}\d)(?![\p{L}\p{N}])/giu;
+    /\b(?:prontu[áa]rio(?:\s+m[ée]dico)?|registro\s+hospitalar|matr[íi]cula\s+(?:hospitalar|do\s+paciente)|n[º°]\s*(?:do\s+)?atendimento)\s*(?:n[º°o.]*)?\s*[:-]?\s*([A-Z]{0,3}\d[\d./-]{1,18}\d)(?![\p{L}\p{N}])/giu;
   return [...text.matchAll(re)].map((m) => candidate('PRONTUARIO', m, 0.95, 'prontuario', 1));
 }
 

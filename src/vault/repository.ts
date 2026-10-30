@@ -1,3 +1,4 @@
+import { migrateContent } from './migrate';
 import {
   DecryptionError,
   PBKDF2_DEFAULT_ITERATIONS,
@@ -126,7 +127,7 @@ export async function openRecord(record: VaultRecord, password: string): Promise
   const key = await deriveKey(password, record.kdf.salt, record.kdf.iterations);
   try {
     const content = await decryptJson<VaultContent>(key, record.payload, payloadContext(record.id));
-    return { meta: toMeta(record), key, content };
+    return { meta: toMeta(record), key, content: migrateContent(content) };
   } catch (error) {
     if (error instanceof DecryptionError) throw new WrongPasswordError();
     throw error;

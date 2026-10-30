@@ -1,12 +1,20 @@
 import { useMemo, useState, useSyncExternalStore } from 'react';
+import { authoritySection } from '../../review/authority';
 import { PERSON_ROLES } from '../../detectors/types';
 import { TYPE_TITLE, labelOf, normalizeRole } from '../../review/labels';
-import { confirm, merge, pseudonymizeAllPeople } from '../../review/model';
+import {
+  confirm,
+  merge,
+  pseudonymizeAllPeople,
+  pseudonymizeInvolved,
+  setDecisionMany,
+} from '../../review/model';
 import { formatFolhas, type ReviewData } from '../../review/useReviewData';
 import { WARNING_BADGE, WARNING_TEXT, contextAround, entityWarnings } from '../../review/warnings';
 import { fold } from '../../detectors/text';
 import { getSettings, subscribeSettings } from '../../settings/settings';
 import { userMessage } from '../../utils/errors';
+import { useSession } from '../../vault/session';
 import type { StoredEntity, VaultContent } from '../../vault/types';
 import { apply, highlightClass } from './common';
 import { EntityDetail } from './EntityDetail';
@@ -18,7 +26,14 @@ interface Group {
   title: string;
   block: Block;
   entities: StoredEntity[];
+  /** Seção que contém este grupo (as funções ficam dentro de "Autoridades"). */
+  parent?: string;
 }
+
+const AUTHORITIES = 'AUTORIDADES';
+
+/** Seções recolhidas por cofre, lembradas enquanto o app estiver aberto (B5). */
+const collapsedByVault = new Map<string, Set<string>>();
 
 const BLOCK_TITLES: Record<Block, string> = {
   people: 'Pessoas',
@@ -53,8 +68,14 @@ const ROLE_TITLES: Record<string, string> = {
 
 function groupEntities(entities: readonly StoredEntity[]): Group[] {
   const groups = new Map<string, Group>();
-  const add = (key: string, title: string, e: StoredEntity) => {
-    const g = groups.get(key) ?? { key, title, block: blockOf(e), entities: [] };
+  const add = (key: string, title: string, e: StoredEntity, parent?: string) => {
+    const g = groups.get(key) ?? {
+      key,
+      title,
+      block: blockOf(e),
+      entities: [],
+      ...(parent ? { parent } : {}),
+    };
     g.entities.push(e);
     groups.set(key, g);
   };
@@ -63,10 +84,17 @@ function groupEntities(entities: readonly StoredEntity[]): Group[] {
     else if (e.type === 'APELIDO') add('APELIDO', TYPE_TITLE.APELIDO, e);
     else if (e.type === 'CIDADE')
       add('CIDADE', `${TYPE_TITLE.CIDADE}${e.decision === 'keep' ? ' (em claro)' : ''}`, e);
+    else if (e.type === 'OUTRO' && e.category)
+      add(
+        `OUTRO:${e.category}`,
+        `Outros: ${e.category}${e.decision === 'keep' ? ' (em claro)' : ''}`,
+        e,
+      );
     else if (e.type === 'PESSOA') {
-      if (e.decision === 'keep')
-        add('PESSOA:KEEP', 'Pessoas mantidas (autoridades e servidores)', e);
-      else if (!e.role) add('PESSOA:?', 'Pessoas sem papel definido', e);
+      if (e.decision === 'keep') {
+        const section = authoritySection(e);
+        add(`KEEP:${section}`, section, e, AUTHORITIES);
+      } else if (!e.role) add('PESSOA:?', 'Pessoas sem papel definido', e);
       else {
         const role = normalizeRole(e.role);
         add(`PESSOA:${role}`, ROLE_TITLES[role] ?? `Papel: ${role}`, e);
@@ -79,13 +107,16 @@ function groupEntities(entities: readonly StoredEntity[]): Group[] {
     if (key === 'SUGESTAO') return 1000;
     if (key === 'PESSOA:?') return -1;
     if (key === 'APELIDO') return 45;
+    if (key.startsWith('KEEP:')) return 50;
     if (key.startsWith('PESSOA:')) {
       const i = PERSON_ROLES.indexOf(key.slice(7) as (typeof PERSON_ROLES)[number]);
-      return key === 'PESSOA:KEEP' ? 50 : i >= 0 ? i : 40;
+      return i >= 0 ? i : 40;
     }
     return 100;
   };
-  return [...groups.values()].sort((a, b) => order(a.key) - order(b.key));
+  return [...groups.values()].sort(
+    (a, b) => order(a.key) - order(b.key) || a.title.localeCompare(b.title, 'pt-BR'),
+  );
 }
 
 interface Props {
@@ -95,12 +126,26 @@ interface Props {
 }
 
 export function EntityList({ content, data, onShowInText }: Props) {
+  const session = useSession();
+  const vaultId = session.status === 'unlocked' ? session.vault.meta.id : '';
   const [openId, setOpenId] = useState<string | null>(null);
   const [onlyPending, setOnlyPending] = useState(false);
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [keepAuthorities, setKeepAuthorities] = useState(true);
+  const [collapsed, setCollapsedState] = useState<Set<string>>(
+    () => new Set(collapsedByVault.get(vaultId) ?? []),
+  );
+  const setCollapsed = (next: Set<string>) => {
+    collapsedByVault.set(vaultId, next);
+    setCollapsedState(next);
+  };
+  const toggle = (key: string) => {
+    const next = new Set(collapsed);
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    setCollapsed(next);
+  };
 
   const visible = useMemo(() => {
     const q = fold(query.trim());
@@ -119,6 +164,13 @@ export function EntityList({ content, data, onShowInText }: Props) {
     for (const e of content.entities) c[blockOf(e)]++;
     return c;
   }, [content.entities]);
+  const peopleIds = groups
+    .filter((g) => g.block === 'people')
+    .flatMap((g) => g.entities.map((e) => e.id));
+  const allKeys = [
+    ...groups.map((g) => g.key),
+    ...(groups.some((g) => g.parent) ? [AUTHORITIES] : []),
+  ];
 
   const selectedEntities = selected
     .map((s) => data.byId.get(s))
@@ -136,6 +188,21 @@ export function EntityList({ content, data, onShowInText }: Props) {
     }
   }
 
+  const groupProps = (group: Group) => ({
+    group,
+    content,
+    data,
+    openId,
+    setOpenId,
+    selected,
+    setSelected,
+    exclusions: settings.detectionExclusions,
+    collapsed: collapsed.has(group.key),
+    onToggle: () => toggle(group.key),
+    onConfirm: (ids: string[]) => void run((c) => confirm(c, ids)),
+    onShowInText,
+  });
+
   return (
     <div className="entity-list">
       <p className="entity-counts" aria-label="Totais">
@@ -146,23 +213,27 @@ export function EntityList({ content, data, onShowInText }: Props) {
       </p>
       {counts.people > 0 && (
         <div className="panel all-people">
-          <button
-            type="button"
-            className="primary"
-            onClick={() =>
-              void run((c) => pseudonymizeAllPeople(c, { includeKept: !keepAuthorities }))
-            }
-          >
-            Pseudonimizar todas as pessoas
-          </button>
-          <label className="checkbox">
-            <input
-              type="checkbox"
-              checked={keepAuthorities}
-              onChange={(e) => setKeepAuthorities(e.target.checked)}
-            />
-            Manter as autoridades em claro (Delegado, Escrivão, Perito…)
-          </label>
+          <div className="bulk-choice">
+            <button
+              type="button"
+              onClick={() => void run((c) => pseudonymizeAllPeople(c, { includeKept: true }))}
+            >
+              Pseudonimizar todos
+            </button>
+            <p className="hint">
+              Todas as pessoas, inclusive Delegado, Escrivão e demais autoridades.
+            </p>
+          </div>
+          <div className="bulk-choice">
+            <button
+              type="button"
+              className="primary"
+              onClick={() => void run(pseudonymizeInvolved)}
+            >
+              Pseudonimizar autores, vítimas, testemunhas e familiares
+            </button>
+            <p className="hint">Só os envolvidos; as autoridades continuam com o nome real.</p>
+          </div>
         </div>
       )}
       <div className="toolbar list-filters">
@@ -182,28 +253,55 @@ export function EntityList({ content, data, onShowInText }: Props) {
           Só pendentes
         </label>
       </div>
+      <div className="toolbar list-controls">
+        <SelectAll
+          ids={peopleIds}
+          selected={selected}
+          setSelected={setSelected}
+          label="Marcar todos"
+        />
+        <button type="button" onClick={() => setCollapsed(new Set(allKeys))}>
+          Recolher todas
+        </button>
+        <button type="button" onClick={() => setCollapsed(new Set())}>
+          Expandir todas
+        </button>
+      </div>
 
       {selected.length > 0 && (
         <div className="merge-bar" role="region" aria-label="Seleção">
           <span>
-            {selected.length} {selected.length === 1 ? 'selecionada' : 'selecionadas'}
-            {!canMerge &&
-              selected.length >= 2 &&
-              ' (só é possível mesclar entidades do mesmo tipo)'}
+            {selected.length} {selected.length === 1 ? 'marcada' : 'marcadas'}
           </span>
           <button
             type="button"
             className="primary"
+            onClick={() => void run((c) => setDecisionMany(c, selected, 'pseudonymize'))}
+          >
+            Pseudonimizar marcadas
+          </button>
+          <button
+            type="button"
+            onClick={() => void run((c) => setDecisionMany(c, selected, 'keep'))}
+          >
+            Manter marcadas (autoridade)
+          </button>
+          <button type="button" onClick={() => void run((c) => confirm(c, selected))}>
+            Confirmar marcadas
+          </button>
+          <button
+            type="button"
             disabled={!canMerge}
+            title={canMerge ? undefined : 'Marque duas ou mais entidades do mesmo tipo'}
             onClick={() => {
               void run((c) => merge(c, selected));
-              setSelected([]);
+              setSelected(() => []);
             }}
           >
             Mesclar na primeira
           </button>
-          <button type="button" onClick={() => setSelected([])}>
-            Limpar seleção
+          <button type="button" onClick={() => setSelected(() => [])}>
+            Desmarcar
           </button>
         </div>
       )}
@@ -222,6 +320,9 @@ export function EntityList({ content, data, onShowInText }: Props) {
       {(['people', 'documents', 'suggestions'] as const).map((block) => {
         const blockGroups = groups.filter((g) => g.block === block);
         if (!blockGroups.length) return null;
+        const top = blockGroups.filter((g) => !g.parent);
+        const authorities = blockGroups.filter((g) => g.parent === AUTHORITIES);
+        const authorityIds = authorities.flatMap((g) => g.entities.map((e) => e.id));
         return (
           <section
             key={block}
@@ -240,25 +341,78 @@ export function EntityList({ content, data, onShowInText }: Props) {
                 conhecido. Não são substituídas. Abra uma delas para aplicar ou descartar.
               </p>
             )}
-            {blockGroups.map((group) => (
-              <EntityGroup
-                key={group.key}
-                group={group}
-                content={content}
-                data={data}
-                openId={openId}
-                setOpenId={setOpenId}
-                selected={selected}
-                setSelected={setSelected}
-                exclusions={settings.detectionExclusions}
-                onConfirm={(ids) => void run((c) => confirm(c, ids))}
-                onShowInText={onShowInText}
-              />
+            {top.map((group) => (
+              <EntityGroup key={group.key} {...groupProps(group)} />
             ))}
+            {authorities.length > 0 && (
+              <section className="entity-group authorities" aria-label="Autoridades">
+                <header className="group-head">
+                  <SelectAll
+                    ids={authorityIds}
+                    selected={selected}
+                    setSelected={setSelected}
+                    label="Marcar todos: Autoridades"
+                  />
+                  <h3>
+                    <button
+                      type="button"
+                      className="collapse-toggle"
+                      aria-expanded={!collapsed.has(AUTHORITIES)}
+                      onClick={() => toggle(AUTHORITIES)}
+                    >
+                      Autoridades ({authorityIds.length}){' '}
+                      <span aria-hidden="true">{collapsed.has(AUTHORITIES) ? '▸' : '▾'}</span>
+                    </button>
+                  </h3>
+                </header>
+                {!collapsed.has(AUTHORITIES) && (
+                  <div className="subgroups">
+                    {authorities.map((group) => (
+                      <EntityGroup key={group.key} {...groupProps(group)} />
+                    ))}
+                  </div>
+                )}
+              </section>
+            )}
           </section>
         );
       })}
     </div>
+  );
+}
+
+/** "Marcar todos" com estado parcial (algumas marcadas). */
+function SelectAll({
+  ids,
+  selected,
+  setSelected,
+  label,
+}: {
+  ids: readonly string[];
+  selected: readonly string[];
+  setSelected: (fn: (s: string[]) => string[]) => void;
+  label: string;
+}) {
+  const marked = ids.filter((id) => selected.includes(id)).length;
+  const all = ids.length > 0 && marked === ids.length;
+  return (
+    <label className="checkbox select-all">
+      <input
+        type="checkbox"
+        aria-label={label}
+        checked={all}
+        disabled={!ids.length}
+        ref={(el) => {
+          if (el) el.indeterminate = marked > 0 && !all;
+        }}
+        onChange={() =>
+          setSelected((s) =>
+            all ? s.filter((x) => !ids.includes(x)) : [...new Set([...s, ...ids])],
+          )
+        }
+      />
+      <span className="select-all-text">{label.startsWith('Marcar todos:') ? 'Todos' : label}</span>
+    </label>
   );
 }
 
@@ -284,6 +438,8 @@ interface GroupProps {
   selected: string[];
   setSelected: (fn: (s: string[]) => string[]) => void;
   exclusions: readonly string[];
+  collapsed: boolean;
+  onToggle: () => void;
   onConfirm: (ids: string[]) => void;
   onShowInText: (pageKey: string, entityId: string) => void;
 }
@@ -297,6 +453,8 @@ function EntityGroup({
   selected,
   setSelected,
   exclusions,
+  collapsed,
+  onToggle,
   onConfirm,
   onShowInText,
 }: GroupProps) {
@@ -304,8 +462,22 @@ function EntityGroup({
   return (
     <section className="entity-group" aria-label={group.title}>
       <header className="group-head">
+        <SelectAll
+          ids={group.entities.map((e) => e.id)}
+          selected={selected}
+          setSelected={setSelected}
+          label={`Marcar todos: ${group.title}`}
+        />
         <h3>
-          {group.title} <span className="meta">({group.entities.length})</span>
+          <button
+            type="button"
+            className="collapse-toggle"
+            aria-expanded={!collapsed}
+            onClick={onToggle}
+          >
+            {group.title} ({group.entities.length}){' '}
+            <span aria-hidden="true">{collapsed ? '▸' : '▾'}</span>
+          </button>
         </h3>
         {pending.length > 0 && (
           <button type="button" onClick={() => onConfirm(pending.map((e) => e.id))}>
@@ -313,83 +485,85 @@ function EntityGroup({
           </button>
         )}
       </header>
-      <ul className="entity-rows">
-        {group.entities.map((e) => {
-          const stats = data.stats.get(e.id);
-          const open = openId === e.id;
-          const label = e.suggested
-            ? 'não aplicada'
-            : e.decision === 'pseudonymize'
-              ? labelOf(e, data.byId)
-              : 'mantido';
-          const warnings = entityWarnings(e, exclusions);
-          const others = e.variants.filter((v) => v !== e.canonical);
-          return (
-            <li key={e.id} className={`entity-row${open ? ' open' : ''}`}>
-              <div className="row-main">
-                <input
-                  type="checkbox"
-                  aria-label={`Selecionar ${e.canonical} para mesclar`}
-                  checked={selected.includes(e.id)}
-                  onChange={(ev) =>
-                    setSelected((s) =>
-                      ev.target.checked ? [...s, e.id] : s.filter((x) => x !== e.id),
-                    )
-                  }
-                />
-                <button
-                  type="button"
-                  className="row-button"
-                  aria-expanded={open}
-                  onClick={() => setOpenId(open ? null : e.id)}
-                >
-                  <span className={`chip ${highlightClass(e)}`}>{label}</span>
-                  <span className="row-text">
-                    <strong>{e.canonical}</strong>
-                    <span className="meta">
-                      {e.position ? `${e.position} · ` : ''}
-                      {e.relation || e.relatedTo
-                        ? `${e.relation ?? ''}${
-                            e.relatedTo && data.labelFor(e.relatedTo)
-                              ? ` de ${data.labelFor(e.relatedTo)}`
-                              : ''
-                          } · `
-                        : ''}
-                      {stats?.count ?? 0} ocorr.
-                      {stats?.folhas.length ? ` · fls. ${formatFolhas(stats.folhas)}` : ''}
-                      {others.length
-                        ? ` · também: ${others.slice(0, 3).join('; ')}${others.length > 3 ? '…' : ''}`
-                        : ''}
-                    </span>
-                    {e.type === 'PESSOA' && <FirstContext entity={e} data={data} />}
-                  </span>
-                  <span className="row-badges">
-                    {warnings.map((w) => (
-                      <span key={w} className="badge warn" title={WARNING_TEXT[w]}>
-                        {WARNING_BADGE[w]}
+      {!collapsed && (
+        <ul className="entity-rows">
+          {group.entities.map((e) => {
+            const stats = data.stats.get(e.id);
+            const open = openId === e.id;
+            const label = e.suggested
+              ? 'não aplicada'
+              : e.decision === 'pseudonymize'
+                ? labelOf(e, data.byId)
+                : 'mantido';
+            const warnings = entityWarnings(e, exclusions);
+            const others = e.variants.filter((v) => v !== e.canonical);
+            return (
+              <li key={e.id} className={`entity-row${open ? ' open' : ''}`}>
+                <div className="row-main">
+                  <input
+                    type="checkbox"
+                    aria-label={`Selecionar ${e.canonical} para mesclar`}
+                    checked={selected.includes(e.id)}
+                    onChange={(ev) =>
+                      setSelected((s) =>
+                        ev.target.checked ? [...s, e.id] : s.filter((x) => x !== e.id),
+                      )
+                    }
+                  />
+                  <button
+                    type="button"
+                    className="row-button"
+                    aria-expanded={open}
+                    onClick={() => setOpenId(open ? null : e.id)}
+                  >
+                    <span className={`chip ${highlightClass(e)}`}>{label}</span>
+                    <span className="row-text">
+                      <strong>{e.canonical}</strong>
+                      <span className="meta">
+                        {e.position ? `${e.position} · ` : ''}
+                        {e.relation || e.relatedTo
+                          ? `${e.relation ?? ''}${
+                              e.relatedTo && data.labelFor(e.relatedTo)
+                                ? ` de ${data.labelFor(e.relatedTo)}`
+                                : ''
+                            } · `
+                          : ''}
+                        {stats?.count ?? 0} ocorr.
+                        {stats?.folhas.length ? ` · fls. ${formatFolhas(stats.folhas)}` : ''}
+                        {others.length
+                          ? ` · também: ${others.slice(0, 3).join('; ')}${others.length > 3 ? '…' : ''}`
+                          : ''}
                       </span>
-                    ))}
-                    {e.suggested ? null : e.reviewed ? (
-                      <span className="badge ok">revisada</span>
-                    ) : (
-                      <span className="badge pending">pendente</span>
-                    )}
-                  </span>
-                </button>
-              </div>
-              {open && (
-                <EntityDetail
-                  key={e.id}
-                  entity={e}
-                  content={content}
-                  data={data}
-                  onShowInText={(key) => onShowInText(key, e.id)}
-                />
-              )}
-            </li>
-          );
-        })}
-      </ul>
+                      {e.type === 'PESSOA' && <FirstContext entity={e} data={data} />}
+                    </span>
+                    <span className="row-badges">
+                      {warnings.map((w) => (
+                        <span key={w} className="badge warn" title={WARNING_TEXT[w]}>
+                          {WARNING_BADGE[w]}
+                        </span>
+                      ))}
+                      {e.suggested ? null : e.reviewed ? (
+                        <span className="badge ok">revisada</span>
+                      ) : (
+                        <span className="badge pending">pendente</span>
+                      )}
+                    </span>
+                  </button>
+                </div>
+                {open && (
+                  <EntityDetail
+                    key={e.id}
+                    entity={e}
+                    content={content}
+                    data={data}
+                    onShowInText={(key) => onShowInText(key, e.id)}
+                  />
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </section>
   );
 }

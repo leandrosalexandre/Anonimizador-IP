@@ -183,9 +183,9 @@ describe('novo escopo padrão', () => {
     'Nome: PEDRO ALVES LIMA, CPF 529.982.247-25, residente na Rua das Flores, nº 10, placa HXP-4821, ' +
     'e-mail pedro@exemplo.com, BO nº 512-347/2026, telefone (85) 98812-3456, nascido em 01/01/1990.';
 
-  it('pseudonimiza só nomes e documentos pessoais', () => {
+  it('pseudonimiza só nomes e documentos pessoais (data de nascimento fica)', () => {
     const types = new Set(detectPage(text).map((c) => c.type));
-    expect([...types].sort()).toEqual(['CPF', 'DATA_NASCIMENTO', 'PESSOA', 'TELEFONE']);
+    expect([...types].sort()).toEqual(['CPF', 'PESSOA', 'TELEFONE']);
   });
 
   it('os demais tipos podem ser reativados', () => {

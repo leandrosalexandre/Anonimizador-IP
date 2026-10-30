@@ -35,7 +35,7 @@ export async function enableAllTypes(page: Page): Promise<void> {
     (types) => {
       const key = 'anonimizador-ip:settings';
       if (!localStorage.getItem(key))
-        localStorage.setItem(key, JSON.stringify({ version: 2, enabledTypes: types }));
+        localStorage.setItem(key, JSON.stringify({ version: 3, enabledTypes: types }));
     },
     [...ENTITY_TYPES],
   );

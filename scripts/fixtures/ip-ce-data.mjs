@@ -212,18 +212,21 @@ export const CE_ENTITIES = [
   {
     id: 'dn_vitima',
     type: 'DATA_NASCIMENTO',
+    outOfScope: true,
     canonical: '14/05/1988',
     variants: ['14/05/1988'],
   },
   {
     id: 'dn_testemunha',
     type: 'DATA_NASCIMENTO',
+    outOfScope: true,
     canonical: '02/02/1975',
     variants: ['02/02/1975'],
   },
   {
     id: 'dn_autor1',
     type: 'DATA_NASCIMENTO',
+    outOfScope: true,
     canonical: '21/11/1999',
     variants: ['21/11/1999'],
   },

@@ -97,7 +97,8 @@ async function main() {
       title: p.title,
       text: [p.stamp, ...pageLines(p)].join('\n'),
     })),
-    entities: CE_ENTITIES.map((e) => ({
+    // Datas de nascimento ficam fora do escopo padrão (não são pseudonimizadas).
+    entities: CE_ENTITIES.filter((e) => !e.outOfScope).map(({ outOfScope: _, ...e }) => ({
       ...e,
       decision: e.decision ?? 'pseudonymize',
       occurrences: pages.flatMap((p, i) =>

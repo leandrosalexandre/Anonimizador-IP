@@ -549,54 +549,6 @@
       ]
     },
     {
-      "id": "dn_vitima",
-      "type": "DATA_NASCIMENTO",
-      "canonical": "14/05/1988",
-      "variants": [
-        "14/05/1988"
-      ],
-      "decision": "pseudonymize",
-      "occurrences": [
-        {
-          "pdfPage": 1,
-          "folha": 2,
-          "text": "14/05/1988"
-        }
-      ]
-    },
-    {
-      "id": "dn_testemunha",
-      "type": "DATA_NASCIMENTO",
-      "canonical": "02/02/1975",
-      "variants": [
-        "02/02/1975"
-      ],
-      "decision": "pseudonymize",
-      "occurrences": [
-        {
-          "pdfPage": 1,
-          "folha": 2,
-          "text": "02/02/1975"
-        }
-      ]
-    },
-    {
-      "id": "dn_autor1",
-      "type": "DATA_NASCIMENTO",
-      "canonical": "21/11/1999",
-      "variants": [
-        "21/11/1999"
-      ],
-      "decision": "pseudonymize",
-      "occurrences": [
-        {
-          "pdfPage": 5,
-          "folha": 6,
-          "text": "21/11/1999"
-        }
-      ]
-    },
-    {
       "id": "titulo_autor1",
       "type": "TITULO_ELEITOR",
       "canonical": "0451 2378 0701",

@@ -106,6 +106,16 @@ export interface StoredEntity {
   relatedTo?: string | null;
   /** Cargo ou função de quem é mantido em claro ("Delegado de Polícia Civil", "Escrivão"). */
   position?: string;
+  /** Vínculo sugerido pela detecção: página de onde veio (para citar a folha na legenda). */
+  relationSource?: { docId: string; pdfPage: number };
+  /** Vínculo duvidoso (colunas misturadas pelo OCR, mais de um candidato): conferir. */
+  relationUncertain?: boolean;
+  /** Vínculo informado pelo usuário na revisão. */
+  relationManual?: boolean;
+  /** Menor de idade à época do fato (vai para a legenda; o marcador não muda). */
+  minor?: boolean;
+  /** Categoria digitada para um termo classificado como "Outros" ("Organização criminosa"). */
+  category?: string;
 }
 
 /**
@@ -138,9 +148,17 @@ export interface VaultContent {
     separate?: [string, string][];
     /** Data da primeira cópia ou download do texto exportado (depois disso, não renumera). */
     exportedAt?: string;
+    /** Versão da estrutura do conteúdo (migração automática ao abrir; ausente = 1). */
+    schema?: number;
   };
 }
 
 export function emptyVaultContent(): VaultContent {
-  return { version: 1, documents: [], entities: [], config: { customRoles: [], keepNames: [] } };
+  // schema: estrutura atual (ver src/vault/migrate.ts); cofres novos não precisam de migração.
+  return {
+    version: 1,
+    documents: [],
+    entities: [],
+    config: { customRoles: [], keepNames: [], schema: 2 },
+  };
 }

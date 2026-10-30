@@ -86,6 +86,11 @@ test('exporta o IP fictício sem dados reais, após a varredura residual', async
   expect(copied).toContain('[VÍTIMA 1]');
   expect(copied).toContain('Legenda: ');
   expect(leaks(copied)).toEqual([]);
+  // A1: nada é cortado — a última linha confirma páginas e caracteres, também na prévia.
+  expect(copied.trimEnd()).toMatch(/=== FIM DO DOCUMENTO — 15 páginas, [\d.]+ caracteres ===$/);
+  await expect(page.getByLabel('Texto exportado')).toContainText(
+    '=== FIM DO DOCUMENTO — 15 páginas',
+  );
 
   // Baixar .txt e .md.
   const txtPromise = page.waitForEvent('download');
@@ -104,7 +109,7 @@ test('exporta o IP fictício sem dados reais, após a varredura residual', async
   const count = await parts.count();
   if (count > 1) await expect(parts.first()).toContainText(`Parte 1 de ${count}`);
   await expect(page.getByLabel('Texto exportado')).toContainText(
-    count > 1 ? `Parte 1 de ${count}` : '=== fls. 3',
+    count > 1 ? `PARTE 1 de ${count}` : '=== fls. 3',
   );
   expect(foreign).toEqual([]);
 });

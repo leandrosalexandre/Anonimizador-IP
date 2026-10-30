@@ -19,9 +19,13 @@ import {
   unify,
   unifyInto,
   addNickname,
+  classifyOther,
+  renameEntity,
+  setMinor,
   setPosition,
   setRelation,
 } from '../../review/model';
+import { AUTHORITY_FUNCTIONS, OTHER_FUNCTION, standardFunction } from '../../review/authority';
 import { ENTITY_TYPES, type EntityType } from '../../detectors/types';
 import {
   WARNING_TEXT,
@@ -225,6 +229,10 @@ export function EntityDetail({ entity, content, data, onShowInText, onClose }: P
         <CleanName entity={entity} exclusions={settings.detectionExclusions} run={run} />
       )}
 
+      {entity.type === 'PESSOA' && !entity.suggested && isMainRole(entity) && (
+        <MinorField entity={entity} run={run} prominent />
+      )}
+
       {!entity.suggested && (
         <div className="decision-toggle" role="group" aria-label="Decisão">
           <button
@@ -310,7 +318,7 @@ export function EntityDetail({ entity, content, data, onShowInText, onClose }: P
       )}
 
       {entity.type === 'PESSOA' && !entity.suggested && entity.decision === 'keep' && (
-        <PositionField key={entity.position ?? ''} entity={entity} run={run} />
+        <FunctionField key={entity.position ?? ''} entity={entity} run={run} />
       )}
 
       {entity.type === 'PESSOA' &&
@@ -326,6 +334,10 @@ export function EntityDetail({ entity, content, data, onShowInText, onClose }: P
           />
         )}
 
+      {entity.type === 'PESSOA' && !entity.suggested && !isMainRole(entity) && (
+        <MinorField entity={entity} run={run} />
+      )}
+
       {entity.type === 'PESSOA' && !entity.suggested && (
         <NicknameField entity={entity} content={content} data={data} run={run} />
       )}
@@ -338,20 +350,7 @@ export function EntityDetail({ entity, content, data, onShowInText, onClose }: P
           <LinkOwner entity={entity} people={people} data={data} run={run} />
         )}
 
-      <div className="inline-form">
-        <label htmlFor={`${id}-type`}>Tipo</label>
-        <select
-          id={`${id}-type`}
-          value={entity.type}
-          onChange={(e) => void run((c) => changeType(c, entity.id, e.target.value as EntityType))}
-        >
-          {ENTITY_TYPES.map((t) => (
-            <option key={t} value={t}>
-              {t === 'CIDADE' ? 'Cidade ou lugar (fica em claro)' : TYPE_TITLE[t].replace(/s$/, '')}
-            </option>
-          ))}
-        </select>
-      </div>
+      <TypeField key={`${entity.type}-${entity.category ?? ''}`} entity={entity} run={run} />
 
       <form
         className="inline-form"
@@ -790,22 +789,6 @@ const KINSHIP = [
   'responsável legal',
 ];
 
-const POSITIONS = [
-  'Delegado de Polícia Civil',
-  'Oficial Investigador de Polícia',
-  'Escrivão de Polícia',
-  'Inspetor de Polícia',
-  'Agente de Polícia',
-  'Perito Criminal',
-  'Perito Médico-Legista',
-  'Policial Militar',
-  'Comissário',
-  'Juiz de Direito',
-  'Promotor de Justiça',
-  'Defensor Público',
-  'Atendente',
-];
-
 /** Parentesco do familiar ("mãe") ou cliente do advogado, e de quem ("de [TESTEMUNHA 1]"). */
 function RelationField({
   entity,
@@ -892,41 +875,176 @@ function RelationField({
   );
 }
 
-/** Cargo de quem é mantido em claro (Delegado, Escrivão, Oficial Investigador…). */
-function PositionField({ entity, run }: { entity: StoredEntity; run: Run }) {
-  const id = useId();
-  const [position, setPositionDraft] = useState(entity.position ?? '');
+/** Vítimas e autores: a caixa "menor de idade" aparece em destaque. */
+const isMainRole = (e: StoredEntity) =>
+  !!e.role && ['VÍTIMA', 'AUTOR', 'INVESTIGADO', 'CONDUZIDO'].includes(normalizeRole(e.role));
+
+/** "Menor de idade à época do fato" (vai para a legenda; o marcador não muda). */
+function MinorField({
+  entity,
+  run,
+  prominent = false,
+}: {
+  entity: StoredEntity;
+  run: Run;
+  prominent?: boolean;
+}) {
   return (
-    <form
-      className="inline-form"
-      onSubmit={(e) => {
-        e.preventDefault();
-        void run((c) => setPosition(c, entity.id, position));
-      }}
-    >
-      <label htmlFor={`${id}-pos`}>Cargo ou função</label>
+    <label className={`checkbox minor-field${prominent ? ' prominent' : ''}`}>
       <input
-        id={`${id}-pos`}
-        className="wide"
-        list={`${id}-positions`}
-        value={position}
-        onChange={(e) => setPositionDraft(e.target.value)}
-        placeholder="Ex.: Delegado de Polícia Civil, Escrivão"
-        maxLength={60}
+        type="checkbox"
+        checked={!!entity.minor}
+        onChange={(e) => void run((c) => setMinor(c, entity.id, e.target.checked))}
       />
-      <datalist id={`${id}-positions`}>
-        {POSITIONS.map((p) => (
-          <option key={p} value={p} />
-        ))}
-      </datalist>
-      <button type="submit" disabled={position.trim() === (entity.position ?? '')}>
-        Salvar
-      </button>
-    </form>
+      Menor de idade à época do fato
+    </label>
   );
 }
 
-/** Apelidos da pessoa: os vinculados e um campo para digitar outro ("vulgo"). */
+/** Lembra um texto criado pelo usuário (categoria ou função) para as próximas vezes. */
+function remember(key: 'customCategories' | 'customPositions', value: string) {
+  const list = getSettings()[key];
+  const v = value.trim();
+  if (!v || list.some((x) => x.toLocaleLowerCase('pt-BR') === v.toLocaleLowerCase('pt-BR'))) return;
+  updateSettings({ [key]: [...list, v] });
+}
+
+/**
+ * Função da autoridade mantida (B7): Delegado, Escrivão, Perito, Inspetor / Oficial
+ * Investigador, Policial Militar, Juiz, Promotor ou Outros (digitado e lembrado). A pessoa muda
+ * de seção na hora.
+ */
+function FunctionField({ entity, run }: { entity: StoredEntity; run: Run }) {
+  const id = useId();
+  const settings = useSyncExternalStore(subscribeSettings, getSettings);
+  const current = entity.position?.trim() ?? '';
+  const standard = current ? standardFunction(current) : null;
+  const [choice, setChoice] = useState<string>(standard ?? (current ? OTHER_FUNCTION : ''));
+  const [other, setOther] = useState(standard ? '' : current);
+  const save = (value: string) => {
+    void run((c) => setPosition(c, entity.id, value));
+  };
+  return (
+    <div className="inline-form function-field">
+      <label htmlFor={`${id}-fn`}>Função</label>
+      <select
+        id={`${id}-fn`}
+        value={choice}
+        onChange={(e) => {
+          setChoice(e.target.value);
+          if (e.target.value && e.target.value !== OTHER_FUNCTION) save(e.target.value);
+        }}
+      >
+        <option value="">— escolha a função —</option>
+        {AUTHORITY_FUNCTIONS.map((f) => (
+          <option key={f} value={f}>
+            {f}
+          </option>
+        ))}
+        <option value={OTHER_FUNCTION}>Outros (digite)</option>
+      </select>
+      {choice === OTHER_FUNCTION && (
+        <form
+          className="inline-form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const value = other.trim();
+            if (!value) return;
+            remember('customPositions', value);
+            save(value);
+          }}
+        >
+          <label htmlFor={`${id}-other`}>Qual função?</label>
+          <input
+            id={`${id}-other`}
+            list={`${id}-others`}
+            value={other}
+            onChange={(e) => setOther(e.target.value)}
+            placeholder="Ex.: Guarda Municipal"
+            maxLength={60}
+          />
+          <datalist id={`${id}-others`}>
+            {settings.customPositions.map((p) => (
+              <option key={p} value={p} />
+            ))}
+          </datalist>
+          <button type="submit" disabled={!other.trim() || other.trim() === current}>
+            Salvar
+          </button>
+        </form>
+      )}
+      {current && (
+        <p className="hint">
+          Cargo registrado: {current}. Mantida com o nome real (só “Pseudonimizar todos” a
+          substitui).
+        </p>
+      )}
+    </div>
+  );
+}
+
+/** Tipo da entidade; "Outros" pede a descrição (B4), que vira a categoria e é lembrada. */
+function TypeField({ entity, run }: { entity: StoredEntity; run: Run }) {
+  const id = useId();
+  const settings = useSyncExternalStore(subscribeSettings, getSettings);
+  const [type, setType] = useState<EntityType>(entity.type);
+  const [category, setCategory] = useState(entity.category ?? '');
+  const options = ENTITY_TYPES.filter((t) => t !== 'OUTRO');
+  return (
+    <div className="inline-form type-field">
+      <label htmlFor={`${id}-type`}>Tipo</label>
+      <select
+        id={`${id}-type`}
+        value={type}
+        onChange={(e) => {
+          const next = e.target.value as EntityType;
+          setType(next);
+          if (next !== 'OUTRO') void run((c) => changeType(c, entity.id, next));
+        }}
+      >
+        {options.map((t) => (
+          <option key={t} value={t}>
+            {t === 'CIDADE' ? 'Cidade ou lugar (fica em claro)' : TYPE_TITLE[t].replace(/s$/, '')}
+          </option>
+        ))}
+        <option value="OUTRO">Outros (digite o que é)</option>
+      </select>
+      {type === 'OUTRO' && (
+        <form
+          className="inline-form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const value = category.trim();
+            if (!value) return;
+            remember('customCategories', value);
+            void run((c) => classifyOther(c, entity.id, value));
+          }}
+        >
+          <label htmlFor={`${id}-cat`}>O que é?</label>
+          <input
+            id={`${id}-cat`}
+            list={`${id}-cats`}
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            placeholder="Ex.: Organização criminosa"
+            maxLength={60}
+          />
+          <datalist id={`${id}-cats`}>
+            {settings.customCategories.map((c) => (
+              <option key={c} value={c} />
+            ))}
+          </datalist>
+          <button type="submit" disabled={!category.trim() || category.trim() === entity.category}>
+            Salvar
+          </button>
+          <p className="hint">Fica em claro no texto; a descrição vai para a legenda.</p>
+        </form>
+      )}
+    </div>
+  );
+}
+
+/** Apelidos da pessoa (B1): cada um com editar e excluir, e um campo para digitar outro. */
 function NicknameField({
   entity,
   content,
@@ -942,38 +1060,110 @@ function NicknameField({
   const [nickname, setNickname] = useState('');
   const linked = content.entities.filter((e) => e.type === 'APELIDO' && e.linkedTo === entity.id);
   return (
-    <form
-      className="inline-form nickname-form"
-      onSubmit={(e) => {
-        e.preventDefault();
-        const value = nickname.trim();
-        if (value.length < 2) return;
-        void run((c) => addNickname(c, entity.id, value));
-        setNickname('');
-      }}
-    >
-      <label htmlFor={`${id}-nick`}>Apelido (vulgo)</label>
+    <div className="nicknames">
       {linked.length > 0 && (
-        <span className="meta">
-          {linked
-            .map((a) =>
-              a.decision === 'pseudonymize'
-                ? `${a.canonical} → ${labelOf(a, data.byId)}`
-                : a.canonical,
-            )
-            .join('; ')}
-        </span>
+        <ul className="nickname-list" aria-label="Apelidos">
+          {linked.map((a) => (
+            <NicknameItem key={a.id} nickname={a} data={data} run={run} />
+          ))}
+        </ul>
       )}
-      <input
-        id={`${id}-nick`}
-        value={nickname}
-        onChange={(e) => setNickname(e.target.value)}
-        placeholder="Ex.: Galego"
-        maxLength={60}
-      />
-      <button type="submit" disabled={nickname.trim().length < 2}>
-        Adicionar apelido
-      </button>
-    </form>
+      <form
+        className="inline-form nickname-form"
+        onSubmit={(e) => {
+          e.preventDefault();
+          const value = nickname.trim();
+          if (value.length < 2) return;
+          void run((c) => addNickname(c, entity.id, value));
+          setNickname('');
+        }}
+      >
+        <label htmlFor={`${id}-nick`}>Apelido (vulgo)</label>
+        <input
+          id={`${id}-nick`}
+          value={nickname}
+          onChange={(e) => setNickname(e.target.value)}
+          placeholder="Ex.: Galego"
+          maxLength={60}
+        />
+        <button type="submit" disabled={nickname.trim().length < 2}>
+          Adicionar apelido
+        </button>
+      </form>
+    </div>
+  );
+}
+
+function NicknameItem({
+  nickname,
+  data,
+  run,
+}: {
+  nickname: StoredEntity;
+  data: ReviewData;
+  run: Run;
+}) {
+  const id = useId();
+  const [mode, setMode] = useState<'view' | 'edit' | 'delete'>('view');
+  const [text, setText] = useState(nickname.canonical);
+  const label = nickname.decision === 'pseudonymize' ? labelOf(nickname, data.byId) : 'em claro';
+  return (
+    <li className="nickname-item">
+      {mode === 'edit' ? (
+        <form
+          className="inline-form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void run((c) => renameEntity(c, nickname.id, text));
+            setMode('view');
+          }}
+        >
+          <label htmlFor={`${id}-edit`} className="visually-hidden">
+            Editar apelido
+          </label>
+          <input id={`${id}-edit`} value={text} onChange={(e) => setText(e.target.value)} />
+          <button type="submit" className="primary" disabled={text.trim().length < 2}>
+            Salvar
+          </button>
+          <button type="button" onClick={() => setMode('view')}>
+            Cancelar
+          </button>
+        </form>
+      ) : (
+        <>
+          <span>
+            <strong>{nickname.canonical}</strong> → {label}
+          </span>
+          <span className="actions">
+            <button type="button" onClick={() => setMode('edit')}>
+              Editar
+            </button>
+            <button
+              type="button"
+              className="danger-outline icon-button"
+              aria-label={`Excluir o apelido ${nickname.canonical}`}
+              onClick={() => setMode('delete')}
+            >
+              ✕
+            </button>
+          </span>
+          {mode === 'delete' && (
+            <span className="confirm-inline" role="alertdialog" aria-label="Excluir apelido">
+              Excluir “{nickname.canonical}”? Ele deixará de ser substituído no texto.
+              <button type="button" onClick={() => setMode('view')}>
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="danger"
+                onClick={() => void run((c) => discard(c, nickname.id))}
+              >
+                Excluir
+              </button>
+            </span>
+          )}
+        </>
+      )}
+    </li>
   );
 }

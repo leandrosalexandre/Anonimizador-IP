@@ -1465,3 +1465,97 @@ mark.reid-unknown {
 .relation-form h3 {
   margin-top: 0;
 }
+
+/* Revisão: seções retráteis, marcar todos, botões em lote (alvos de toque ≥ 44 px) */
+.all-people {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+}
+
+.bulk-choice {
+  flex: 1 1 18rem;
+}
+
+.bulk-choice .hint {
+  margin: 0.25rem 0 0;
+}
+
+.list-controls {
+  align-items: center;
+}
+
+.collapse-toggle {
+  min-height: var(--touch);
+  background: none;
+  border: none;
+  padding: 0 0.25rem;
+  font: inherit;
+  font-weight: 600;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.group-head {
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.select-all {
+  min-height: var(--touch);
+}
+
+.select-all input,
+.entity-row .row-main > input[type='checkbox'],
+.minor-field input {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.select-all-text {
+  font-size: 0.875rem;
+}
+
+.authorities > .subgroups {
+  padding-left: 0.75rem;
+  border-left: 3px solid var(--border);
+}
+
+.minor-field {
+  min-height: var(--touch);
+}
+
+.minor-field.prominent {
+  padding: 0.5rem 0.75rem;
+  border: 2px solid var(--warn);
+  border-radius: var(--radius);
+  background: var(--warn-bg);
+  font-weight: 600;
+}
+
+.nickname-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 0.5rem;
+}
+
+.nickname-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
+}
+
+.icon-button {
+  min-width: var(--touch);
+}
+
+.confirm-inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}

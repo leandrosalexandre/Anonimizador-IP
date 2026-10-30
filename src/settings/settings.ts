@@ -18,6 +18,10 @@ export interface AppSettings {
   aiInstructions: string | null;
   /** Tipos de dado a pseudonimizar (nomes de pessoas sempre). */
   enabledTypes: EntityType[];
+  /** Descrições criadas pelo usuário para termos "Outros" ("Organização criminosa"). */
+  customCategories: string[];
+  /** Funções de autoridade criadas pelo usuário em "Outros" ("Guarda Municipal"). */
+  customPositions: string[];
   /**
    * Termos ensinados na revisão como "não é dado pessoal" (bairro, rua, órgão…), com o motivo
    * digitado. Valem para todos os cofres; ficam em claro como as demais preferências.
@@ -39,6 +43,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   aiInstructions: null,
   enabledTypes: [...DEFAULT_ENABLED_TYPES],
   learnedTerms: [],
+  customCategories: [],
+  customPositions: [],
 };
 export const IDLE_LOCK_OPTIONS = [1, 2, 5, 10, 15, 30, 60] as const;
 export const LOCK_ON_HIDE_DELAY_MS: Record<LockOnHide, number | null> = {
@@ -49,10 +55,29 @@ export const LOCK_ON_HIDE_DELAY_MS: Record<LockOnHide, number | null> = {
 };
 
 const STORAGE_KEY = 'anonimizador-ip:settings';
-/** 2: o padrão de `lockOnHide` deixou de ser "immediate". */
-const STORAGE_VERSION = 2;
+/**
+ * 2: o padrão de `lockOnHide` deixou de ser "immediate".
+ * 3: data de nascimento saiu do escopo padrão (era gravada junto com os demais tipos).
+ */
+const STORAGE_VERSION = 3;
 const listeners = new Set<() => void>();
 let cached: AppSettings | null = null;
+
+/** Lista de textos curtos, sem repetição (sem diferenciar caixa). */
+function stringList(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const v of value) {
+    if (typeof v !== 'string') continue;
+    const t = v.trim().slice(0, 60);
+    const k = t.toLocaleLowerCase('pt-BR');
+    if (!t || seen.has(k)) continue;
+    seen.add(k);
+    out.push(t);
+  }
+  return out.slice(0, 200);
+}
 
 function sanitize(value: unknown): AppSettings {
   const raw = (typeof value === 'object' && value !== null ? value : {}) as Partial<AppSettings>;
@@ -95,6 +120,8 @@ function sanitize(value: unknown): AppSettings {
           .map((t) => ({ text: t.text.trim().slice(0, 120), kind: t.kind.trim().slice(0, 40) }))
           .slice(0, 2000)
       : [],
+    customCategories: stringList(raw.customCategories),
+    customPositions: stringList(raw.customPositions),
   };
 }
 
@@ -104,8 +131,12 @@ export function getSettings(): AppSettings {
     const stored = localStorage.getItem(STORAGE_KEY);
     const parsed = (stored ? JSON.parse(stored) : null) as Record<string, unknown> | null;
     // Antes da versão 2, "immediate" era só o padrão antigo gravado junto com outras preferências.
-    if (parsed && parsed.version !== STORAGE_VERSION && parsed.lockOnHide === 'immediate') {
+    const version = typeof parsed?.version === 'number' ? parsed.version : 1;
+    if (parsed && version < 2 && parsed.lockOnHide === 'immediate') {
       delete parsed.lockOnHide;
+    }
+    if (parsed && version < 3 && Array.isArray(parsed.enabledTypes)) {
+      parsed.enabledTypes = parsed.enabledTypes.filter((t) => t !== 'DATA_NASCIMENTO');
     }
     cached = sanitize(parsed);
   } catch {

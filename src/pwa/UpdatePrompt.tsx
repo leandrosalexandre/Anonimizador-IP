@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
+import { useSession } from '../vault/session';
 
 /** Avisa quando há nova versão do app ou quando ele já está pronto para uso offline. */
 export function UpdatePrompt() {
@@ -8,6 +9,14 @@ export function UpdatePrompt() {
     offlineReady: [offlineReady, setOfflineReady],
     updateServiceWorker,
   } = useRegisterSW();
+
+  // Ao reabrir o app com uma versão nova baixada e nenhum cofre aberto, atualiza sozinho (nada
+  // a perder). Com um cofre aberto, pergunta antes, para não interromper o trabalho.
+  const session = useSession();
+  const locked = session.status !== 'unlocked';
+  useEffect(() => {
+    if (needRefresh && locked) void updateServiceWorker(true);
+  }, [needRefresh, locked, updateServiceWorker]);
 
   // O aviso de "pronto para offline" é só informativo: some sozinho.
   useEffect(() => {

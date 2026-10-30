@@ -22,7 +22,6 @@ const PART_SIZES: [string, number | null][] = [
   ['~100 mil caracteres', 100_000],
   ['~150 mil caracteres', 150_000],
 ];
-const PREVIEW_LIMIT = 20_000;
 
 const KIND_LABEL: Record<ResidualItem['kind'], string> = {
   ...Object.fromEntries(ENTITY_TYPES.map((t) => [t, TYPE_LABEL[t].toLocaleLowerCase('pt-BR')])),
@@ -100,7 +99,6 @@ function ExportView({ content }: { content: VaultContent }) {
   const [includeLegend, setIncludeLegend] = useState(true);
   const [partSize, setPartSize] = useState<number | null>(null);
   const [previewPart, setPreviewPart] = useState(0);
-  const [showAll, setShowAll] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [confirmAll, setConfirmAll] = useState(false);
 
@@ -328,14 +326,14 @@ function ExportView({ content }: { content: VaultContent }) {
 
       <div className="panel">
         <h2>Pré-visualização</h2>
+        <p className="hint">
+          Texto completo, sem cortes ({part.length.toLocaleString('pt-BR')} caracteres). A última
+          linha (“=== FIM DO DOCUMENTO …” ou “=== FIM DA PARTE …”) confirma que nada ficou de fora
+          ao copiar ou colar.
+        </p>
         <pre className="page-text export-preview" aria-label="Texto exportado">
-          {showAll || part.length <= PREVIEW_LIMIT ? part : `${part.slice(0, PREVIEW_LIMIT)}\n…`}
+          {part}
         </pre>
-        {part.length > PREVIEW_LIMIT && !showAll && (
-          <button type="button" onClick={() => setShowAll(true)}>
-            Mostrar o texto completo
-          </button>
-        )}
       </div>
     </>
   );

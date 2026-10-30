@@ -8,10 +8,15 @@ import { duplicateLabels, labelOf, nextIndex } from './labels';
 import { buildLocator, substitute } from './locate';
 import { buildLegend } from '../export/build';
 import { paragraphAround } from './warnings';
+import { authoritySection } from './authority';
 import {
   acceptSuggestion,
   addManual,
   addNickname,
+  classifyOther,
+  pseudonymizeInvolved,
+  renameEntity,
+  setMinor,
   applyDetection,
   assignRole,
   changeType,
@@ -354,7 +359,7 @@ describe('parentesco, cargo, apelido e contexto', () => {
       const e = byId.get(id);
       return e && e.decision === 'pseudonymize' ? labelOf(e, byId) : null;
     });
-    expect(legend).toContain('[FAMILIAR 1] = familiar (mãe de [TESTEMUNHA 1])');
+    expect(legend).toContain('[FAMILIAR 1] = mãe de [TESTEMUNHA 1]');
     c = setPosition(c, byCanonical(c, /Paulo Roberto/).id, 'Oficial Investigador de Polícia');
     expect(byCanonical(c, /Paulo Roberto/).position).toBe('Oficial Investigador de Polícia');
   });
@@ -373,5 +378,72 @@ describe('parentesco, cargo, apelido e contexto', () => {
     const i = text.indexOf('Maria');
     const r = paragraphAround(text, i, i + 5);
     expect(text.slice(r.start, r.end)).toBe('QUE viu Maria chegar;\nQUE Maria chorava.');
+  });
+});
+
+describe('melhorias da revisão (parte B)', () => {
+  const TEXT4 =
+    'Vítima: ANA PAULA ROCHA. Autor: JOÃO PEDRO ALVES, vulgo "Galego". ' +
+    'Testemunha: RITA GOMES LIMA. Mãe: MARIA HELENA ROCHA.\n' +
+    'Médico: Dr. HENRIQUE MOURA LEITE - CRM 12345\n' +
+    'Delegado de Polícia Civil: PAULO ROBERTO LIMA\nQUE o grupo CV atua no bairro.';
+  const fresh = () =>
+    applyDetection(emptyVaultContent(), detectEntities([{ docId: 'd', pdfPage: 1, text: TEXT4 }]));
+  const legendOf = (c: VaultContent) => {
+    const byId = new Map(c.entities.map((e) => [e.id, e]));
+    return (
+      buildLegend(c.entities, (id) => {
+        const e = byId.get(id);
+        return e && e.decision === 'pseudonymize' ? labelOf(e, byId) : null;
+      }) ?? ''
+    );
+  };
+
+  it('B2. menor de idade vai para a legenda; o marcador não muda', () => {
+    let c = fresh();
+    c = setMinor(c, byCanonical(c, /João Pedro/).id, true);
+    expect(legendOf(c)).toContain('[AUTOR 1] = autor (menor de idade à época do fato)');
+    expect(pseudonymize(c, 'JOÃO PEDRO ALVES')).toBe('[AUTOR 1]');
+  });
+
+  it('B3. pseudonimizar envolvidos mantém autoridades e não mexe em médico', () => {
+    const c = pseudonymizeInvolved(fresh());
+    expect(byCanonical(c, /Paulo Roberto/).decision).toBe('keep');
+    for (const re of [/Ana Paula/, /João Pedro/, /Rita Gomes/, /Maria Helena/])
+      expect(byCanonical(c, re).reviewed, String(re)).toBe(true);
+    expect(byCanonical(c, /Henrique/).reviewed).toBe(false);
+    expect(c.entities.find((e) => e.type === 'APELIDO')?.reviewed).toBe(true);
+  });
+
+  it('B4. "Outros" com descrição: termo em claro e descrito na legenda', () => {
+    let c = addManual(fresh(), 'CV', 'OUTRO').content;
+    const cv = c.entities.find((e) => e.canonical === 'CV');
+    c = classifyOther(c, cv?.id ?? '', 'Organização criminosa');
+    expect(c.entities.find((e) => e.canonical === 'CV')).toMatchObject({
+      type: 'OUTRO',
+      category: 'Organização criminosa',
+      decision: 'keep',
+    });
+    expect(legendOf(c)).toContain('Termos classificados (em claro): CV = Organização criminosa.');
+    expect(pseudonymize(c, 'o grupo CV atua')).toBe('o grupo CV atua');
+  });
+
+  it('B1. editar apelido: o texto antigo deixa de ser substituído', () => {
+    let c = fresh();
+    const galego = c.entities.find((e) => e.type === 'APELIDO');
+    c = renameEntity(c, galego?.id ?? '', 'Galeguinho');
+    expect(pseudonymize(c, 'vulgo Galego; vulgo Galeguinho')).toBe(
+      'vulgo Galego; vulgo [APELIDO DE AUTOR 1]',
+    );
+  });
+
+  it('B7. autoridade vai para a seção da sua função', () => {
+    const c = fresh();
+    expect(authoritySection(byCanonical(c, /Paulo Roberto/))).toBe('Delegado');
+    const pm = { ...byCanonical(c, /Paulo Roberto/), position: 'Soldado PM' };
+    expect(authoritySection(pm)).toBe('Policial Militar');
+    expect(authoritySection({ ...pm, position: 'Guarda Municipal' })).toBe(
+      'Outros — Guarda Municipal',
+    );
   });
 });

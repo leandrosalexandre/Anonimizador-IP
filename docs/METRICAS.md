@@ -66,7 +66,7 @@ revisão humana é obrigatória.
 
 ## Testes automatizados
 
-- **Unitários (Vitest): 217** — criptografia, cofre e `.ipcofre`, força da senha, bloqueio
+- **Unitários (Vitest): 243** — criptografia, cofre e `.ipcofre`, força da senha, bloqueio
   automático, extração de PDF e folhas, pré-processamento e texto do OCR, cada detector,
   agrupamento de variantes, revisão, substituição, exportação, varredura residual e
   reidentificação tolerante.

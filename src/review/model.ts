@@ -127,6 +127,8 @@ export function applyDetection(
       ...(d.roleConflicts.length ? { roleConflicts: [...d.roleConflicts] } : {}),
       ...(d.relation ? { relation: d.relation } : {}),
       ...(d.position ? { position: d.position } : {}),
+      ...(d.relationSource ? { relationSource: d.relationSource } : {}),
+      ...(d.relationUncertain ? { relationUncertain: true } : {}),
     };
     if (entity.decision === 'pseudonymize') entity.index = nextIndex(entities, entity);
     entities.push(entity);
@@ -382,6 +384,8 @@ export function setRelation(
     ...e,
     relation: value,
     relatedTo: relatedTo && relatedTo !== id ? relatedTo : null,
+    relationManual: true,
+    relationUncertain: false,
     reviewed: true,
   }));
 }
@@ -678,6 +682,95 @@ export function resetReview(content: VaultContent): VaultContent {
   delete config.detectedAt;
   delete config.separate;
   return { ...content, entities: [], config };
+}
+
+/** Menor de idade à época do fato (vai para a legenda; o marcador não muda). */
+export function setMinor(content: VaultContent, id: string, minor: boolean): VaultContent {
+  return update(content, id, (e) => ({ ...e, minor, reviewed: true }));
+}
+
+/**
+ * Classifica um termo como "Outros" com a descrição digitada ("CV" = "Organização criminosa").
+ * O termo fica em claro, e a descrição aparece na legenda.
+ */
+export function classifyOther(content: VaultContent, id: string, category: string): VaultContent {
+  const value = category.trim().slice(0, 60);
+  if (!value) return content;
+  const typed = changeType(content, id, 'OUTRO');
+  return update(typed, id, (e) => ({ ...e, category: value, decision: 'keep', index: null }));
+}
+
+/** Papéis dos envolvidos (B3: "Pseudonimizar autores, vítimas, testemunhas e familiares"). */
+export const INVOLVED_ROLES = new Set([
+  'VÍTIMA',
+  'AUTOR',
+  'INVESTIGADO',
+  'CONDUZIDO',
+  'TESTEMUNHA',
+  'INFORMANTE',
+  'COMUNICANTE',
+  'FAMILIAR',
+]);
+
+/**
+ * Pseudonimiza e confirma só os envolvidos (e os apelidos deles). Autoridades mantidas, médicos,
+ * advogados e pessoas sem papel não mudam.
+ */
+export function pseudonymizeInvolved(content: VaultContent): VaultContent {
+  const byId = new Map(content.entities.map((e) => [e.id, e]));
+  const involved = (e: StoredEntity | undefined): boolean =>
+    !!e &&
+    e.type === 'PESSOA' &&
+    !e.suggested &&
+    e.decision === 'pseudonymize' &&
+    !!e.role &&
+    INVOLVED_ROLES.has(normalizeRole(e.role));
+  let entities = content.entities;
+  for (const e of content.entities) {
+    const ok =
+      involved(e) || (e.type === 'APELIDO' && !e.suggested && involved(byId.get(e.linkedTo ?? '')));
+    if (!ok) continue;
+    entities = entities.map((x) =>
+      x.id === e.id
+        ? {
+            ...x,
+            decision: 'pseudonymize',
+            reviewed: true,
+            index: x.index ?? nextIndex(entities, x, x.id),
+          }
+        : x,
+    );
+  }
+  return compactIndexes(withEntities(content, entities));
+}
+
+/** Ações em lote sobre as entidades marcadas na lista. */
+export function setDecisionMany(
+  content: VaultContent,
+  ids: readonly string[],
+  decision: StoredEntity['decision'],
+): VaultContent {
+  return ids.reduce((c, id) => setDecision(c, id, decision), content);
+}
+
+/**
+ * Edita o texto de um apelido (ou outro dado): o texto antigo deixa de ser substituído e não
+ * volta numa nova detecção.
+ */
+export function renameEntity(content: VaultContent, id: string, text: string): VaultContent {
+  const entity = content.entities.find((e) => e.id === id);
+  const value = text.replace(/\s+/g, ' ').trim();
+  if (!entity || value.length < 2 || vkey(value) === vkey(entity.canonical)) return content;
+  const old = entity.variants.filter((v) => vkey(v) !== vkey(value));
+  const dismissed = [...new Set([...(content.config.dismissed ?? []), ...old])].filter(
+    (d) => vkey(d) !== vkey(value),
+  );
+  return update({ ...content, config: { ...content.config, dismissed } }, id, (e) => ({
+    ...e,
+    canonical: value,
+    variants: [value],
+    reviewed: true,
+  }));
 }
 
 /** Marca a primeira exportação (a partir daí os números dos marcadores ficam fixos). */
