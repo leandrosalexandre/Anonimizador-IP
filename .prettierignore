@@ -1,0 +1,8 @@
+dist
+dev-dist
+coverage
+test-results
+playwright-report
+package-lock.json
+SPEC.md
+test/fixtures
