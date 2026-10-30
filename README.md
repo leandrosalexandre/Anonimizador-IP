@@ -7,8 +7,8 @@ telemetria nem comunicação com IA — o texto é copiado e colado manualmente.
 A especificação completa está em [`SPEC.md`](./SPEC.md); as decisões técnicas, em
 [`docs/DECISOES.md`](./docs/DECISOES.md).
 
-> **Estado atual:** Fase 0 — estrutura, navegação e funcionamento offline. As telas ainda são
-> provisórias.
+> **Estado atual:** Fase 1 — cofres criptografados (criar, abrir, bloquear, exportar, importar e
+> apagar). As telas de Documentos em diante ainda são provisórias.
 
 ## Endereço
 
@@ -47,6 +47,19 @@ O app verifica se há versão nova sempre que é aberto com internet. Quando hou
 aplicada sozinha, para não interromper uma revisão em andamento. Sem internet, o app continua na
 versão instalada. Os cofres (Fase 1 em diante) ficam guardados no aparelho e não são afetados pela
 atualização.
+
+## Cofres e segurança
+
+- Cada inquérito fica num **cofre** protegido por senha. O conteúdo é gravado no aparelho só
+  cifrado (AES-GCM 256, chave derivada da senha com PBKDF2-SHA-256 e 600.000 iterações). O nome do
+  cofre e as datas ficam visíveis para listar os cofres, por isso **não use nomes de pessoas no
+  nome do cofre**.
+- **Não há recuperação de senha.** Sem a senha, o cofre não pode ser aberto.
+- O cofre **bloqueia sozinho** após 10 minutos sem uso e quando o app sai da tela. Os dois tempos
+  podem ser ajustados em Configurações.
+- **Levar para outro aparelho:** em Cofres, toque em **Exportar** para baixar um arquivo
+  `.ipcofre` (cifrado com a mesma senha). No outro aparelho, use **Importar cofre** e digite a
+  senha.
 
 ## Desenvolvimento
 

@@ -1,9 +1,34 @@
+import type { ReactNode } from 'react';
 import { Navigate, NavLink, Route, Routes } from 'react-router';
-import { ROUTES } from './routes';
+import { ROUTES, type AppRoute } from './routes';
 import { PlaceholderPage } from './pages/PlaceholderPage';
 import { NotFoundPage } from './pages/NotFoundPage';
+import { SettingsPage } from './pages/SettingsPage';
+import { VaultsPage } from './pages/vaults/VaultsPage';
+import { AutoLockController } from './components/AutoLockController';
+import { RequireVault } from './components/RequireVault';
+import { VaultStatus } from './components/VaultStatus';
 import { UpdatePrompt } from './pwa/UpdatePrompt';
 import { OnlineStatus } from './pwa/OnlineStatus';
+
+function pageFor(route: AppRoute): ReactNode {
+  switch (route.path) {
+    case '/cofres':
+      return <VaultsPage />;
+    case '/configuracoes':
+      return <SettingsPage />;
+    default:
+      return (
+        <PlaceholderPage route={route}>
+          <RequireVault>
+            <div className="empty-state">
+              <p>Esta etapa ainda está em construção.</p>
+            </div>
+          </RequireVault>
+        </PlaceholderPage>
+      );
+  }
+}
 
 export function App() {
   return (
@@ -16,7 +41,10 @@ export function App() {
           <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" width="28" height="28" />
           <span>Anonimizador de IP</span>
         </div>
-        <OnlineStatus />
+        <div className="header-status">
+          <VaultStatus />
+          <OnlineStatus />
+        </div>
       </header>
       <nav className="app-nav" aria-label="Etapas">
         <ol>
@@ -36,11 +64,12 @@ export function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/cofres" replace />} />
           {ROUTES.map((route) => (
-            <Route key={route.path} path={route.path} element={<PlaceholderPage route={route} />} />
+            <Route key={route.path} path={route.path} element={pageFor(route)} />
           ))}
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>
+      <AutoLockController />
       <UpdatePrompt />
     </div>
   );
