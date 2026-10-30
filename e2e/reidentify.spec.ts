@@ -1,11 +1,14 @@
 import { expect, test, type Page } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
-import { trackForeignRequests } from './helpers';
+import { enableAllTypes, trackForeignRequests } from './helpers';
 
 const PASSWORD = 'girassol tapete nuvem bicicleta';
 const FIXTURE = new URL('../test/fixtures/ip-ficticio-texto.pdf', import.meta.url).pathname;
 
 test.describe.configure({ timeout: 120_000 });
+
+// Aceites do SPEC com todos os tipos ativos (placas, endereços, e-mails…).
+test.beforeEach(({ page }) => enableAllTypes(page));
 
 async function reviewedVault(page: Page) {
   await page.goto('./#/cofres');
@@ -32,7 +35,7 @@ async function reviewedVault(page: Page) {
 
 // Análise "devolvida pela IA" com as variações que o app precisa tolerar.
 const ANALYSIS = [
-  'Síntese: a [VÍTIMA 1] reconheceu o [INVESTIGADO 1], vulgo "[APELIDO DE INVESTIGADO 1]" (fls. 5).',
+  'Síntese: a [VÍTIMA 1] reconheceu o [AUTOR 1], vulgo "[APELIDO DE AUTOR 1]" (fls. 5).',
   'A Vitima 1 informou o CPF [CPF 1]; a vítima 1 mora na [ENDEREÇO DE VÍTIMA 1].',
   'As TESTEMUNHAS 1 e 2 confirmam a dinâmica.',
   'Não há elementos contra a [VÍTIMA 9].',

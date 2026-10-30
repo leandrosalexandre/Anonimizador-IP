@@ -1,6 +1,7 @@
 // Agrupamento de variantes em entidades (SPEC Fase 4): "MARIA DA SILVA SOUZA", "Maria Souza" e
 // "Maria" viram a mesma pessoa quando os tokens são compatíveis. Casos ambíguos (dois "João")
 // ficam como sugestão, nunca como fusão automática. Tolera erros de OCR de 1 a 2 caracteres.
+import { ROLE_PRIORITY } from './types';
 import type {
   Candidate,
   Decision,
@@ -10,6 +11,9 @@ import type {
   PersonRole,
 } from './types';
 import { fold, isUpper, nameTokens, ocrDigits, onlyDigits, titleCase, tokensMatch } from './text';
+
+/** Máximo de palavras num nome "limpo" (acima disso, provavelmente pegou texto a mais). */
+const MAX_CLEAN_TOKENS = 7;
 
 export interface LocatedCandidate extends Candidate {
   docId: string;
@@ -33,6 +37,8 @@ export function dataKey(type: EntityType, text: string): string {
     case 'CEP':
     case 'NUM_PROCESSO':
     case 'CNH':
+    case 'TITULO_ELEITOR':
+    case 'CNS':
     case 'RG': {
       const digits = onlyDigits(ocrDigits(text));
       // Telefone com e sem DDD/+55: agrupa pelos 8 últimos dígitos e DDD quando houver.
@@ -51,6 +57,9 @@ export function dataKey(type: EntityType, text: string): string {
         .replace(/\(@|@\)/, '@');
     case 'CHAVE_PIX':
       return text.toLowerCase().replace(/\s+/g, '');
+    case 'PASSAPORTE':
+    case 'PRONTUARIO':
+      return text.toUpperCase().replace(/[^A-Z0-9]/g, '');
     case 'CONTA_BANCARIA':
     case 'NUM_BO':
     case 'NUM_IP':
@@ -74,20 +83,36 @@ function tokensFit(small: string[], big: string[], fuzzy: boolean): boolean {
   return true;
 }
 
-/** Forma canônica preferida: a mais longa, em caixa mista ("MARIA DA SILVA" → "Maria da Silva"). */
-function canonicalOf(members: readonly LocatedCandidate[]): string {
-  const best = bestVariant(members);
+/** Forma canônica preferida: a mais completa entre as "limpas", em caixa mista. */
+function canonicalOf(
+  members: readonly LocatedCandidate[],
+  exclusions: ReadonlySet<string>,
+): string {
+  const best = bestVariant(members, exclusions);
   return isUpper(best) ? titleCase(best) : best;
 }
 
-function bestVariant(members: readonly LocatedCandidate[]): string {
+/** Variante sem palavras da lista de exclusão e com no máximo 7 palavras. */
+export function isCleanName(text: string, exclusions: ReadonlySet<string>): boolean {
+  const tokens = nameTokens(text);
+  return tokens.length <= MAX_CLEAN_TOKENS && !tokens.some((t) => exclusions.has(t));
+}
+
+function bestVariant(
+  members: readonly LocatedCandidate[],
+  exclusions: ReadonlySet<string>,
+): string {
   const texts = members.map((m) => m.text.replace(/\s+/g, ' ').trim());
+  const clean = texts.filter((t) => isCleanName(t, exclusions));
   return (
-    [...texts].sort((a, b) => {
+    [...(clean.length ? clean : texts)].sort((a, b) => {
       const tokens = nameTokens(b).length - nameTokens(a).length;
       if (tokens) return tokens;
       const upper = Number(isUpper(a)) - Number(isUpper(b));
       if (upper) return upper;
+      // Com acentos é preferível ("Antônia" a "ANTONIA").
+      const accents = b.normalize('NFD').length - b.length - (a.normalize('NFD').length - a.length);
+      if (accents) return accents;
       return b.length - a.length;
     })[0] ?? ''
   );
@@ -97,6 +122,16 @@ let idCounter = 0;
 function newId(prefix: string): string {
   idCounter += 1;
   return `${prefix}-${idCounter.toString(36)}`;
+}
+
+/** Membros do mesmo grupo (pai e mãe de uma filiação) nunca ficam no mesmo cluster. */
+function conflicts(cluster: Cluster, c: LocatedCandidate): boolean {
+  return (
+    !!c.group &&
+    cluster.members.some(
+      (m) => m.group === c.group && (m.start !== c.start || m.pdfPage !== c.pdfPage),
+    )
+  );
 }
 
 /** Agrupa pessoas (e apelidos) por compatibilidade de tokens. */
@@ -118,10 +153,9 @@ export function clusterPeople(
       pendingShort.push(c);
       continue;
     }
-    const exact = clusters.filter((k) => tokensFit(tokens, k.tokens, false));
-    const matches = exact.length
-      ? exact
-      : clusters.filter((k) => tokensFit(tokens, k.tokens, true));
+    const allowed = clusters.filter((k) => !conflicts(k, c));
+    const exact = allowed.filter((k) => tokensFit(tokens, k.tokens, false));
+    const matches = exact.length ? exact : allowed.filter((k) => tokensFit(tokens, k.tokens, true));
     if (matches.length === 1 && matches[0]) {
       matches[0].members.push(c);
     } else {
@@ -140,11 +174,12 @@ export function clusterPeople(
   for (const c of pendingShort) {
     const token = nameTokens(c.text)[0] ?? '';
     // Prefere casar com o primeiro nome; depois com qualquer token.
-    const byFirst = clusters.filter((k) => k.tokens[0] === token);
-    const exact = byFirst.length ? byFirst : clusters.filter((k) => k.tokens.includes(token));
+    const allowed = clusters.filter((k) => !conflicts(k, c));
+    const byFirst = allowed.filter((k) => k.tokens[0] === token);
+    const exact = byFirst.length ? byFirst : allowed.filter((k) => k.tokens.includes(token));
     const matches = exact.length
       ? exact
-      : clusters.filter((k) => k.tokens.some((t) => tokensMatch(token, t, true)));
+      : allowed.filter((k) => k.tokens.some((t) => tokensMatch(token, t, true)));
     if (matches.length === 1 && matches[0]) {
       matches[0].members.push(c);
     } else {
@@ -198,37 +233,41 @@ export function clusterData(candidates: readonly LocatedCandidate[]): Cluster[] 
   return clusters.filter((k) => k.members.length > 0);
 }
 
-function majorityRole(members: readonly LocatedCandidate[]): PersonRole | null {
-  const counts = new Map<PersonRole, number>();
-  for (const m of members) if (m.role) counts.set(m.role, (counts.get(m.role) ?? 0) + 1);
-  let best: PersonRole | null = null;
-  let max = 0;
-  for (const [role, n] of counts) {
-    if (n > max) {
-      best = role;
-      max = n;
-    }
-  }
-  return best;
+/** Papel mais relevante entre os encontrados (VÍTIMA > AUTOR > … > FAMILIAR > PESSOA). */
+function priorityRole(members: readonly LocatedCandidate[]): {
+  role: PersonRole | null;
+  conflicts: PersonRole[];
+} {
+  const roles = [...new Set(members.map((m) => m.role).filter((r): r is PersonRole => !!r))];
+  roles.sort((a, b) => ROLE_PRIORITY.indexOf(a) - ROLE_PRIORITY.indexOf(b));
+  return { role: roles[0] ?? null, conflicts: roles.length > 1 ? roles : [] };
 }
 
-export function toEntity(cluster: Cluster): DetectedEntity {
+export function toEntity(
+  cluster: Cluster,
+  exclusions: ReadonlySet<string> = new Set(),
+): DetectedEntity {
   const members = cluster.members;
   const authorityVotes = members.filter((m) => m.authority).length;
+  const { role, conflicts: roleConflicts } =
+    cluster.type === 'PESSOA' ? priorityRole(members) : { role: null, conflicts: [] };
+  // Profissional identificado pelo contexto (médico, advogado) não é "mantido" como autoridade.
+  const professional = role === 'MÉDICO' || role === 'ADVOGADO';
   const decision: Decision =
-    authorityVotes > 0 && authorityVotes * 2 >= members.length ? 'keep' : 'pseudonymize';
+    !professional && authorityVotes > 0 && authorityVotes * 2 >= members.length
+      ? 'keep'
+      : 'pseudonymize';
   const occurrences: Occurrence[] = members
     .map((m) => ({ docId: m.docId, pdfPage: m.pdfPage, start: m.start, end: m.end, text: m.text }))
     .sort((a, b) => a.docId.localeCompare(b.docId) || a.pdfPage - b.pdfPage || a.start - b.start);
   const variants = [...new Set(members.map((m) => m.text.replace(/\s+/g, ' ').trim()))];
-  const role = cluster.type === 'PESSOA' ? majorityRole(members) : null;
   return {
     id: cluster.id,
     type: cluster.type,
     role,
     canonical:
       cluster.type === 'PESSOA' || cluster.type === 'APELIDO'
-        ? canonicalOf(members)
+        ? canonicalOf(members, exclusions)
         : (variants.sort((a, b) => b.length - a.length)[0] ?? ''),
     variants,
     decision,
@@ -237,5 +276,7 @@ export function toEntity(cluster: Cluster): DetectedEntity {
     linkedTo: null,
     ambiguousWith: [...cluster.ambiguousWith],
     detectors: [...new Set(members.flatMap((m) => m.detector.split('+')))],
+    suggestion: members.every((m) => m.suggestion),
+    roleConflicts,
   };
 }

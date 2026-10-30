@@ -104,6 +104,69 @@ export function detectCnh(text: string): Candidate[] {
   return [...text.matchAll(re)].map((m) => candidate('CNH', m, 0.95, 'cnh', 1));
 }
 
+// ---------------------------------------------------------------- Título, CNS, passaporte, prontuário
+
+/** Título de eleitor: 8 dígitos sequenciais, 2 da UF (01 a 28) e 2 verificadores. */
+export function isValidTituloEleitor(value: string): boolean {
+  const d = onlyDigits(value);
+  if (d.length !== 12) return false;
+  const uf = Number(d.slice(8, 10));
+  if (uf < 1 || uf > 28) return false;
+  let sum = 0;
+  for (let i = 0; i < 8; i++) sum += Number(d[i]) * (i + 2);
+  let dv1 = sum % 11;
+  if (dv1 === 10) dv1 = 0;
+  else if (dv1 === 0 && (uf === 1 || uf === 2)) dv1 = 1;
+  let dv2 = (Number(d[8]) * 7 + Number(d[9]) * 8 + dv1 * 9) % 11;
+  if (dv2 === 10) dv2 = 0;
+  else if (dv2 === 0 && (uf === 1 || uf === 2)) dv2 = 1;
+  return dv1 === Number(d[10]) && dv2 === Number(d[11]);
+}
+
+export function detectTituloEleitor(text: string): Candidate[] {
+  const re =
+    /\bt[íi]tulo(?:\s+de)?\s+eleitor(?:al)?\s*(?:n[º°o.]*)?\s*[:-]?\s*(\d{4}[\s.]?\d{4}[\s.]?\d{4})(?!\d)/giu;
+  return [...text.matchAll(re)].map((m) =>
+    candidate('TITULO_ELEITOR', m, isValidTituloEleitor(m[1] ?? '') ? 0.98 : 0.85, 'titulo', 1),
+  );
+}
+
+/** Cartão Nacional de Saúde (15 dígitos; definitivo começa com 1 ou 2, provisório com 7, 8 ou 9). */
+export function isValidCns(value: string): boolean {
+  const d = onlyDigits(value);
+  if (d.length !== 15 || !/^[12789]/.test(d)) return false;
+  let sum = 0;
+  for (let i = 0; i < 15; i++) sum += Number(d[i]) * (15 - i);
+  return sum % 11 === 0;
+}
+
+export function detectCns(text: string): Candidate[] {
+  const out: Candidate[] = [];
+  const labeled =
+    /\b(?:CNS|cart[ãa]o\s+(?:nacional\s+de\s+sa[úu]de|(?:do\s+)?SUS))\s*(?:n[º°o.]*)?\s*[:-]?\s*(\d{3}[\s.]?\d{4}[\s.]?\d{4}[\s.]?\d{4})(?!\d)/giu;
+  for (const m of text.matchAll(labeled)) {
+    out.push(candidate('CNS', m, isValidCns(m[1] ?? '') ? 0.98 : 0.85, 'cns', 1));
+  }
+  // Sem rótulo, só com os dígitos verificadores válidos e no formato 000 0000 0000 0000.
+  const bare = new RegExp(`${B}[12789]\\d{2} \\d{4} \\d{4} \\d{4}${E}`, 'gu');
+  for (const m of text.matchAll(bare)) {
+    if (!isValidCns(m[0]) || out.some((o) => o.start === m.index)) continue;
+    out.push(candidate('CNS', m, 0.9, 'cns'));
+  }
+  return out;
+}
+
+export function detectPassaporte(text: string): Candidate[] {
+  const re = /\bpassaporte\s*(?:n[º°o.]*)?\s*[:-]?\s*([A-Z]{2}\s?\d{6,7})(?![\p{L}\p{N}])/giu;
+  return [...text.matchAll(re)].map((m) => candidate('PASSAPORTE', m, 0.95, 'passaporte', 1));
+}
+
+export function detectProntuario(text: string): Candidate[] {
+  const re =
+    /\b(?:prontu[áa]rio(?:\s+m[ée]dico)?|registro\s+hospitalar|n[º°]\s*(?:do\s+)?atendimento)\s*(?:n[º°o.]*)?\s*[:-]?\s*([A-Z]{0,3}\d[\d./-]{1,18}\d)(?![\p{L}\p{N}])/giu;
+  return [...text.matchAll(re)].map((m) => candidate('PRONTUARIO', m, 0.95, 'prontuario', 1));
+}
+
 export function detectRenavam(text: string): Candidate[] {
   const re = /\bRenavam\s*(?:n[º°o.]*)?\s*[:-]?\s*([\dOo]{9,11})(?![\dOo])/giu;
   return [...text.matchAll(re)].map((m) => candidate('CHASSI_RENAVAM', m, 0.95, 'renavam', 1));
@@ -273,6 +336,10 @@ export const PATTERN_DETECTORS: ((text: string) => Candidate[])[] = [
   detectCnpj,
   detectRg,
   detectCnh,
+  detectTituloEleitor,
+  detectCns,
+  detectPassaporte,
+  detectProntuario,
   detectRenavam,
   detectChassi,
   detectPlaca,

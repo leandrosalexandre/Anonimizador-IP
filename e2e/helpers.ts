@@ -1,4 +1,5 @@
 import type { Page } from '@playwright/test';
+import { ENTITY_TYPES } from '../src/detectors/types';
 
 /** Registra toda requisição feita pela página (e por seus workers) para outra origem. */
 export function trackForeignRequests(page: Page, appOrigin: string): string[] {
@@ -23,4 +24,19 @@ export async function waitForServiceWorker(page: Page): Promise<void> {
       );
     }
   });
+}
+
+/**
+ * Ativa todos os tipos de dado (o padrão do app pseudonimiza só nomes e documentos pessoais).
+ * Os aceites das Fases 4 a 7 do SPEC incluem placas, endereços, e-mails e contas.
+ */
+export async function enableAllTypes(page: Page): Promise<void> {
+  await page.addInitScript(
+    (types) => {
+      const key = 'anonimizador-ip:settings';
+      if (!localStorage.getItem(key))
+        localStorage.setItem(key, JSON.stringify({ version: 2, enabledTypes: types }));
+    },
+    [...ENTITY_TYPES],
+  );
 }

@@ -2,12 +2,12 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 import { RequireVault } from '../../components/RequireVault';
 import { duplicateLabels } from '../../review/labels';
-import { reviewProgress } from '../../review/model';
+import { resetReview, reviewProgress } from '../../review/model';
 import { runDetection } from '../../review/runDetection';
 import { useReviewData } from '../../review/useReviewData';
 import { userMessage } from '../../utils/errors';
 import { formatDateTime } from '../../utils/format';
-import { useSession } from '../../vault/session';
+import { updateVaultContent, useSession } from '../../vault/session';
 import type { VaultContent } from '../../vault/types';
 import { EntityList } from './EntityList';
 import { TextView } from './TextView';
@@ -19,6 +19,7 @@ function ReviewView({ content }: { content: VaultContent }) {
   const [focusId, setFocusId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmReset, setConfirmReset] = useState(false);
 
   if (!data) return null;
   const hasText = data.pages.length > 0;
@@ -29,10 +30,12 @@ function ReviewView({ content }: { content: VaultContent }) {
     0,
   );
 
-  async function detect() {
+  async function detect(fromScratch = false) {
     setBusy(true);
     setError(null);
+    setConfirmReset(false);
     try {
+      if (fromScratch) await updateVaultContent(resetReview);
       await runDetection();
     } catch (e) {
       setError(userMessage(e));
@@ -63,8 +66,9 @@ function ReviewView({ content }: { content: VaultContent }) {
           </p>
         ) : (
           <p>
-            A detecção procura nomes, documentos, telefones, endereços e outros dados pessoais em
-            todas as páginas. Depois, revise cada sugestão.
+            A detecção procura nomes de pessoas e documentos pessoais (CPF, RG, telefone, data de
+            nascimento…) em todas as páginas. Outros tipos podem ser ativados em Configurações.
+            Depois, revise cada sugestão.
           </p>
         )}
         {pendingOcr > 0 && (
@@ -82,7 +86,30 @@ function ReviewView({ content }: { content: VaultContent }) {
                 ? 'Detectar de novo'
                 : 'Detectar dados pessoais'}
           </button>
+          {content.entities.length > 0 && !confirmReset && (
+            <button type="button" disabled={busy} onClick={() => setConfirmReset(true)}>
+              Recomeçar a revisão do zero
+            </button>
+          )}
         </div>
+        {confirmReset && (
+          <div className="panel danger" role="alertdialog" aria-label="Recomeçar a revisão">
+            <p>
+              Todas as entidades, papéis e decisões deste cofre serão apagados e a detecção será
+              feita de novo. Os documentos e as correções de texto continuam.
+              {content.config.exportedAt &&
+                ' Atenção: um texto já exportado usa os marcadores atuais; depois de recomeçar, os números podem mudar.'}
+            </p>
+            <div className="actions">
+              <button type="button" onClick={() => setConfirmReset(false)}>
+                Cancelar
+              </button>
+              <button type="button" className="danger" onClick={() => void detect(true)}>
+                Recomeçar
+              </button>
+            </div>
+          </div>
+        )}
         {error && (
           <p className="field-error" role="alert">
             {error}

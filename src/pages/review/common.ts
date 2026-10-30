@@ -6,6 +6,7 @@ import type { StoredEntity, VaultContent } from '../../vault/types';
 /** Classe de cor do destaque conforme papel/tipo. */
 export function highlightClass(entity: StoredEntity | undefined): string {
   if (!entity) return 'hl';
+  if (entity.suggested) return 'hl hl-suggested';
   if (entity.decision === 'keep') return 'hl hl-keep';
   const pending = entity.reviewed ? '' : ' hl-pending';
   if (entity.type !== 'PESSOA' && entity.type !== 'APELIDO') return `hl hl-dado${pending}`;
@@ -19,6 +20,8 @@ export function highlightClass(entity: StoredEntity | undefined): string {
     INFORMANTE: 'testemunha',
     COMUNICANTE: 'vitima',
     ADVOGADO: 'advogado',
+    MÉDICO: 'advogado',
+    PERITO: 'advogado',
     FAMILIAR: 'familiar',
   };
   return `hl hl-${map[role] ?? 'pessoa'}${pending}`;

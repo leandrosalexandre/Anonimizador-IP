@@ -4,6 +4,10 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { detectEntities } from '../src/detectors';
+import { ENTITY_TYPES } from '../src/detectors/types';
+
+/** Métricas do aceite da Fase 4: todos os tipos ativos. */
+const ALL = { types: ENTITY_TYPES };
 import { evaluate, formatReport, type Gabarito } from './detection-metrics';
 
 const gabarito = JSON.parse(
@@ -12,7 +16,7 @@ const gabarito = JSON.parse(
 
 describe('detecção no IP fictício (texto)', () => {
   const pages = gabarito.pages.map((p) => ({ docId: 'ip', pdfPage: p.pdfPage, text: p.text }));
-  const entities = detectEntities(pages);
+  const entities = detectEntities(pages, ALL);
   const report = evaluate(entities, new Map(pages.map((p) => [p.pdfPage, p.text])), gabarito);
   console.info(formatReport('IP fictício – PDF com texto', report));
   const recall = (type: string) => report.byType.find((t) => t.type === type)?.recall;
@@ -49,7 +53,7 @@ describe('detecção no IP fictício (texto do OCR do PDF escaneado)', () => {
     readFileSync(new URL('./fixtures/ocr-escaneado.json', import.meta.url), 'utf8'),
   ) as { pdfPage: number; text: string }[];
   const pages = ocr.map((p) => ({ docId: 'ip', pdfPage: p.pdfPage, text: p.text }));
-  const entities = detectEntities(pages);
+  const entities = detectEntities(pages, ALL);
   const report = evaluate(entities, new Map(pages.map((p) => [p.pdfPage, p.text])), gabarito, true);
   console.info(formatReport('IP fictício – texto do OCR', report));
   const recall = (type: string) => report.byType.find((t) => t.type === type)?.recall;

@@ -43,7 +43,11 @@ const DATE = /^\d{1,2}\/\d{1,2}\/\d{2,4}$/;
 export function scanResidual(
   pages: readonly ExportPage[],
   data: ReviewData,
-  options: { exclusions?: readonly string[]; ignored?: readonly string[] } = {},
+  options: {
+    exclusions?: readonly string[];
+    ignored?: readonly string[];
+    types?: readonly EntityType[];
+  } = {},
 ): ResidualItem[] {
   const exclusions = buildExclusions(options.exclusions);
   const ignored = new Set((options.ignored ?? []).map(residualKey));
@@ -83,7 +87,8 @@ export function scanResidual(
     );
     const original = data.byKey.get(page.key)?.text ?? '';
     const keptTexts = (data.located.get(page.key) ?? [])
-      .filter((l) => data.labelFor(l.entityId) === null)
+      // Sugestões não aplicadas não foram mantidas de propósito: continuam sendo verificadas.
+      .filter((l) => data.labelFor(l.entityId) === null && !data.byId.get(l.entityId)?.suggested)
       .map((l) => original.slice(l.start, l.end));
     const keptSpans: [number, number][] = [];
     for (const kept of new Set(keptTexts)) {
@@ -97,7 +102,11 @@ export function scanResidual(
     const taken: [number, number][] = [];
     const free = (s: number, e: number) => !taken.some(([a, b]) => a < e && s < b);
 
-    for (const c of detectPage(text, { exclusions: options.exclusions ?? [] })) {
+    const detectOptions = {
+      exclusions: options.exclusions ?? [],
+      ...(options.types ? { types: options.types } : {}),
+    };
+    for (const c of detectPage(text, detectOptions)) {
       if (c.authority) continue;
       add(c.type, c.text, page, c.start, c.end);
       taken.push([c.start, c.end]);

@@ -58,14 +58,48 @@ export function tokenTolerance(token: string): number {
 export function tokensMatch(a: string, b: string, fuzzy: boolean): boolean {
   if (a === b) return true;
   if (!fuzzy) return false;
+  // Masculino e feminino do mesmo prenome são pessoas diferentes ("Francisco" × "Francisca").
+  if (
+    a.length === b.length &&
+    a.slice(0, -1) === b.slice(0, -1) &&
+    /[oa]/.test(a.slice(-1) + b.slice(-1))
+  )
+    return false;
   const tol = Math.min(tokenTolerance(a), tokenTolerance(b));
   return tol > 0 && levenshtein(a, b, tol) <= tol;
 }
 
-/** Todas as ocorrências de `needle` em `text` (sem diferenciar caixa), em limites de palavra. */
+const ACCENT_CLASSES: Record<string, string> = {
+  a: 'aáàâãä',
+  e: 'eéèêë',
+  i: 'iíìîï',
+  o: 'oóòôõö',
+  u: 'uúùûü',
+  c: 'cç',
+  n: 'nñ',
+};
+
+/** Padrão de regex que casa `s` com ou sem acentos (usar com a flag "i" para ignorar a caixa). */
+export function accentInsensitive(s: string): string {
+  return [...s.trim()]
+    .map((ch) => {
+      if (/\s/.test(ch)) return '\\s+';
+      const base = stripAccents(ch).toLowerCase();
+      const cls = ACCENT_CLASSES[base];
+      if (cls) return `[${cls}${cls.toUpperCase()}]`;
+      return ch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    })
+    .join('')
+    .replace(/(?:\\s\+)+/g, '\\s+');
+}
+
+/** Todas as ocorrências de `needle` em `text`, em limites de palavra. */
 export function findAll(text: string, needle: string, caseSensitive = false): [number, number][] {
   if (!needle) return [];
-  const escaped = needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+');
+  // Sem diferenciar caixa, também não diferencia acentos ("ANTONIA" = "Antônia").
+  const escaped = caseSensitive
+    ? needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+')
+    : accentInsensitive(needle);
   const re = new RegExp(
     `(?<![\\p{L}\\p{N}])${escaped}(?![\\p{L}\\p{N}])`,
     caseSensitive ? 'gu' : 'giu',

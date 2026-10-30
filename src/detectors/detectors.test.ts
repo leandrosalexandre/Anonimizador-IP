@@ -23,10 +23,13 @@ import {
   isValidCnpj,
   isValidCpf,
 } from './patterns';
-import type { Candidate } from './types';
+import { ENTITY_TYPES, type Candidate } from './types';
+
+/** Testes dos detectores: todos os tipos ativos (o padrão do app é mais restrito). */
+const ALL = { types: ENTITY_TYPES };
 
 const texts = (cs: Candidate[]) => cs.map((c) => c.text);
-const people = (text: string) => detectPage(text).filter((c) => c.type === 'PESSOA');
+const people = (text: string) => detectPage(text, ALL).filter((c) => c.type === 'PESSOA');
 
 describe('CPF e CNPJ', () => {
   it('valida dígitos verificadores', () => {
@@ -239,7 +242,10 @@ describe('pessoas', () => {
   });
 
   it('apelidos', () => {
-    const cs = detectPage('o nacional conhecido como "Zé Pequeno"; vulgo GALEGO; Alcunha: Bigode');
+    const cs = detectPage(
+      'o nacional conhecido como "Zé Pequeno"; vulgo GALEGO; Alcunha: Bigode',
+      ALL,
+    );
     expect(cs.filter((c) => c.type === 'APELIDO').map((c) => c.text)).toEqual([
       'Zé Pequeno',
       'GALEGO',
@@ -248,7 +254,7 @@ describe('pessoas', () => {
   });
 
   it('empresas privadas', () => {
-    const cs = detectPage('na loja Comercial Silva & Filhos Ltda. e no Banco Exemplo S.A.');
+    const cs = detectPage('na loja Comercial Silva & Filhos Ltda. e no Banco Exemplo S.A.', ALL);
     const companies = cs.filter((c) => c.type === 'EMPRESA_PRIVADA');
     expect(companies.map((c) => [c.text, Boolean(c.authority)])).toEqual([
       ['Comercial Silva & Filhos Ltda.', false],
@@ -292,10 +298,13 @@ describe('agrupamento de variantes', () => {
   });
 
   it('agrupa dados com formatos diferentes', () => {
-    const entities = detectEntities([
-      page('tel (85) 98812-3456 e placa HXP-4821'),
-      page('telefone 85 98812-3456; placa HXP4821', 2),
-    ]);
+    const entities = detectEntities(
+      [
+        page('tel (85) 98812-3456 e placa HXP-4821'),
+        page('telefone 85 98812-3456; placa HXP4821', 2),
+      ],
+      ALL,
+    );
     expect(entities.filter((e) => e.type === 'TELEFONE')).toHaveLength(1);
     expect(entities.filter((e) => e.type === 'PLACA')).toHaveLength(1);
   });
@@ -303,12 +312,13 @@ describe('agrupamento de variantes', () => {
   it('respeita termos de exclusão e nomes a manter das configurações', () => {
     const text = 'QUE estava na Praça Ferreira com Pedro Alves Lima';
     const withExclusion = detectEntities([page('QUE Ferreira Gomes Lima chegou')], {
+      ...ALL,
       exclusions: ['Ferreira'],
     });
     expect(withExclusion.filter((e) => e.type === 'PESSOA').map((e) => e.canonical)).toEqual([
       'Gomes Lima',
     ]);
-    const kept = detectEntities([page(text)], { keepNames: ['Pedro Alves Lima'] });
+    const kept = detectEntities([page(text)], { ...ALL, keepNames: ['Pedro Alves Lima'] });
     expect(kept.find((e) => e.canonical === 'Pedro Alves Lima')?.decision).toBe('keep');
   });
 });

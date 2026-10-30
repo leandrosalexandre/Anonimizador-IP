@@ -1,17 +1,27 @@
-import { useId, useState } from 'react';
+import { useId, useState, useSyncExternalStore } from 'react';
 import { TYPE_LABEL, labelOf, normalizeRole } from '../../review/labels';
 import {
+  acceptSuggestion,
   addCustomRole,
   assignRole,
+  cleanName,
   confirm,
   discard,
+  keepSeparate,
   link,
-  merge,
   setCanonical,
   setDecision,
   setIndex,
   splitVariant,
+  unify,
 } from '../../review/model';
+import {
+  WARNING_TEXT,
+  contextAround,
+  entityWarnings,
+  suspiciousWords,
+} from '../../review/warnings';
+import { getSettings, subscribeSettings } from '../../settings/settings';
 import { formatFolhas, type ReviewData } from '../../review/useReviewData';
 import { userMessage } from '../../utils/errors';
 import type { StoredEntity, VaultContent } from '../../vault/types';
@@ -36,17 +46,14 @@ function Snippets({ entity, data, onShowInText }: Pick<Props, 'entity' | 'data' 
         const page = data.byKey.get(key);
         const hit = data.located.get(key)?.find((l) => l.entityId === entity.id);
         if (!page || !hit) return null;
-        const before = page.text.slice(Math.max(0, hit.start - 50), hit.start).replace(/\s+/g, ' ');
-        const after = page.text.slice(hit.end, hit.end + 50).replace(/\s+/g, ' ');
+        const { before, hit: found, after } = contextAround(page.text, hit.start, hit.end);
         return (
           <li key={key}>
             <button type="button" className="link" onClick={() => onShowInText(key)}>
               {page.folha !== null ? `fls. ${page.folha}` : `PDF p. ${page.pdfPage}`}
             </button>{' '}
             <span className="meta">
-              …{before}
-              <mark className="snippet-hit">{hit.text}</mark>
-              {after}…
+              …{before} <mark className="snippet-hit">{found}</mark> {after}…
             </span>
           </li>
         );
@@ -77,6 +84,10 @@ export function EntityDetail({ entity, content, data, onShowInText, onClose }: P
   }
 
   const label = entity.decision === 'pseudonymize' ? labelOf(entity, data.byId) : null;
+  const settings = useSyncExternalStore(subscribeSettings, getSettings);
+  const warnings = entityWarnings(entity, settings.detectionExclusions).filter(
+    (w) => w !== 'ambiguous',
+  );
 
   return (
     <div className="entity-detail" aria-label={`Detalhes de ${entity.canonical}`}>
@@ -97,24 +108,102 @@ export function EntityDetail({ entity, content, data, onShowInText, onClose }: P
         )}
       </div>
 
-      <div className="decision-toggle" role="group" aria-label="Decisão">
-        <button
-          type="button"
-          className={entity.decision === 'pseudonymize' ? 'primary' : ''}
-          aria-pressed={entity.decision === 'pseudonymize'}
-          onClick={() => void run((c) => setDecision(c, entity.id, 'pseudonymize'))}
-        >
-          Pseudonimizar
-        </button>
-        <button
-          type="button"
-          className={entity.decision === 'keep' ? 'primary' : ''}
-          aria-pressed={entity.decision === 'keep'}
-          onClick={() => void run((c) => setDecision(c, entity.id, 'keep'))}
-        >
-          Manter (autoridade/público)
-        </button>
-      </div>
+      {entity.suggested && (
+        <div className="notice info suggestion-box">
+          <div>
+            <p>
+              <strong>Sugestão não aplicada.</strong> Não está em bloco de qualificação, não vem
+              depois de um gatilho (“a vítima”, “o acusado”…) e não começa por um prenome conhecido.
+              Enquanto não for aplicada, fica em claro no texto exportado.
+            </p>
+            <div className="actions">
+              <button
+                type="button"
+                className="primary"
+                onClick={() => void run((c) => acceptSuggestion(c, entity.id))}
+              >
+                Aplicar (é nome de pessoa)
+              </button>
+              <button
+                type="button"
+                className="danger-outline"
+                onClick={() => void run((c) => discard(c, entity.id))}
+              >
+                Descartar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {warnings.map((w) => (
+        <p key={w} className="notice warn">
+          {WARNING_TEXT[w]}
+          {w === 'roles' && entity.roleConflicts?.length
+            ? ` Encontrados: ${entity.roleConflicts.map((r) => r.toLocaleLowerCase('pt-BR')).join(', ')}. Foi escolhido o mais relevante.`
+            : ''}
+        </p>
+      ))}
+
+      {entity.ambiguousWith.length > 0 && (
+        <div className="notice warn same-person" role="group" aria-label="Possível mesma pessoa">
+          <div>
+            <p>
+              <strong>Possível mesma pessoa?</strong>
+            </p>
+            <ul>
+              {entity.ambiguousWith
+                .map((a) => data.byId.get(a))
+                .filter((a): a is StoredEntity => !!a)
+                .map((a) => (
+                  <li key={a.id}>
+                    {a.decision === 'pseudonymize' && !a.suggested
+                      ? `${labelOf(a, data.byId)} `
+                      : ''}
+                    <strong>{a.canonical}</strong>{' '}
+                    <button
+                      type="button"
+                      onClick={() => void run((c) => unify(c, a.id, entity.id))}
+                    >
+                      Unificar
+                    </button>{' '}
+                    <button
+                      type="button"
+                      onClick={() => void run((c) => keepSeparate(c, a.id, entity.id))}
+                    >
+                      Manter separados
+                    </button>
+                  </li>
+                ))}
+            </ul>
+          </div>
+        </div>
+      )}
+
+      {entity.type === 'PESSOA' && (
+        <CleanName entity={entity} exclusions={settings.detectionExclusions} run={run} />
+      )}
+
+      {!entity.suggested && (
+        <div className="decision-toggle" role="group" aria-label="Decisão">
+          <button
+            type="button"
+            className={entity.decision === 'pseudonymize' ? 'primary' : ''}
+            aria-pressed={entity.decision === 'pseudonymize'}
+            onClick={() => void run((c) => setDecision(c, entity.id, 'pseudonymize'))}
+          >
+            Pseudonimizar
+          </button>
+          <button
+            type="button"
+            className={entity.decision === 'keep' ? 'primary' : ''}
+            aria-pressed={entity.decision === 'keep'}
+            onClick={() => void run((c) => setDecision(c, entity.id, 'keep'))}
+          >
+            Manter (autoridade/público)
+          </button>
+        </div>
+      )}
 
       {entity.type === 'PESSOA' && entity.decision === 'pseudonymize' && (
         <div className="inline-form">
@@ -202,27 +291,6 @@ export function EntityDetail({ entity, content, data, onShowInText, onClose }: P
           </div>
         )}
 
-      {entity.ambiguousWith.length > 0 && (
-        <div className="notice warn">
-          <span>
-            Pode ser a mesma {entity.type === 'PESSOA' ? 'pessoa' : 'entidade'} que:{' '}
-            {entity.ambiguousWith
-              .map((a) => data.byId.get(a))
-              .filter((a): a is StoredEntity => !!a)
-              .map((a) => (
-                <button
-                  key={a.id}
-                  type="button"
-                  className="link"
-                  onClick={() => void run((c) => merge(c, [a.id, entity.id]))}
-                >
-                  Mesclar com {a.canonical}
-                </button>
-              ))}
-          </span>
-        </div>
-      )}
-
       <form
         className="inline-form"
         onSubmit={(e) => {
@@ -293,6 +361,73 @@ export function EntityDetail({ entity, content, data, onShowInText, onClose }: P
             Descartar (não é dado pessoal)
           </button>
         )}
+      </div>
+    </div>
+  );
+}
+
+/** "Limpar nome": marcar as palavras que não fazem parte do nome e removê-las. */
+function CleanName({
+  entity,
+  exclusions,
+  run,
+}: {
+  entity: StoredEntity;
+  exclusions: readonly string[];
+  run: (op: (c: VaultContent) => VaultContent) => Promise<void>;
+}) {
+  const words = entity.canonical.split(/\s+/).filter(Boolean);
+  const suspicious = new Set(suspiciousWords(entity, exclusions));
+  const [marked, setMarked] = useState<string[]>(() => [...suspicious]);
+  const [open, setOpen] = useState(suspicious.size > 0);
+  if (words.length < 2) return null;
+  if (!open) {
+    return (
+      <p>
+        <button type="button" className="link" onClick={() => setOpen(true)}>
+          Limpar nome (cortar palavras que não fazem parte dele)
+        </button>
+      </p>
+    );
+  }
+  return (
+    <div className="panel clean-name">
+      <h3>Limpar nome</h3>
+      <p className="hint">
+        Toque nas palavras que não fazem parte do nome. Elas saem do nome e das variantes, e a
+        entidade é unificada com a pessoa de mesmo nome, se houver.
+      </p>
+      <div className="word-chips" role="group" aria-label="Palavras do nome">
+        {words.map((w, i) => {
+          const on = marked.includes(w);
+          return (
+            <button
+              key={`${w}-${i}`}
+              type="button"
+              className={`word-chip${on ? ' removed' : ''}`}
+              aria-pressed={on}
+              onClick={() => setMarked((m) => (on ? m.filter((x) => x !== w) : [...m, w]))}
+            >
+              {w}
+            </button>
+          );
+        })}
+      </div>
+      <div className="actions">
+        <button
+          type="button"
+          className="primary"
+          disabled={!marked.length || marked.length >= words.length}
+          onClick={() => {
+            void run((c) => cleanName(c, entity.id, marked));
+            setMarked([]);
+          }}
+        >
+          Remover palavras marcadas
+        </button>
+        <button type="button" onClick={() => setOpen(false)}>
+          Fechar
+        </button>
       </div>
     </div>
   );

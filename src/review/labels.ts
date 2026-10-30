@@ -8,6 +8,10 @@ export const TYPE_LABEL: Record<EntityType, string> = {
   CNPJ: 'CNPJ',
   RG: 'RG',
   CNH: 'CNH',
+  TITULO_ELEITOR: 'TÍTULO DE ELEITOR',
+  CNS: 'CNS',
+  PASSAPORTE: 'PASSAPORTE',
+  PRONTUARIO: 'PRONTUÁRIO',
   TELEFONE: 'TELEFONE',
   EMAIL: 'E-MAIL',
   ENDERECO: 'ENDEREÇO',
@@ -32,6 +36,10 @@ export const TYPE_TITLE: Record<EntityType, string> = {
   CNPJ: 'CNPJs',
   RG: 'RGs',
   CNH: 'CNHs',
+  TITULO_ELEITOR: 'Títulos de eleitor',
+  CNS: 'Cartões SUS (CNS)',
+  PASSAPORTE: 'Passaportes',
+  PRONTUARIO: 'Prontuários',
   TELEFONE: 'Telefones',
   EMAIL: 'E-mails',
   ENDERECO: 'Endereços',
@@ -52,7 +60,7 @@ export const TYPE_TITLE: Record<EntityType, string> = {
 /** Papel em maiúsculas com acentuação padronizada ("vitima" → "VÍTIMA"). */
 export function normalizeRole(role: string): string {
   const upper = role.trim().replace(/\s+/g, ' ').toLocaleUpperCase('pt-BR');
-  const known: Record<string, string> = { VITIMA: 'VÍTIMA' };
+  const known: Record<string, string> = { VITIMA: 'VÍTIMA', MEDICO: 'MÉDICO' };
   return known[upper] ?? upper;
 }
 

@@ -1370,3 +1370,70 @@ mark.reid-unknown {
     padding: 0 0.5rem;
   }
 }
+
+/* Revisão: blocos, contadores, sugestões e "Limpar nome" */
+.entity-counts {
+  margin: 0 0 0.75rem;
+}
+
+.entity-block {
+  margin-top: 1.25rem;
+}
+
+.block-title {
+  font-size: 1.25rem;
+  border-bottom: 2px solid var(--border);
+  padding-bottom: 0.25rem;
+}
+
+.entity-group h3 {
+  font-size: 1.0625rem;
+  margin: 0;
+}
+
+.row-context {
+  display: block;
+  font-size: 0.8125rem;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.hl-suggested {
+  background: none;
+  outline: 1px dotted var(--warn);
+}
+
+.same-person ul {
+  margin: 0.25rem 0 0;
+  padding-left: 1.25rem;
+}
+
+.same-person li {
+  margin: 0.25rem 0;
+}
+
+.word-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin: 0.5rem 0;
+}
+
+.word-chip {
+  min-height: var(--touch);
+}
+
+.word-chip.removed {
+  text-decoration: line-through;
+  background: var(--warn-bg);
+  color: var(--warn);
+}
+
+.type-choice {
+  border: none;
+  padding: 0;
+  margin: 0 0 0.75rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: 0.25rem 1rem;
+}

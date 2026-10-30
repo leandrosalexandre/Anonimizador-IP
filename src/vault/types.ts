@@ -70,8 +70,10 @@ export interface StoredDocument {
 
 /**
  * Entidade revisada (SPEC 4, `entidades[]`). O marcador ("rótulo") é calculado a partir do papel
- * e do índice, que nunca são renumerados automaticamente. As ocorrências são recalculadas a partir
- * das variantes sobre o texto atual das páginas (ver src/review/locate.ts).
+ * e do índice. Os índices são renumerados sem lacunas após unificar ou descartar, mas só enquanto
+ * nenhum texto foi exportado (uma análise já devolvida pela IA usa os números antigos). As
+ * ocorrências são recalculadas a partir das variantes sobre o texto atual das páginas (ver
+ * src/review/locate.ts).
  */
 export interface StoredEntity {
   id: string;
@@ -91,6 +93,13 @@ export interface StoredEntity {
   ambiguousWith: string[];
   source: 'detected' | 'manual';
   confidence: number;
+  /**
+   * Sugestão sem sinal forte (fora de qualificação, sem gatilho, sem prenome conhecido): não é
+   * substituída até o usuário aceitá-la na revisão.
+   */
+  suggested?: boolean;
+  /** Papéis diferentes encontrados nas peças (mostrados como conflito na revisão). */
+  roleConflicts?: string[];
 }
 
 /**
@@ -119,6 +128,10 @@ export interface VaultContent {
     detectedAt?: string;
     /** Itens da varredura residual confirmados como não pessoais. */
     residualIgnored?: string[];
+    /** Pares de entidades que o usuário decidiu manter separadas ("não é a mesma pessoa"). */
+    separate?: [string, string][];
+    /** Data da primeira cópia ou download do texto exportado (depois disso, não renumera). */
+    exportedAt?: string;
   };
 }
 

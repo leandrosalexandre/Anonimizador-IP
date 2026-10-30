@@ -100,16 +100,27 @@ atualização.
 
 ## Revisão dos dados pessoais
 
-1. Em **Revisão**, toque em **Detectar dados pessoais**. O app sugere as entidades (pessoas,
-   CPFs, telefones, endereços…), com papel (vítima, autor…) e número, e sugere **manter** as
-   autoridades (Delegado, Escrivão…).
-2. Na aba **Entidades**, abra cada uma para ajustar o papel e o número, decidir entre pseudonimizar
-   e manter, vincular dados a uma pessoa, mesclar duplicadas, separar variantes ou descartar falsos
-   positivos. **Confirmar sugestões** aceita um grupo inteiro.
-3. Na aba **Texto**, confira os destaques página a página. Toque num destaque para abrir a entidade;
+1. Em **Revisão**, toque em **Detectar dados pessoais**. Por padrão, o app pseudonimiza só
+   **nomes de pessoas** (e apelidos) e **documentos pessoais**: CPF, RG, CNH, título de eleitor,
+   CNS, passaporte, prontuário, telefone e data de nascimento. Municípios, bairros, ruas, hospitais,
+   delegacias, órgãos, datas do fato, termos médicos, rótulos de formulário e números de BO/IP/
+   processo ficam em claro. Endereço, placa, e-mail, conta e outros tipos podem ser ativados em
+   **Configurações → O que pseudonimizar**.
+2. A lista mostra três blocos: **Pessoas** (por papel: vítima, autor, testemunha, familiar,
+   médico…), **Documentos** e **Sugestões (não aplicadas)**, com o total de cada um no topo. Uma
+   sugestão é um nome sem sinal forte (fora de bloco de qualificação, sem "a vítima", "o acusado"…
+   antes e sem prenome conhecido): fica em claro até você tocar em **Aplicar**.
+3. Abra cada entidade para ajustar o papel e o número, decidir entre pseudonimizar e manter,
+   vincular dados a uma pessoa, separar variantes ou descartar falsos positivos. Os alertas
+   indicam nome com mais de 7 palavras, palavra suspeita (rótulo, lugar, termo médico), papéis
+   diferentes nas peças e **possível mesma pessoa** (botões **Unificar** e **Manter separados**).
+   **Limpar nome** corta palavras que não fazem parte do nome e unifica com a pessoa certa.
+   **Confirmar sugestões** aceita um grupo inteiro. **Recomeçar a revisão do zero** refaz a
+   detecção apagando as decisões (útil em cofres revisados com uma versão anterior do app).
+4. Na aba **Texto**, confira os destaques página a página. Toque num destaque para abrir a entidade;
    selecione um trecho que a detecção perdeu para marcá-lo. Ligue **Original × pseudonimizado**
    para ver o resultado.
-4. A exportação só é liberada quando todas as pessoas estiverem revisadas.
+5. A exportação só é liberada quando todas as pessoas estiverem revisadas.
 
 ## Exportação
 

@@ -1,7 +1,8 @@
 # Métricas (IP fictício de referência)
 
-Medidas com o IP fictício de `test/fixtures/` (15 páginas, 51 entidades, 125 ocorrências; todos os
-dados são inventados). Para reproduzir: `npm run metrics` (detecção) e
+Medidas com os IPs fictícios de `test/fixtures/` (IP 1: 15 páginas, 51 entidades, 125
+ocorrências; IP 2, no formato do Ceará: 6 páginas, 29 entidades, 47 ocorrências; todos os dados são
+inventados). Para reproduzir: `npm run metrics` (detecção) e
 `npm run build && npm run bench:ocr` (OCR).
 
 ## OCR (PDF escaneado: 200 DPI, rotação de até 0,8°, ruído)
@@ -16,10 +17,26 @@ dados são inventados). Para reproduzir: `npm run metrics` (detecção) e
 
 ## Detecção de dados pessoais (antes da revisão)
 
+### IP fictício 2 (formato Ceará, escopo padrão)
+
+6 páginas (BO de sistema, termo de depoimento, relatório da PEFOCE, prontuário, interrogatório e
+relatório final), 29 entidades, 47 ocorrências. `test/fixtures/gabarito-ce.json`.
+
+| Métrica                                             | Versão 1.0 (antes)                                                              | Agora                                                                  |
+| --------------------------------------------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Pessoas pseudonimizadas (gabarito: 12 + 3 mantidas) | 26 (municípios, "Hora do Registro", "fratura de rádio", "Vizinho" como vítima…) | **12** (+ 3 mantidas)                                                  |
+| Precisão                                            | 58,0% (40/69)                                                                   | **100%** (41/41)                                                       |
+| Cobertura de nomes de envolvidos                    | 100%                                                                            | **100%** (26/26)                                                       |
+| Papéis                                              | acusados e médico sem papel; pai e mãe da testemunha unificados                 | **todos como no gabarito** (3 autores, 6 familiares distintos, médico) |
+| Nome da vítima sem acento (laudo, prontuário)       | **ficava em claro** no texto exportado                                          | substituído por [VÍTIMA 1]                                             |
+| Título de eleitor, CNS, prontuário                  | não detectados                                                                  | 100%                                                                   |
+
+### IP fictício 1 (escopo completo, aceite do SPEC)
+
 | Texto                         | Nomes de envolvidos | CPF · telefone · placa | Demais tipos                            | Precisão            | Autoridades sugeridas "manter" |
 | ----------------------------- | ------------------- | ---------------------- | --------------------------------------- | ------------------- | ------------------------------ |
 | PDF com texto                 | **100%** (45/45)    | **100%** (8 · 7 · 6)   | 100% em todos                           | **99,1%** (112/113) | 13/13                          |
-| Texto do OCR do PDF escaneado | **100%** (53/53)    | **100%**               | 100% das ocorrências presentes no texto | 93,8%*              | 17/17                          |
+| Texto do OCR do PDF escaneado | **100%** (53/53)    | **100%**               | 100% das ocorrências presentes no texto | 94,6%*              | 17/17                          |
 
 Aceite do SPEC (Fase 4): 100% de CPFs, telefones e placas e ≥ 95% dos nomes. **Atingido.**
 
@@ -49,7 +66,7 @@ revisão humana é obrigatória.
 
 ## Testes automatizados
 
-- **Unitários (Vitest): 183** — criptografia, cofre e `.ipcofre`, força da senha, bloqueio
+- **Unitários (Vitest): 217** — criptografia, cofre e `.ipcofre`, força da senha, bloqueio
   automático, extração de PDF e folhas, pré-processamento e texto do OCR, cada detector,
   agrupamento de variantes, revisão, substituição, exportação, varredura residual e
   reidentificação tolerante.

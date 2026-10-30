@@ -6,6 +6,10 @@ export const ENTITY_TYPES = [
   'CNPJ',
   'RG',
   'CNH',
+  'TITULO_ELEITOR',
+  'CNS',
+  'PASSAPORTE',
+  'PRONTUARIO',
   'TELEFONE',
   'EMAIL',
   'ENDERECO',
@@ -33,6 +37,8 @@ export const PERSON_ROLES = [
   'INFORMANTE',
   'COMUNICANTE',
   'ADVOGADO',
+  'MÉDICO',
+  'PERITO',
   'PESSOA',
   'FAMILIAR',
 ] as const;
@@ -54,6 +60,13 @@ export interface Candidate {
   role?: PersonRole;
   /** Autoridade ou servidor no exercício da função: sugerir "manter". */
   authority?: boolean;
+  /**
+   * Nome sem sinal forte (fora de bloco de qualificação, sem gatilho e sem prenome conhecido):
+   * vai para "Sugestões (não aplicadas)" na revisão, sem ser substituído.
+   */
+  suggestion?: boolean;
+  /** Nomes do mesmo grupo (pai e mãe numa filiação) são sempre pessoas distintas. */
+  group?: string;
 }
 
 export interface PageText {
@@ -85,6 +98,10 @@ export interface DetectedEntity {
   /** Casos ambíguos (ex.: "João" pode ser mais de uma pessoa): vão para revisão como sugestão. */
   ambiguousWith: string[];
   detectors: string[];
+  /** Sem sinal forte: sugerida, mas não aplicada. */
+  suggestion: boolean;
+  /** Papéis diferentes encontrados nas peças (o escolhido é o mais relevante). */
+  roleConflicts: PersonRole[];
 }
 
 export interface DetectionOptions {
@@ -92,4 +109,41 @@ export interface DetectionOptions {
   exclusions?: readonly string[];
   /** Nomes que devem ser sempre mantidos (configuração do cofre). */
   keepNames?: readonly string[];
+  /** Tipos a pseudonimizar; os demais não viram entidade (padrão: DEFAULT_ENABLED_TYPES). */
+  types?: readonly EntityType[];
 }
+
+/**
+ * Escopo padrão: nomes de pessoas (e apelidos) e documentos e identificadores pessoais. Endereços,
+ * placas, e-mails, contas, empresas e números de BO/IP/processo ficam em claro, salvo se o usuário
+ * os ativar nas Configurações.
+ */
+export const DEFAULT_ENABLED_TYPES: readonly EntityType[] = [
+  'PESSOA',
+  'APELIDO',
+  'CPF',
+  'RG',
+  'CNH',
+  'TITULO_ELEITOR',
+  'CNS',
+  'PASSAPORTE',
+  'PRONTUARIO',
+  'TELEFONE',
+  'DATA_NASCIMENTO',
+];
+
+/** Prioridade dos papéis quando a mesma pessoa aparece com papéis diferentes (maior primeiro). */
+export const ROLE_PRIORITY: readonly PersonRole[] = [
+  'VÍTIMA',
+  'AUTOR',
+  'INVESTIGADO',
+  'CONDUZIDO',
+  'TESTEMUNHA',
+  'INFORMANTE',
+  'COMUNICANTE',
+  'MÉDICO',
+  'PERITO',
+  'ADVOGADO',
+  'FAMILIAR',
+  'PESSOA',
+];

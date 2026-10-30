@@ -6,15 +6,18 @@ import { clusterData, clusterPeople, toEntity, type LocatedCandidate } from './g
 import { buildExclusions } from './lexicon';
 import { PATTERN_DETECTORS } from './patterns';
 import {
+  applySectionRoles,
   detectApelidos,
   detectCapitalized,
   detectEmpresas,
   detectQualification,
   detectTriggers,
   markAuthorities,
+  nameContext,
 } from './persons';
 import { resolveOverlaps } from './resolve';
 import { findAll, fold, isUpper, nameTokens, PARTICLES } from './text';
+import { DEFAULT_ENABLED_TYPES } from './types';
 import type {
   Candidate,
   DetectedEntity,
@@ -26,15 +29,20 @@ import type {
 
 export type { Candidate, DetectedEntity, DetectionOptions, PageText } from './types';
 
-/** Candidatos de uma página, já sem sobreposição. */
+/**
+ * Candidatos de uma página, já sem sobreposição. Todos os detectores rodam (um endereço ainda
+ * impede que "Rua José de Alencar" vire pessoa); só depois saem os tipos desativados.
+ */
 export function detectPage(text: string, options: DetectionOptions = {}): Candidate[] {
   const exclusions = buildExclusions(options.exclusions);
+  const ctx = nameContext(text, exclusions);
   const people = [
-    ...detectQualification(text, exclusions),
-    ...detectTriggers(text, exclusions),
-    ...detectCapitalized(text, exclusions),
+    ...detectQualification(text, ctx),
+    ...detectTriggers(text, ctx),
+    ...detectCapitalized(text, ctx),
   ];
   markAuthorities(text, people);
+  applySectionRoles(text, people);
   const all = [
     ...PATTERN_DETECTORS.flatMap((d) => d(text)),
     ...detectEndereco(text),
@@ -42,13 +50,19 @@ export function detectPage(text: string, options: DetectionOptions = {}): Candid
     ...detectApelidos(text),
     ...people,
   ];
-  return resolveOverlaps(all);
+  const enabled = new Set(options.types ?? DEFAULT_ENABLED_TYPES);
+  enabled.add('PESSOA');
+  return resolveOverlaps(all).filter((c) => enabled.has(c.type));
 }
 
 const LINKABLE: ReadonlySet<EntityType> = new Set([
   'CPF',
   'RG',
   'CNH',
+  'TITULO_ELEITOR',
+  'CNS',
+  'PASSAPORTE',
+  'PRONTUARIO',
   'TELEFONE',
   'EMAIL',
   'ENDERECO',
@@ -92,16 +106,23 @@ interface PageIndex {
 function claim(index: PageIndex, start: number, end: number, claimer: DetectedEntity): boolean {
   const hits = index.occupied.filter((s) => s.occ.start < end && start < s.occ.end);
   if (!hits.length) return true;
-  const yielding = hits.every(
-    (s) =>
-      s.entity !== claimer &&
-      s.entity.type === 'PESSOA' &&
-      s.entity.confidence < 0.6 &&
-      s.occ.start >= start &&
-      s.occ.end <= end &&
-      claimer.type !== 'PESSOA',
-  );
+  const yielding = hits.every((s) => {
+    const inside = s.occ.start >= start && s.occ.end <= end;
+    if (!inside) return false;
+    // A forma mais longa do mesmo nome substitui a mais curta ("ANTONIA LUCIA FERREIRA" +
+    // "DOS SANTOS" na linha seguinte). Uma sugestão cede a qualquer entidade aplicada.
+    if (s.entity === claimer) return true;
+    if (s.entity.suggestion && !claimer.suggestion) return true;
+    return s.entity.type === 'PESSOA' && s.entity.confidence < 0.6 && claimer.type !== 'PESSOA';
+  });
   if (!yielding) return false;
+  if (
+    hits.length === 1 &&
+    hits[0]?.entity === claimer &&
+    hits[0].occ.start === start &&
+    hits[0].occ.end === end
+  )
+    return false;
   for (const s of hits) {
     s.entity.occurrences = s.entity.occurrences.filter((o) => o !== s.occ);
     index.occupied.splice(index.occupied.indexOf(s), 1);
@@ -151,6 +172,7 @@ function expandOccurrences(entities: DetectedEntity[], pages: PageIndex[]): void
       continue;
     }
 
+    searches.sort((a, b) => b.text.length - a.text.length);
     for (const index of pages) {
       const { page, occupied } = index;
       for (const s of searches) {
@@ -231,6 +253,7 @@ export function detectEntities(
   pages: readonly PageText[],
   options: DetectionOptions = {},
 ): DetectedEntity[] {
+  const exclusions = buildExclusions(options.exclusions);
   const located: LocatedCandidate[] = [];
   for (const page of pages) {
     for (const c of detectPage(page.text, options))
@@ -247,7 +270,7 @@ export function detectEntities(
       'APELIDO',
     ),
     ...clusterData(located.filter((c) => c.type !== 'PESSOA' && c.type !== 'APELIDO')),
-  ].map(toEntity);
+  ].map((cluster) => toEntity(cluster, exclusions));
 
   const keep = new Set((options.keepNames ?? []).map((n) => fold(n).trim()));
   for (const e of entities) {

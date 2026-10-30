@@ -1,0 +1,648 @@
+{
+  "description": "Gabarito do IP fictício 2 (formato Ceará). Todos os dados são inventados. Gerado por scripts/fixtures/gen-ip-ficticio-ce.mjs.",
+  "folhaOffset": 1,
+  "files": {
+    "text": "ip-ficticio-ce.pdf"
+  },
+  "pages": [
+    {
+      "pdfPage": 1,
+      "folha": 2,
+      "stamp": "Fls. 2",
+      "title": "BOLETIM DE OCORRÊNCIA",
+      "text": "Fls. 2\nGOVERNO DO ESTADO DO CEARÁ\nSECRETARIA DA SEGURANÇA PÚBLICA E DEFESA SOCIAL\nPOLÍCIA CIVIL DO ESTADO DO CEARÁ\nBOLETIM DE OCORRÊNCIA Nº 512-347/2026\nData/Hora do Registro: 03/09/2026 22:15 Unidade: DELEGACIA MUNICIPAL DE SANTANA DO ACARAÚ\nNatureza do Fato: HOMICÍDIO TENTADO\nData/Hora do Fato: 03/09/2026 20:40\nMunicípio: SANTANA DO ACARAÚ/CE Bairro: CENTRO\nLocal do Fato: RUA CORONEL ANTÔNIO FIRMO, 210 - CENTRO\nDADOS DA(S) VÍTIMA(S)\nNome:ANTÔNIA LÚCIA FERREIRA DOS SANTOS Data de Nascimento: 14/05/1988 CPF:417.358.296-09\nSexo: FEMININO Cor/Raça: PARDA Estado Civil: SOLTEIRA Escolaridade: ALFABETIZADA\nNacionalidade: BRASILEIRA Naturalidade: SOBRAL/CE Profissão: AUTÔNOMA\nFiliação: MARIA JOSÉ FERREIRA / FRANCISCO DOS SANTOS\nRG: 2009123456-7 SSP/CE Telefone: (88) 99876-5432\nEndereço: SÍTIO LAGOA SECA, S/N, ZONA RURAL, SANTANA DO ACARAÚ/CE\nDADOS DO(S) NOTICIANTE(S)\nNome:RAIMUNDO NONATO ARAÚJO NUNES Data de Nascimento: 02/02/1975 CPF:602.941.735-52\nTelefone: (88) 98111-2040 Relação com a vítima: VIZINHO\nACUSADOS: JOSÉ WELLINGTON MOTA SILVA, ÍTALO RENAN COSTA PEREIRA E DAMIÃO FERNANDES ROCHA\nRELATO:\nNoticia o comunicante que a vítima ANTÔNIA LÚCIA FERREIRA DOS SANTOS\nfoi agredida a pauladas em via pública e socorrida à SANTA CASA DE SOBRAL,\nonde foi constatada fratura de rádio e ulna e TCE leve.\nAtendente: LÍVIA MARQUES CORDEIRO - Escrivã de Polícia Civil"
+    },
+    {
+      "pdfPage": 2,
+      "folha": 3,
+      "stamp": "Fls. 3",
+      "title": "TERMO DE DEPOIMENTO",
+      "text": "Fls. 3\nPOLÍCIA CIVIL DO ESTADO DO CEARÁ\nDELEGACIA MUNICIPAL DE SANTANA DO ACARAÚ\nTERMO DE DEPOIMENTO DA TESTEMUNHA\nNome: RAIMUNDO NONATO ARAÚJO NUNES, brasileiro, casado, agricultor,\nfilho(a) de FRANCISCA ARAÚJO NUNES e FRANCISCO ARAÚJO NUNES,\nnatural de MASSAPÊ/CE, residente no SÍTIO LAGOA SECA, zona rural deste município.\nAos costumes disse nada. Compromissado na forma da lei, respondeu que é vizinho\nda vítima Antônia Lúcia Ferreira dos Santos; que no dia dos fatos viu\nos acusados José Wellington Mota Silva, vulgo \"ZÉ GALO\",\nÍtalo Renan Costa Pereira e Damião Fernandes Rocha correndo pela RUA CORONEL ANTÔNIO FIRMO;\nque Antônia Lúcia foi levada ao Hospital Regional Norte. Nada mais.\nDelegado de Polícia Civil: FELIPE AUGUSTO MACHADO RIOS\nEscrivã: LÍVIA MARQUES CORDEIRO"
+    },
+    {
+      "pdfPage": 3,
+      "folha": 4,
+      "stamp": "Fls. 4",
+      "title": "RELATÓRIO DE LOCAL DE CRIME",
+      "text": "Fls. 4\nPERÍCIA FORENSE DO ESTADO DO CEARÁ - PEFOCE\nNÚCLEO REGIONAL DE PERÍCIAS DE SOBRAL\nRELATÓRIO DE LOCAL DE CRIME\nMunicípio: SANTANA DO ACARAÚ/CE\nLocal: RUA CORONEL ANTÔNIO FIRMO, 210, CENTRO\nRequisitante: DELEGACIA MUNICIPAL DE SANTANA DO ACARAÚ\nA vítima ANTONIA LUCIA FERREIRA\nDOS SANTOS já havia sido removida\npara a SANTA CASA DE SOBRAL quando da chegada da equipe ao local.\nForam recolhidos um pedaço de madeira e manchas de sangue na calçada.\nPerito Criminal: ARMANDO TEIXEIRA BASTOS"
+    },
+    {
+      "pdfPage": 4,
+      "folha": 5,
+      "stamp": "Fls. 5",
+      "title": "BOLETIM DE ATENDIMENTO HOSPITALAR",
+      "text": "Fls. 5\nSANTA CASA DE MISERICÓRDIA DE SOBRAL\nBOLETIM DE ATENDIMENTO DE URGÊNCIA\nPaciente: ANTONIA LUCIA FERREIRA DOS SANTOS\nProntuário: 2026/004512 CNS: 104 1234 5678 0018\nDiagnóstico: FRATURA DE RÁDIO E ULNA À ESQUERDA; TCE LEVE; POLITRAUMA\nConduta: imobilização, analgesia e observação na UTI por 24 horas.\nMédico: Dr. HENRIQUE MOURA LEITE - CRM 12345"
+    },
+    {
+      "pdfPage": 5,
+      "folha": 6,
+      "stamp": "Fls. 6",
+      "title": "AUTO DE QUALIFICAÇÃO E INTERROGATÓRIO",
+      "text": "Fls. 6\nPOLÍCIA CIVIL DO ESTADO DO CEARÁ\nAUTO DE QUALIFICAÇÃO E INTERROGATÓRIO\nNome:JOSÉ WELLINGTON MOTA SILVA Alcunha: ZÉ GALO\nData de Nascimento: 21/11/1999 CPF: 835.102.947-50 RG: 98002345671\nTítulo de Eleitor: 0451 2378 0701\nFILHO DE MARIA IVONE MOTA E JOSÉ WILSON SILVA\nNaturalidade: FORQUILHA/CE Estado Civil: SOLTEIRO Profissão: SERVENTE\nInterrogado, negou a autoria e disse que estava em casa no momento do fato.\nDelegado de Polícia Civil: FELIPE AUGUSTO MACHADO RIOS"
+    },
+    {
+      "pdfPage": 6,
+      "folha": 7,
+      "stamp": "Fls. 7",
+      "title": "RELATÓRIO FINAL",
+      "text": "Fls. 7\nDELEGACIA MUNICIPAL DE SANTANA DO ACARAÚ\nRELATÓRIO\nTrata-se de inquérito instaurado para apurar a tentativa de homicídio contra\nAntônia Lúcia Ferreira dos Santos, ocorrida em 03/09/2026 em Santana do Acaraú.\nA testemunha Raimundo Nonato reconheceu os acusados.\nO laudo do Dr. Henrique Moura Leite confirma a fratura de rádio e ulna.\nIndicio José Wellington pelo crime do art. 121, c/c art. 14, II, do CP.\nSantana do Acaraú/CE, 20 de outubro de 2026.\nFELIPE AUGUSTO MACHADO RIOS\nDelegado de Polícia Civil"
+    }
+  ],
+  "entities": [
+    {
+      "id": "vitima1",
+      "type": "PESSOA",
+      "role": "VÍTIMA",
+      "index": 1,
+      "canonical": "Antônia Lúcia Ferreira dos Santos",
+      "variants": [
+        "ANTÔNIA LÚCIA FERREIRA DOS SANTOS",
+        "Antônia Lúcia Ferreira dos Santos",
+        "ANTONIA LUCIA FERREIRA\nDOS SANTOS",
+        "ANTONIA LUCIA FERREIRA DOS SANTOS",
+        "Antônia Lúcia"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 1,
+          "folha": 2,
+          "text": "ANTÔNIA LÚCIA FERREIRA DOS SANTOS"
+        },
+        {
+          "pdfPage": 1,
+          "folha": 2,
+          "text": "ANTÔNIA LÚCIA FERREIRA DOS SANTOS"
+        },
+        {
+          "pdfPage": 2,
+          "folha": 3,
+          "text": "Antônia Lúcia Ferreira dos Santos"
+        },
+        {
+          "pdfPage": 2,
+          "folha": 3,
+          "text": "Antônia Lúcia"
+        },
+        {
+          "pdfPage": 3,
+          "folha": 4,
+          "text": "ANTONIA LUCIA FERREIRA\nDOS SANTOS"
+        },
+        {
+          "pdfPage": 4,
+          "folha": 5,
+          "text": "ANTONIA LUCIA FERREIRA DOS SANTOS"
+        },
+        {
+          "pdfPage": 6,
+          "folha": 7,
+          "text": "Antônia Lúcia Ferreira dos Santos"
+        }
+      ]
+    },
+    {
+      "id": "testemunha1",
+      "type": "PESSOA",
+      "role": "TESTEMUNHA",
+      "index": 1,
+      "canonical": "Raimundo Nonato Araújo Nunes",
+      "variants": [
+        "RAIMUNDO NONATO ARAÚJO NUNES",
+        "Raimundo Nonato Araújo Nunes",
+        "Raimundo Nonato"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 1,
+          "folha": 2,
+          "text": "RAIMUNDO NONATO ARAÚJO NUNES"
+        },
+        {
+          "pdfPage": 2,
+          "folha": 3,
+          "text": "RAIMUNDO NONATO ARAÚJO NUNES"
+        },
+        {
+          "pdfPage": 6,
+          "folha": 7,
+          "text": "Raimundo Nonato"
+        }
+      ]
+    },
+    {
+      "id": "autor1",
+      "type": "PESSOA",
+      "role": "AUTOR",
+      "index": 1,
+      "canonical": "José Wellington Mota Silva",
+      "variants": [
+        "JOSÉ WELLINGTON MOTA SILVA",
+        "José Wellington Mota Silva",
+        "José Wellington"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 1,
+          "folha": 2,
+          "text": "JOSÉ WELLINGTON MOTA SILVA"
+        },
+        {
+          "pdfPage": 2,
+          "folha": 3,
+          "text": "José Wellington Mota Silva"
+        },
+        {
+          "pdfPage": 5,
+          "folha": 6,
+          "text": "JOSÉ WELLINGTON MOTA SILVA"
+        },
+        {
+          "pdfPage": 6,
+          "folha": 7,
+          "text": "José Wellington"
+        }
+      ]
+    },
+    {
+      "id": "autor2",
+      "type": "PESSOA",
+      "role": "AUTOR",
+      "index": 2,
+      "canonical": "Ítalo Renan Costa Pereira",
+      "variants": [
+        "ÍTALO RENAN COSTA PEREIRA",
+        "Ítalo Renan Costa Pereira"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 1,
+          "folha": 2,
+          "text": "ÍTALO RENAN COSTA PEREIRA"
+        },
+        {
+          "pdfPage": 2,
+          "folha": 3,
+          "text": "Ítalo Renan Costa Pereira"
+        }
+      ]
+    },
+    {
+      "id": "autor3",
+      "type": "PESSOA",
+      "role": "AUTOR",
+      "index": 3,
+      "canonical": "Damião Fernandes Rocha",
+      "variants": [
+        "DAMIÃO FERNANDES ROCHA",
+        "Damião Fernandes Rocha"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 1,
+          "folha": 2,
+          "text": "DAMIÃO FERNANDES ROCHA"
+        },
+        {
+          "pdfPage": 2,
+          "folha": 3,
+          "text": "Damião Fernandes Rocha"
+        }
+      ]
+    },
+    {
+      "id": "mae_vitima",
+      "type": "PESSOA",
+      "role": "FAMILIAR",
+      "index": 1,
+      "canonical": "Maria José Ferreira",
+      "variants": [
+        "MARIA JOSÉ FERREIRA"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 1,
+          "folha": 2,
+          "text": "MARIA JOSÉ FERREIRA"
+        }
+      ]
+    },
+    {
+      "id": "pai_vitima",
+      "type": "PESSOA",
+      "role": "FAMILIAR",
+      "index": 2,
+      "canonical": "Francisco dos Santos",
+      "variants": [
+        "FRANCISCO DOS SANTOS"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 1,
+          "folha": 2,
+          "text": "FRANCISCO DOS SANTOS"
+        }
+      ]
+    },
+    {
+      "id": "mae_testemunha",
+      "type": "PESSOA",
+      "role": "FAMILIAR",
+      "index": 3,
+      "canonical": "Francisca Araújo Nunes",
+      "variants": [
+        "FRANCISCA ARAÚJO NUNES"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 2,
+          "folha": 3,
+          "text": "FRANCISCA ARAÚJO NUNES"
+        }
+      ]
+    },
+    {
+      "id": "pai_testemunha",
+      "type": "PESSOA",
+      "role": "FAMILIAR",
+      "index": 4,
+      "canonical": "Francisco Araújo Nunes",
+      "variants": [
+        "FRANCISCO ARAÚJO NUNES"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 2,
+          "folha": 3,
+          "text": "FRANCISCO ARAÚJO NUNES"
+        }
+      ]
+    },
+    {
+      "id": "mae_autor1",
+      "type": "PESSOA",
+      "role": "FAMILIAR",
+      "index": 5,
+      "canonical": "Maria Ivone Mota",
+      "variants": [
+        "MARIA IVONE MOTA"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 5,
+          "folha": 6,
+          "text": "MARIA IVONE MOTA"
+        }
+      ]
+    },
+    {
+      "id": "pai_autor1",
+      "type": "PESSOA",
+      "role": "FAMILIAR",
+      "index": 6,
+      "canonical": "José Wilson Silva",
+      "variants": [
+        "JOSÉ WILSON SILVA"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 5,
+          "folha": 6,
+          "text": "JOSÉ WILSON SILVA"
+        }
+      ]
+    },
+    {
+      "id": "medico1",
+      "type": "PESSOA",
+      "role": "MÉDICO",
+      "index": 1,
+      "canonical": "Henrique Moura Leite",
+      "variants": [
+        "HENRIQUE MOURA LEITE",
+        "Henrique Moura Leite"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 4,
+          "folha": 5,
+          "text": "HENRIQUE MOURA LEITE"
+        },
+        {
+          "pdfPage": 6,
+          "folha": 7,
+          "text": "Henrique Moura Leite"
+        }
+      ]
+    },
+    {
+      "id": "delegado",
+      "type": "PESSOA",
+      "role": null,
+      "decision": "keep",
+      "canonical": "Felipe Augusto Machado Rios",
+      "variants": [
+        "FELIPE AUGUSTO MACHADO RIOS"
+      ],
+      "occurrences": [
+        {
+          "pdfPage": 2,
+          "folha": 3,
+          "text": "FELIPE AUGUSTO MACHADO RIOS"
+        },
+        {
+          "pdfPage": 5,
+          "folha": 6,
+          "text": "FELIPE AUGUSTO MACHADO RIOS"
+        },
+        {
+          "pdfPage": 6,
+          "folha": 7,
+          "text": "FELIPE AUGUSTO MACHADO RIOS"
+        }
+      ]
+    },
+    {
+      "id": "escriva",
+      "type": "PESSOA",
+      "role": null,
+      "decision": "keep",
+      "canonical": "Lívia Marques Cordeiro",
+      "variants": [
+        "LÍVIA MARQUES CORDEIRO"
+      ],
+      "occurrences": [
+        {
+          "pdfPage": 1,
+          "folha": 2,
+          "text": "LÍVIA MARQUES CORDEIRO"
+        },
+        {
+          "pdfPage": 2,
+          "folha": 3,
+          "text": "LÍVIA MARQUES CORDEIRO"
+        }
+      ]
+    },
+    {
+      "id": "perito",
+      "type": "PESSOA",
+      "role": "PERITO",
+      "decision": "keep",
+      "canonical": "Armando Teixeira Bastos",
+      "variants": [
+        "ARMANDO TEIXEIRA BASTOS"
+      ],
+      "occurrences": [
+        {
+          "pdfPage": 3,
+          "folha": 4,
+          "text": "ARMANDO TEIXEIRA BASTOS"
+        }
+      ]
+    },
+    {
+      "id": "apelido_autor1",
+      "type": "APELIDO",
+      "role": "AUTOR",
+      "index": 1,
+      "canonical": "Zé Galo",
+      "variants": [
+        "ZÉ GALO",
+        "Zé Galo"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 2,
+          "folha": 3,
+          "text": "ZÉ GALO"
+        },
+        {
+          "pdfPage": 5,
+          "folha": 6,
+          "text": "ZÉ GALO"
+        }
+      ]
+    },
+    {
+      "id": "cpf_vitima",
+      "type": "CPF",
+      "canonical": "417.358.296-09",
+      "variants": [
+        "417.358.296-09"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 1,
+          "folha": 2,
+          "text": "417.358.296-09"
+        }
+      ]
+    },
+    {
+      "id": "cpf_testemunha",
+      "type": "CPF",
+      "canonical": "602.941.735-52",
+      "variants": [
+        "602.941.735-52"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 1,
+          "folha": 2,
+          "text": "602.941.735-52"
+        }
+      ]
+    },
+    {
+      "id": "cpf_autor1",
+      "type": "CPF",
+      "canonical": "835.102.947-50",
+      "variants": [
+        "835.102.947-50"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 5,
+          "folha": 6,
+          "text": "835.102.947-50"
+        }
+      ]
+    },
+    {
+      "id": "rg_vitima",
+      "type": "RG",
+      "canonical": "2009123456-7",
+      "variants": [
+        "2009123456-7"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 1,
+          "folha": 2,
+          "text": "2009123456-7"
+        }
+      ]
+    },
+    {
+      "id": "rg_autor1",
+      "type": "RG",
+      "canonical": "98002345671",
+      "variants": [
+        "98002345671"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 5,
+          "folha": 6,
+          "text": "98002345671"
+        }
+      ]
+    },
+    {
+      "id": "tel_vitima",
+      "type": "TELEFONE",
+      "canonical": "(88) 99876-5432",
+      "variants": [
+        "(88) 99876-5432"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 1,
+          "folha": 2,
+          "text": "(88) 99876-5432"
+        }
+      ]
+    },
+    {
+      "id": "tel_testemunha",
+      "type": "TELEFONE",
+      "canonical": "(88) 98111-2040",
+      "variants": [
+        "(88) 98111-2040"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 1,
+          "folha": 2,
+          "text": "(88) 98111-2040"
+        }
+      ]
+    },
+    {
+      "id": "dn_vitima",
+      "type": "DATA_NASCIMENTO",
+      "canonical": "14/05/1988",
+      "variants": [
+        "14/05/1988"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 1,
+          "folha": 2,
+          "text": "14/05/1988"
+        }
+      ]
+    },
+    {
+      "id": "dn_testemunha",
+      "type": "DATA_NASCIMENTO",
+      "canonical": "02/02/1975",
+      "variants": [
+        "02/02/1975"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 1,
+          "folha": 2,
+          "text": "02/02/1975"
+        }
+      ]
+    },
+    {
+      "id": "dn_autor1",
+      "type": "DATA_NASCIMENTO",
+      "canonical": "21/11/1999",
+      "variants": [
+        "21/11/1999"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 5,
+          "folha": 6,
+          "text": "21/11/1999"
+        }
+      ]
+    },
+    {
+      "id": "titulo_autor1",
+      "type": "TITULO_ELEITOR",
+      "canonical": "0451 2378 0701",
+      "variants": [
+        "0451 2378 0701"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 5,
+          "folha": 6,
+          "text": "0451 2378 0701"
+        }
+      ]
+    },
+    {
+      "id": "cns_vitima",
+      "type": "CNS",
+      "canonical": "104 1234 5678 0018",
+      "variants": [
+        "104 1234 5678 0018"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 4,
+          "folha": 5,
+          "text": "104 1234 5678 0018"
+        }
+      ]
+    },
+    {
+      "id": "prontuario_vitima",
+      "type": "PRONTUARIO",
+      "canonical": "2026/004512",
+      "variants": [
+        "2026/004512"
+      ],
+      "decision": "pseudonymize",
+      "occurrences": [
+        {
+          "pdfPage": 4,
+          "folha": 5,
+          "text": "2026/004512"
+        }
+      ]
+    }
+  ]
+}

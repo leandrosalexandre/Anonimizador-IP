@@ -1,15 +1,25 @@
-// Detector de nomes de pessoas (SPEC Fase 4), em camadas:
-// 1. blocos de qualificação ("NOME:", "Mãe:", "Testemunha:"…), com papel sugerido;
-// 2. gatilhos no texto corrido ("a vítima", "filho de", "vulgo"…);
-// 3. sequências de palavras capitalizadas ou em CAIXA ALTA, reforçadas por listas de prenomes e
-//    sobrenomes e quebradas nas palavras da lista de exclusão;
-// 5. autoridades (Delegado, Escrivão…) sugeridas como "manter";
+// Detector de nomes de pessoas (SPEC Fase 4, revisto para "precisão primeiro"), em camadas:
+// 1. blocos de qualificação ("Nome:", "Filiação:", "Vítima:", "ACUSADOS:"…), com papel sugerido.
+//    O nome termina na quebra de linha, no próximo rótulo ("Data de Nascimento:"), na troca de
+//    CAIXA ALTA para outra caixa ou numa palavra da lista de exclusão; no máximo 7 palavras.
+//    Filiação e listas ("A, B E C") viram pessoas distintas;
+// 2. gatilhos no texto corrido ("a vítima", "o acusado", "filho de", "vulgo"…);
+// 3. sequências de palavras capitalizadas ou em CAIXA ALTA. Só são aplicadas automaticamente se
+//    começarem por um prenome conhecido e tiverem 2 ou mais palavras; as demais vão para
+//    "Sugestões (não aplicadas)" na revisão;
+// 4. lista de exclusão e trechos bloqueados (municípios, instituições, valores de rótulos de lugar);
+// 5. autoridades (Delegado, Escrivão, Perito…) sugeridas como "manter"; profissionais pelo contexto
+//    (médico com CRM, advogado com OAB) recebem papel próprio;
 // 6. apelidos ("vulgo", "conhecido como", "alcunha").
-// A camada 4 (exclusão) está embutida na 3. Empresas privadas também são detectadas aqui.
+// Empresas privadas também são detectadas aqui.
 import { AUTHORITY_TITLE } from './data/exclusoes';
 import { FIRST_NAMES, SURNAMES } from './lexicon';
-import { PARTICLES, fold } from './text';
+import { blockedRanges, labelStartsField, nextLabelStart, overlapsAny, type Range } from './places';
+import { PARTICLES, fold, isUpper } from './text';
 import type { Candidate, PersonRole } from './types';
+
+/** Máximo de palavras (sem partículas) num nome. */
+export const MAX_NAME_TOKENS = 7;
 
 // Palavra capitalizada; ponto só em abreviações curtas ("Jr.", "Dr."), não no fim da frase.
 const CAP_WORD =
@@ -21,6 +31,11 @@ const NAME_SEQUENCE = new RegExp(
   `(?<![\\p{L}\\p{N}])${CAP_WORD}(?:(?:[ \\t]+|[ \\t]*\\n[ \\t]*(?![^\\n:]{1,30}:))(?:${PARTICLE}[ \\t]+)?${CAP_WORD})*`,
   'gu',
 );
+/** A mesma sequência, sem atravessar a quebra de linha (blocos de qualificação). */
+const NAME_ON_LINE = new RegExp(
+  `(?<![\\p{L}\\p{N}])${CAP_WORD}(?:[ \\t]+(?:${PARTICLE}[ \\t]+)?${CAP_WORD})*`,
+  'u',
+);
 
 interface Span {
   start: number;
@@ -28,8 +43,24 @@ interface Span {
   text: string;
 }
 
-/** Divide uma sequência capitalizada nas palavras excluídas e remove partículas nas pontas. */
-export function splitOnExclusions(span: Span, exclusions: ReadonlySet<string>): Span[] {
+export interface NameContext {
+  exclusions: ReadonlySet<string>;
+  /** Trechos que não podem fazer parte de nomes (municípios, instituições…). */
+  blocked: readonly Range[];
+}
+
+export function nameContext(text: string, exclusions: ReadonlySet<string>): NameContext {
+  return { exclusions, blocked: blockedRanges(text) };
+}
+
+const wordKey = (w: string) => fold(w).replace(/[.'’:,;]+$/u, '');
+
+/** Divide uma sequência nas palavras excluídas ou bloqueadas e remove partículas nas pontas. */
+export function splitOnExclusions(
+  span: Span,
+  exclusions: ReadonlySet<string>,
+  blocked: readonly Range[] = [],
+): Span[] {
   const parts: Span[] = [];
   const words = [...span.text.matchAll(/[^\s]+/gu)];
   let current: RegExpMatchArray[] = [];
@@ -47,10 +78,17 @@ export function splitOnExclusions(span: Span, exclusions: ReadonlySet<string>): 
     current = [];
   };
   for (const w of words) {
-    const token = fold(w[0]).replace(/[.'’]+$/u, '');
+    const token = wordKey(w[0]);
     // "e" entre nomes separa duas pessoas ("JOSÉ NUNES e ANTÔNIA NUNES").
     const head = token.split('-')[0] ?? token; // "Intime-se" → "intime"
-    if (exclusions.has(token) || exclusions.has(head) || /^\d/.test(token) || token === 'e')
+    const start = span.start + (w.index ?? 0);
+    if (
+      exclusions.has(token) ||
+      exclusions.has(head) ||
+      /^\d/.test(token) ||
+      token === 'e' ||
+      overlapsAny(blocked, start, start + w[0].length)
+    )
       flush();
     else current.push(w);
   }
@@ -64,7 +102,7 @@ export function splitOnExclusions(span: Span, exclusions: ReadonlySet<string>): 
     .filter((p) => p.text.length > 1);
 }
 
-function nameScore(text: string): { tokens: string[]; first: boolean; surname: number } {
+function nameScore(text: string): { tokens: string[]; first: boolean; known: number } {
   const tokens = fold(text)
     .split(/[\s\n]+/)
     .map((t) => t.replace(/[.'’]+$/u, ''))
@@ -72,22 +110,30 @@ function nameScore(text: string): { tokens: string[]; first: boolean; surname: n
   return {
     tokens,
     first: FIRST_NAMES.has(tokens[0] ?? ''),
-    surname: tokens.filter((t) => SURNAMES.has(t) || FIRST_NAMES.has(t)).length,
+    known: tokens.filter((t) => SURNAMES.has(t) || FIRST_NAMES.has(t)).length,
   };
 }
 
 /** Confiança de que uma sequência capitalizada é nome de pessoa (0 = descartar). */
 export function sequenceConfidence(text: string): number {
-  const { tokens, first, surname } = nameScore(text);
+  const { tokens, first, known } = nameScore(text);
   if (tokens.length === 0) return 0;
   if (tokens.some((t) => t.length === 1 && !/^[a-z]$/.test(t))) return 0;
   if (tokens.length === 1) return 0; // nome isolado só por gatilho ou variante conhecida
+  // Nenhuma palavra é prenome ou sobrenome conhecido: não é tratado como nome.
+  if (known === 0) return 0;
   let c = 0.35;
   if (first) c += 0.35;
-  if (surname >= 2) c += 0.15;
-  else if (surname === 1 && !first) c += 0.1;
-  if (tokens.length > 7) c -= 0.3;
+  if (known >= 2) c += 0.15;
+  else if (known === 1 && !first) c += 0.1;
+  if (tokens.length > MAX_NAME_TOKENS) c -= 0.3;
   return Math.min(c, 0.9);
+}
+
+/** Aplicado automaticamente só com prenome conhecido no início e 2 ou mais palavras. */
+export function strongSequence(text: string): boolean {
+  const { tokens, first } = nameScore(text);
+  return first && tokens.length >= 2 && tokens.length <= MAX_NAME_TOKENS;
 }
 
 function personCandidate(
@@ -99,69 +145,156 @@ function personCandidate(
   return { type: 'PESSOA', ...span, confidence, detector, ...(role ? { role } : {}) };
 }
 
-/** Primeiro nome válido em `text` a partir de `offset` (para rótulos e gatilhos). */
+/** Corta o nome em no máximo MAX_NAME_TOKENS palavras (sem contar partículas). */
+function capTokens(span: Span): Span {
+  const words = [...span.text.matchAll(/[^\s]+/gu)];
+  let count = 0;
+  for (const w of words) {
+    if (!PARTICLES.has(fold(w[0]))) count++;
+    if (count === MAX_NAME_TOKENS) {
+      const end = span.start + (w.index ?? 0) + w[0].length;
+      return { start: span.start, end, text: span.text.slice(0, end - span.start) };
+    }
+  }
+  return span;
+}
+
+/** Em CAIXA ALTA, o nome termina na primeira palavra que não está em caixa alta ("Data", "Sexo"). */
+function cutAtCaseChange(span: Span): Span {
+  const words = [...span.text.matchAll(/[^\s]+/gu)];
+  if (!words[0] || !isUpper(words[0][0]) || words[0][0].length < 2) return span;
+  for (const w of words.slice(1)) {
+    if (PARTICLES.has(fold(w[0])) || isUpper(w[0])) continue;
+    const end = (w.index ?? 0) - 1;
+    const text = span.text.slice(0, end).trimEnd();
+    return { start: span.start, end: span.start + text.length, text };
+  }
+  return span;
+}
+
+/**
+ * Primeiro nome válido em `text` a partir de `offset` (para rótulos e gatilhos). Em blocos de
+ * qualificação (`line`), não atravessa a quebra de linha e para no próximo rótulo.
+ */
 function nameAt(
   text: string,
   offset: number,
-  exclusions: ReadonlySet<string>,
-  allowSingle: boolean,
+  ctx: NameContext,
+  options: { allowSingle: boolean; line: boolean },
 ): Span | null {
-  const slice = text.slice(offset, offset + 160);
-  const re = new RegExp(NAME_SEQUENCE.source, 'u');
+  // Tratamentos antes do nome ("Dr. FULANO", "Sra. FULANA") não fazem parte dele.
+  const honorific = /^(?:dr|dra|sr|sra|prof|profa)\.?[ \t]+/iu.exec(text.slice(offset, offset + 8));
+  if (honorific) offset += honorific[0].length;
+  const limit = options.line ? nextLabelStart(text, offset) : offset + 160;
+  const slice = text.slice(offset, limit);
+  const re = options.line ? NAME_ON_LINE : new RegExp(NAME_SEQUENCE.source, 'u');
   const m = re.exec(slice);
   if (!m || (m.index ?? 0) > 2) return null;
-  const span = { start: offset + (m.index ?? 0), end: 0, text: m[0] };
+  let span: Span = { start: offset + (m.index ?? 0), end: 0, text: m[0] };
   span.end = span.start + span.text.length;
-  const first = splitOnExclusions(span, exclusions)[0];
+  span = cutAtCaseChange(span);
+  const first = splitOnExclusions(span, ctx.exclusions, ctx.blocked)[0];
   if (!first || first.start !== span.start) return null;
-  const tokens = nameScore(first.text).tokens;
-  if (tokens.length === 1 && !allowSingle) return null;
-  return first;
+  const capped = capTokens(first);
+  const tokens = nameScore(capped.text).tokens;
+  if (tokens.length === 1 && !options.allowSingle) return null;
+  return capped;
 }
 
 // ---------------------------------------------------------------- 1. Qualificação
 
-const LABELS: [RegExp, PersonRole | 'KEEP' | null][] = [
-  [/nome(?:\s+completo)?|qualificado|declarante|interrogad[oa]/, null],
-  [/filia[çc][ãa]o|m[ãa]e|pai|genitora?|genitor/, 'FAMILIAR'],
-  [/v[íi]tima|ofendid[oa]/, 'VÍTIMA'],
-  [/testemunha/, 'TESTEMUNHA'],
-  [/investigad[oa]|suspeit[oa]/, 'INVESTIGADO'],
-  [/indiciad[oa]|autor(?:a)?(?:\s+do\s+fato)?|acusad[oa]|r[ée]u|denunciad[oa]/, 'AUTOR'],
-  [/conduzid[oa]|preso|presa|flagranteado/, 'CONDUZIDO'],
-  [/comunicante|noticiante|requerente/, 'COMUNICANTE'],
-  [/informante/, 'INFORMANTE'],
-  [/advogad[oa]|defensor(?:a)?\s+constitu[íi]d[oa]|procurador[a]?/, 'ADVOGADO'],
-  [
-    /c[ôo]njuge|companheir[oa]|espos[oa]|irm[ãa]o?|filh[oa]s?|respons[áa]vel(?:\s+legal)?/,
-    'FAMILIAR',
-  ],
-  [
-    /atendente|escriv[ãa]o?|escriv[ãa]|delegad[oa]|inspetor[a]?|perit[oa](?:\s+criminal)?|agente|autoridade|condutor(?:\s+do\s+flagrante)?/,
-    'KEEP',
-  ],
+type LabelKind = PersonRole | 'KEEP' | null;
+
+interface LabelRule {
+  re: RegExp;
+  role: LabelKind;
+  /** Aceita mais de um nome: filiação (2) ou lista ("ACUSADOS: A, B E C"). */
+  many?: 'pair' | 'list';
+}
+
+const S = '(?:\\(?s\\)?|es)?'; // plural opcional: "acusado(s)", "acusados", "autores"
+const LABELS: LabelRule[] = [
+  { re: /nome(?:\s+completo)?|qualificad[oa]|declarante|interrogad[oa]|paciente/, role: null },
+  { re: /filia[çc][ãa]o/, role: 'FAMILIAR', many: 'pair' },
+  { re: /m[ãa]e|pai|genitora?|genitor/, role: 'FAMILIAR' },
+  { re: new RegExp(`v[íi]tima${S}|ofendid[oa]${S}`), role: 'VÍTIMA', many: 'list' },
+  { re: new RegExp(`testemunha${S}`), role: 'TESTEMUNHA', many: 'list' },
+  { re: new RegExp(`investigad[oa]${S}|suspeit[oa]${S}`), role: 'INVESTIGADO', many: 'list' },
+  {
+    re: new RegExp(
+      `indiciad[oa]${S}|autor${S}(?:\\s+do\\s+fato)?|autora|acusad[oa]${S}|r[ée]u|r[ée]us|denunciad[oa]${S}`,
+    ),
+    role: 'AUTOR',
+    many: 'list',
+  },
+  { re: new RegExp(`conduzid[oa]${S}|pres[oa]|flagranteado`), role: 'CONDUZIDO', many: 'list' },
+  { re: new RegExp(`comunicante${S}|noticiante${S}|requerente`), role: 'COMUNICANTE' },
+  { re: /informante/, role: 'INFORMANTE' },
+  { re: /advogad[oa]|defensor(?:a)?\s+constitu[íi]d[oa]|procurador[a]?/, role: 'ADVOGADO' },
+  { re: /m[ée]dic[oa](?:\s+(?:respons[áa]vel|plantonista|assistente))?/, role: 'MÉDICO' },
+  {
+    re: /c[ôo]njuge|companheir[oa]|espos[oa]|irm[ãa]o?|filh[oa]s?|respons[áa]vel(?:\s+legal)?/,
+    role: 'FAMILIAR',
+  },
+  {
+    re: /atendente|escriv[ãa]o?|escriv[ãa]|delegad[oa]|inspetor[a]?|perit[oa](?:\s+criminal)?|agente|autoridade|condutor(?:\s+do\s+flagrante)?/,
+    role: 'KEEP',
+  },
 ];
 
 const LABEL_RE = new RegExp(
-  `(?:^|[\\n;]|\\b)(${LABELS.map(([re]) => re.source).join('|')})[ \\t]*:[ \\t]*`,
+  `(?<![\\p{L}])(${LABELS.map((l) => l.re.source).join('|')})[ \\t]*:[ \\t]*`,
   'giu',
 );
 
-function labelRole(label: string): PersonRole | 'KEEP' | null {
+function labelRule(label: string): LabelRule | null {
   const f = label.toLowerCase();
-  for (const [re, role] of LABELS) if (new RegExp(`^(?:${re.source})$`, 'iu').test(f)) return role;
-  return null;
+  return LABELS.find((l) => new RegExp(`^(?:${l.re.source})$`, 'iu').test(f)) ?? null;
 }
 
-export function detectQualification(text: string, exclusions: ReadonlySet<string>): Candidate[] {
+/** Separadores entre nomes: filiação ("A / B", "A e B") e listas ("A, B E C"). */
+const PAIR_SEP = /^[ \t]*(?:\/|&|;|\be\b|\bE\b)[ \t]*/u;
+const LIST_SEP = /^[ \t]*(?:,|;|\/|\be\b|\bE\b)[ \t]*/u;
+
+let groupCounter = 0;
+
+/** Lê um ou mais nomes a partir de `offset`, conforme o tipo de rótulo ou gatilho. */
+function readNames(
+  text: string,
+  offset: number,
+  ctx: NameContext,
+  options: { many: 'pair' | 'list' | undefined; line: boolean; allowSingle: boolean },
+): Span[] {
+  const out: Span[] = [];
+  const max = options.many === 'pair' ? 2 : options.many === 'list' ? 12 : 1;
+  let pos = offset;
+  while (out.length < max) {
+    const span = nameAt(text, pos, ctx, { allowSingle: options.allowSingle, line: options.line });
+    if (!span) break;
+    out.push(span);
+    const sep = (options.many === 'pair' ? PAIR_SEP : LIST_SEP).exec(
+      text.slice(span.end, span.end + 8),
+    );
+    if (!sep || !options.many) break;
+    pos = span.end + sep[0].length;
+  }
+  return out;
+}
+
+export function detectQualification(text: string, ctx: NameContext): Candidate[] {
   const out: Candidate[] = [];
   for (const m of text.matchAll(LABEL_RE)) {
-    const role = labelRole(m[1] ?? '');
-    let offset = (m.index ?? 0) + m[0].length;
-    // Filiação: "PAI e MÃE" ou "MÃE e PAI".
-    for (let i = 0; i < 2; i++) {
-      const span = nameAt(text, offset, exclusions, true);
-      if (!span) break;
+    // "Relação com a vítima: VIZINHO" não é o rótulo "Vítima:".
+    if (!labelStartsField(text, m.index ?? 0)) continue;
+    const rule = labelRule(m[1] ?? '');
+    const role = rule?.role ?? null;
+    const names = readNames(text, (m.index ?? 0) + m[0].length, ctx, {
+      many: rule?.many,
+      line: true,
+      allowSingle: true,
+    });
+    const group = names.length > 1 ? `g${++groupCounter}` : undefined;
+    for (const span of names) {
       const c = personCandidate(
         span,
         0.95,
@@ -169,10 +302,8 @@ export function detectQualification(text: string, exclusions: ReadonlySet<string
         role && role !== 'KEEP' ? role : undefined,
       );
       if (role === 'KEEP') c.authority = true;
+      if (group) c.group = group;
       out.push(c);
-      const and = /^\s+e\s+/iu.exec(text.slice(span.end, span.end + 6));
-      if (!and || role !== 'FAMILIAR') break;
-      offset = span.end + and[0].length;
     }
   }
   return out;
@@ -180,54 +311,82 @@ export function detectQualification(text: string, exclusions: ReadonlySet<string
 
 // ---------------------------------------------------------------- 2. Gatilhos no texto corrido
 
-const TRIGGERS: [string, PersonRole | null][] = [
-  ['(?:a|à|da|pela|como|com\\s+a)?\\s*v[íi]tima', 'VÍTIMA'],
-  ['(?:pel[oa]|do|da)\\s+(?:interrogad[oa]|depoente)', null],
-  ['(?:o|do|pelo)\\s+autor(?:\\s+do\\s+fato)?', 'AUTOR'],
-  ['(?:o|a|do|da)\\s+indiciad[oa]', 'AUTOR'],
-  ['(?:o|a|do|da)\\s+investigad[oa]', 'INVESTIGADO'],
-  ['(?:o|a|do|da)\\s+suspeit[oa]', 'INVESTIGADO'],
-  ['(?:o|a|do|da)\\s+conduzid[oa]', 'CONDUZIDO'],
-  ['(?:a|da|pela)\\s+testemunha', 'TESTEMUNHA'],
-  ['(?:a|o|da|do)\\s+informante', 'INFORMANTE'],
-  ['(?:a|o)\\s+comunicante', 'COMUNICANTE'],
-  ['(?:a|o|pel[ao])\\s+declarante', null],
-  ['(?:o|a)\\s+nacional', null],
-  ['(?:o|a)\\s+senhor[a]?', null],
-  ['(?:o|a)\\s+sr[a]?\\.?', null],
-  ['filh[oa]\\s+de', 'FAMILIAR'],
-  [
-    '(?:o|a|seu|sua)\\s+(?:pai|m[ãa]e|genitor[a]?|irm[ãa]o?|espos[oa]|marido|companheir[oa]|namorad[oa]|filh[oa]|av[ôóo]|tio|tia|primo|prima)',
-    'FAMILIAR',
-  ],
-  ['(?:o|a)\\s+vizinh[oa]', null],
-  ['(?:o|a)\\s+advogad[oa]', 'ADVOGADO'],
-  ['como\\s+sendo', null],
-  ['de\\s+propriedade\\s+de', null],
-  ['em\\s+nome\\s+de', null],
-  ['titularidade\\s+de', null],
-  ['contra', null],
-  ['(?:intime|ou[çc]a|notifique|oficie)-se', null],
+interface Trigger {
+  re: string;
+  role: PersonRole | null;
+  /** Sinal fraco: só aplica se o nome também começar por prenome conhecido. */
+  weak?: boolean;
+  many?: 'pair' | 'list';
+}
+
+const TRIGGERS: Trigger[] = [
+  { re: '(?:a|à|da|pela|como|com\\s+a)?\\s*v[íi]tima', role: 'VÍTIMA' },
+  { re: '(?:as|das|pelas)\\s+v[íi]timas', role: 'VÍTIMA', many: 'list' },
+  { re: '(?:pel[oa]|do|da)\\s+(?:interrogad[oa]|depoente)', role: null },
+  { re: '(?:o|do|pelo)\\s+autor(?:\\s+do\\s+fato)?', role: 'AUTOR' },
+  { re: '(?:os|dos|pelos)\\s+autores', role: 'AUTOR', many: 'list' },
+  { re: '(?:o|a|do|da|pel[oa])\\s+acusad[oa]', role: 'AUTOR' },
+  { re: '(?:os|as|dos|das|pel[oa]s)\\s+acusad[oa]s', role: 'AUTOR', many: 'list' },
+  { re: '(?:o|a|do|da)\\s+indiciad[oa]', role: 'AUTOR' },
+  { re: '(?:o|a|do|da)\\s+investigad[oa]', role: 'INVESTIGADO' },
+  { re: '(?:os|as|dos|das)\\s+investigad[oa]s', role: 'INVESTIGADO', many: 'list' },
+  { re: '(?:o|a|do|da)\\s+suspeit[oa]', role: 'INVESTIGADO' },
+  { re: '(?:o|a|do|da)\\s+conduzid[oa]', role: 'CONDUZIDO' },
+  { re: '(?:a|da|pela)\\s+testemunha', role: 'TESTEMUNHA' },
+  { re: '(?:as|das|pelas)\\s+testemunhas', role: 'TESTEMUNHA', many: 'list' },
+  { re: '(?:a|o|da|do)\\s+informante', role: 'INFORMANTE' },
+  { re: '(?:a|o)\\s+(?:comunicante|noticiante)', role: 'COMUNICANTE' },
+  { re: '(?:a|o|pel[ao])\\s+declarante', role: null },
+  { re: '(?:o|a)\\s+nacional', role: null },
+  { re: 'filh[oa](?:\\s*\\(\\s*[oa]\\s*\\))?\\s+de', role: 'FAMILIAR', many: 'pair' },
+  {
+    re: '(?:o|a|seu|sua)\\s+(?:pai|m[ãa]e|genitor[a]?|irm[ãa]o?|espos[oa]|marido|companheir[oa]|namorad[oa]|filh[oa](?!\\s+de\\b)|av[ôóo]|tio|tia|primo|prima)',
+    role: 'FAMILIAR',
+  },
+  { re: '(?:o|a)\\s+advogad[oa]', role: 'ADVOGADO' },
+  { re: '(?:o|a)\\s+m[ée]dic[oa](?:\\s+plantonista)?', role: 'MÉDICO' },
+  { re: '(?:o|a)\\s+senhor[a]?', role: null, weak: true },
+  { re: '(?:o|a)\\s+sr[a]?\\.?', role: null, weak: true },
+  { re: '(?:o|a)\\s+vizinh[oa]', role: null, weak: true },
+  { re: 'como\\s+sendo', role: null, weak: true },
+  { re: 'de\\s+propriedade\\s+de', role: null, weak: true },
+  { re: 'em\\s+nome\\s+de', role: null, weak: true },
+  { re: 'titularidade\\s+de', role: null, weak: true },
+  { re: 'contra', role: null, weak: true },
+  { re: '(?:intime|ou[çc]a|notifique|oficie)-se', role: null, weak: true },
 ];
 
 const TRIGGER_RE = new RegExp(
-  `(?<![\\p{L}])(?:${TRIGGERS.map(([t]) => `(${t})`).join('|')})[\\s,:]+(?:["“]\\s*)?`,
+  `(?<![\\p{L}])(?:${TRIGGERS.map((t) => `(${t.re})`).join('|')})[\\s,:]+(?:["“]\\s*)?`,
   'giu',
 );
 
-export function detectTriggers(text: string, exclusions: ReadonlySet<string>): Candidate[] {
+export function detectTriggers(text: string, ctx: NameContext): Candidate[] {
   const out: Candidate[] = [];
   for (const m of text.matchAll(TRIGGER_RE)) {
     const groupIndex = m.slice(1).findIndex((g) => g !== undefined);
-    const role = TRIGGERS[groupIndex]?.[1] ?? null;
-    const span = nameAt(text, (m.index ?? 0) + m[0].length, exclusions, true);
-    if (!span) continue;
-    const { tokens, first } = nameScore(span.text);
-    // Nome isolado só se for prenome conhecido ou estiver em caixa alta.
-    if (tokens.length === 1 && !first) continue;
-    out.push(
-      personCandidate(span, tokens.length === 1 ? 0.75 : 0.85, 'gatilho', role ?? undefined),
-    );
+    const trigger = TRIGGERS[groupIndex];
+    if (!trigger) continue;
+    const names = readNames(text, (m.index ?? 0) + m[0].length, ctx, {
+      many: trigger.many,
+      line: false,
+      allowSingle: true,
+    });
+    const group = names.length > 1 && trigger.many === 'pair' ? `g${++groupCounter}` : undefined;
+    for (const span of names) {
+      const { tokens, first } = nameScore(span.text);
+      // Nome isolado só se for prenome conhecido.
+      if (tokens.length === 1 && !first) continue;
+      const c = personCandidate(
+        span,
+        tokens.length === 1 ? 0.75 : 0.85,
+        'gatilho',
+        trigger.role ?? undefined,
+      );
+      if (trigger.weak && !strongSequence(span.text)) c.suggestion = true;
+      if (group) c.group = group;
+      out.push(c);
+    }
   }
   return out;
 }
@@ -238,39 +397,121 @@ export function detectTriggers(text: string, exclusions: ReadonlySet<string>): C
 const NAMED_AFTER =
   /(?:^|[^\p{L}])(?:lei|leis|rua|avenida|av\.|travessa|pra[çc]a|escola|col[ée]gio|hospital|instituto|universidade|faculdade|funda[çc][ãa]o|f[óo]rum|est[áa]dio|terminal|conjunto|residencial|edif[íi]cio|condom[íi]nio|ponte|viaduto|unidade|creche|posto|igreja|par[óo]quia|capela|comunidade|associa[çc][ãa]o)(?:\s+(?:estadual|municipal|federal|dr\.?|dra\.?|prof\.?|profa\.?|padre|pe\.|santo|santa|s[ãa]o|governador|presidente|deputado|senador|general|coronel|marechal))*[\s:]*$/iu;
 
-export function detectCapitalized(text: string, exclusions: ReadonlySet<string>): Candidate[] {
+export function detectCapitalized(text: string, ctx: NameContext): Candidate[] {
   const out: Candidate[] = [];
   for (const m of text.matchAll(NAME_SEQUENCE)) {
     const span = { start: m.index ?? 0, end: (m.index ?? 0) + m[0].length, text: m[0] };
-    for (const part of splitOnExclusions(span, exclusions)) {
+    for (const part of splitOnExclusions(span, ctx.exclusions, ctx.blocked)) {
       if (NAMED_AFTER.test(text.slice(Math.max(0, part.start - 40), part.start))) continue;
       const confidence = sequenceConfidence(part.text);
-      if (confidence >= 0.3) out.push(personCandidate(part, confidence, 'sequencia'));
+      if (confidence < 0.3) continue;
+      const c = personCandidate(part, confidence, 'sequencia');
+      if (!strongSequence(part.text)) c.suggestion = true;
+      out.push(c);
     }
   }
   return out;
 }
 
-// ---------------------------------------------------------------- 5. Autoridades
+// ---------------------------------------------------------------- 5. Autoridades e profissionais
 
-/** Marca como autoridade os nomes precedidos (na mesma linha) ou seguidos de um cargo. */
+const PERITO_TITLE = /perit[oa]/iu;
+
+/**
+ * Marca como autoridade os nomes precedidos (na mesma linha) ou seguidos de um cargo, e dá papel
+ * próprio aos profissionais identificados pelo contexto: médico (CRM), advogado (OAB), perito.
+ */
 export function markAuthorities(text: string, candidates: Candidate[]): void {
+  const titleBefore = new RegExp(`(${AUTHORITY_TITLE.source})[\\s:,]*(?:dr[a]?\\.?\\s*)?$`, 'iu');
+  const titleAfter = new RegExp(`^${AUTHORITY_TITLE.source}`, 'iu');
   for (const c of candidates) {
     if (c.type !== 'PESSOA') continue;
     const before = text.slice(Math.max(0, c.start - 45), c.start);
     const sameLine = before.split('\n').pop() ?? '';
-    const titleBefore = new RegExp(`${AUTHORITY_TITLE.source}[\\s:,]*(?:dr[a]?\\.?\\s*)?$`, 'iu');
     const after = text.slice(c.end, c.end + 70);
     const nextLine = /^[ \t,]*\n[ \t]*([^\n]*)/u.exec(after)?.[1] ?? '';
     const sameLineAfter = /^[ \t]*[,–-][ \t]*([^\n]*)/u.exec(after)?.[1] ?? '';
-    if (
-      titleBefore.test(sameLine) ||
-      new RegExp(`^${AUTHORITY_TITLE.source}`, 'iu').test(nextLine) ||
-      /^(?:mat(?:r[íi]cula)?\.?|DPC)\b/iu.test(nextLine) ||
-      new RegExp(`^${AUTHORITY_TITLE.source}`, 'iu').test(sameLineAfter)
-    ) {
+    const restOfLine = after.split('\n')[0] ?? '';
+
+    const before1 = titleBefore.exec(sameLine)?.[1];
+    const after1 = titleAfter.exec(nextLine)?.[0] ?? titleAfter.exec(sameLineAfter)?.[0];
+    if (before1 || after1 || /^(?:mat(?:r[íi]cula)?\.?|DPC)\b/iu.test(nextLine)) {
       c.authority = true;
+      if (PERITO_TITLE.test(before1 ?? after1 ?? '')) c.role = 'PERITO';
     }
+    // Médico: "Dr. FULANO - CRM 12345", "médico FULANO", "Médico: Dr. FULANO".
+    if (
+      /^[ \t]*[,–-]?[ \t]*(?:\(?\s*)?CRM\b/iu.test(restOfLine) ||
+      /m[ée]dic[oa](?:\s+plantonista)?\s*:?\s*(?:dr[a]?\.?\s*)?$/iu.test(sameLine)
+    ) {
+      c.role = 'MÉDICO';
+      c.authority = false;
+      c.suggestion = false;
+    }
+    // Advogado: "FULANO, OAB/CE 12.345".
+    if (/^[ \t]*[,–-]?[ \t]*(?:\(?\s*)?OAB\b/iu.test(restOfLine)) {
+      c.role = 'ADVOGADO';
+      c.authority = false;
+      c.suggestion = false;
+    }
+  }
+}
+
+// ---------------------------------------------------------------- Papel pela seção da peça
+
+interface Section {
+  start: number;
+  role: PersonRole;
+}
+
+/** Cabeçalhos de bloco e de peça que indicam o papel de quem é qualificado em seguida. */
+const SECTION_RULES: [RegExp, PersonRole][] = [
+  [/^(?:dados\s+d[aoe]s?\s*(?:\(s\))?\s*)?v[íi]tima(?:\(s\)|s)?\s*:?$/iu, 'VÍTIMA'],
+  [
+    /^(?:dados\s+d[aoe]s?\s*(?:\(s\))?\s*)?(?:noticiante|comunicante)(?:\(s\)|s)?\s*:?$/iu,
+    'COMUNICANTE',
+  ],
+  [/^(?:dados\s+d[aoe]s?\s*(?:\(s\))?\s*)?testemunha(?:\(s\)|s)?\s*:?$/iu, 'TESTEMUNHA'],
+  [
+    /^(?:dados\s+d[aoe]s?\s*(?:\(s\))?\s*)?(?:acusad[oa]|autor|indiciad[oa])(?:\(s\)|s|es)?\s*:?$/iu,
+    'AUTOR',
+  ],
+  [
+    /^(?:dados\s+d[aoe]s?\s*(?:\(s\))?\s*)?(?:investigad[oa]|suspeit[oa])(?:\(s\)|s)?\s*:?$/iu,
+    'INVESTIGADO',
+  ],
+  [/^(?:dados\s+d[aoe]s?\s*(?:\(s\))?\s*)?conduzid[oa](?:\(s\)|s)?\s*:?$/iu, 'CONDUZIDO'],
+  [/^termo\s+de\s+(?:depoimento|declara[çc][õo]es)\s+d[ae]\s+testemunha\b/iu, 'TESTEMUNHA'],
+  [/^termo\s+de\s+declara[çc][õo]es\s+d[ae]\s+v[íi]tima\b/iu, 'VÍTIMA'],
+  [/^termo\s+de\s+declara[çc][õo]es\s+d[oe]\s+(?:comunicante|noticiante)\b/iu, 'COMUNICANTE'],
+  [/^termo\s+de\s+declara[çc][õo]es\s+d[oe]\s+informante\b/iu, 'INFORMANTE'],
+];
+
+function sections(text: string): Section[] {
+  const out: Section[] = [];
+  let pos = 0;
+  for (const line of text.split('\n')) {
+    const trimmed = line.trim();
+    if (trimmed.length <= 70) {
+      const rule = SECTION_RULES.find(([re]) => re.test(trimmed));
+      if (rule) out.push({ start: pos, role: rule[1] });
+      // Outra peça ou bloco sem papel encerra a seção anterior.
+      else if (/^(?:dados\s+d|termo\s+de|auto\s+de|relat[óo]rio|boletim\s+de)/iu.test(trimmed))
+        out.push({ start: pos, role: 'PESSOA' });
+    }
+    pos += line.length + 1;
+  }
+  return out;
+}
+
+/** "Nome:" sem papel recebe o papel da seção em que está ("DADOS DA(S) VÍTIMA(S)"). */
+export function applySectionRoles(text: string, candidates: Candidate[]): void {
+  const list = sections(text);
+  if (!list.length) return;
+  for (const c of candidates) {
+    if (c.type !== 'PESSOA' || c.role || c.authority || c.detector !== 'qualificacao') continue;
+    const section = [...list].reverse().find((s) => s.start <= c.start);
+    if (section && section.role !== 'PESSOA') c.role = section.role;
   }
 }
 
@@ -303,13 +544,14 @@ export function detectApelidos(text: string): Candidate[] {
       continue;
     }
     const bare = /^[\p{Lu}][\p{L}'’-]*(?:[ \t]+[\p{Lu}][\p{L}'’-]*){0,2}/u.exec(rest);
-    if (bare) push(offset, bare[0], 0.85);
+    if (bare) push(offset, cutAtCaseChange({ start: offset, end: 0, text: bare[0] }).text, 0.85);
   }
-  // "Alcunha: CHICO BALA" em blocos de qualificação.
-  for (const m of text.matchAll(/\b(?:alcunha|apelido|vulgo)[ \t]*:[ \t]*([^\n,;]{2,40})/giu)) {
-    const value = m[1] ?? '';
-    const start = (m.index ?? 0) + m[0].length - value.length;
-    if (!out.some((o) => o.start === start)) push(start, value.replace(/["“”]/g, ''), 0.95);
+  // "Alcunha: CHICO BALA" em blocos de qualificação (até o próximo rótulo).
+  for (const m of text.matchAll(/\b(?:alcunha|apelido|vulgo)[ \t]*:[ \t]*/giu)) {
+    const start = (m.index ?? 0) + m[0].length;
+    const raw = text.slice(start, nextLabelStart(text, start));
+    const value = (/^[^\n,;]{2,40}/u.exec(raw)?.[0] ?? '').replace(/["“”]/g, '').trimEnd();
+    if (value && !out.some((o) => o.start === start)) push(start, value, 0.95);
   }
   return out;
 }

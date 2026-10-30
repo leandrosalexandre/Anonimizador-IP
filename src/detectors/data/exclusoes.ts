@@ -1,7 +1,9 @@
 // Palavras que não fazem parte de nomes de pessoas (minúsculas, sem acentos): cargos, órgãos,
 // termos jurídicos e processuais, peças do inquérito, rótulos de formulários, logradouros, meses
-// e lugares. Uma sequência de palavras capitalizadas é quebrada nessas palavras, de modo que
-// "INDICIO FRANCISCO DA SILVA" vira "FRANCISCO DA SILVA" e "Estado do Ceará" é descartado.
+// e lugares; órgãos e unidades de saúde; termos médicos; termos de qualificação ("SOLTEIRO",
+// "PARDA") e tipos de crime. Uma sequência de palavras capitalizadas é quebrada nessas palavras,
+// de modo que "INDICIO FRANCISCO DA SILVA" vira "FRANCISCO DA SILVA" e "Estado do Ceará" é
+// descartado.
 // O usuário pode acrescentar termos nas configurações.
 export const DEFAULT_EXCLUSIONS = `
 estado secretaria seguranca publica publico defesa social policia civil militar federal rodoviaria
@@ -38,6 +40,36 @@ janeiro fevereiro abril maio junho julho agosto setembro outubro novembro dezemb
 segunda terca quarta quinta sexta sabado domingo feira
 sim nao total valor reais rs
 ltda me eireli epp sa
+governo secretaria pericias pericia forense nucleo regional municipal estadual unidade unidades
+hospital hospitais misericordia casa upa ubs saude clinica maternidade policlinica instituto iml
+ijf samu bombeiros ciops cisp aisp coordenadoria batalhao companhia cpchoque raio guarda urgencia
+emergencia atendimento ambulatorio enfermaria pronto fratura fraturas radio ulna tce politrauma
+politraumatismo uti cti cirurgia cirurgico cirurgica obito lesao lesoes ferimento ferimentos
+hematoma hematomas escoriacao escoriacoes contusao contusoes traumatismo cranioencefalico craniano
+diagnostico diagnosticos conduta analgesia imobilizacao sutura internacao internado internada
+tomografia rx radiografia leve grave graves moderado moderada esquerda esquerdo direita direito
+membro membros superior superiores inferior inferiores torax abdome abdominal cabeca face braco
+antebraco perna femur tibia fibula umero clavicula costela costelas perfuracao perfurante
+perfurocortante contundente cortante projetil projeteis paf faf hemorragia sangramento choque
+parada cardiorrespiratoria exposta curativo medicacao paciente prontuario cns sus crm medico
+medica medicos enfermeiro enfermeira plantonista necropsia necroscopico cadaver morte evolucao
+observacao queixa brasil brasileiro brasileira brasileiros solteiro solteira casado casada
+divorciado divorciada viuvo viuva separado separada uniao estavel convivente alfabetizado
+alfabetizada analfabeto analfabeta fundamental medio completo incompleto ensino escolaridade grau
+instrucao autonomo autonoma desempregado desempregada agricultor agricultora servente pedreiro
+estudante aposentado aposentada domestica domestico comerciante vendedor vendedora motorista
+mototaxista lavrador lavradora masculino feminino sexo genero cor raca etnia pardo parda preto
+preta negro negra amarelo amarela indigena civil nacionalidade ocupacao documento identidade
+expedidor emissor expedicao uf logradouro numero complemento referencia ponto celular fone contato
+registro hora horario idade anos envolvido envolvidos envolvida envolvidas tipo condicao situacao
+relacao vinculo parentesco participacao dados noticiante noticiantes acusado acusados acusada
+acusadas suspeito suspeitos suspeita suspeitas relato zona rural urbana centro distrito localidade
+povoado assentamento riacho lagoa seca vizinho vizinha vizinhos residente domiciliado domiciliada
+homicidio tentado tentada tentativa consumado lesao corporal roubo furto trafico estupro ameaca
+ameacas violencia feminicidio latrocinio receptacao porte posse ilegal arma armas fogo drogas
+entorpecentes dano injuria calunia difamacao sequestro extorsao estelionato titulo eleitor
+eleitoral passaporte carteira trabalho previdencia social natureza tentativa fls folha folhas
+pagina
 `
   .split(/\s+/)
   .filter(Boolean);
