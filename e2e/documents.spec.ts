@@ -153,3 +153,31 @@ test('importa PDF sem internet', async ({ page, context }) => {
   await expect(page.getByText('15 páginas importadas')).toBeVisible();
   await expect(pageRow(page, 1).locator('img')).toBeVisible();
 });
+
+test('o seletor de arquivos não bloqueia o cofre, mesmo com bloqueio imediato', async ({
+  page,
+}) => {
+  await createVaultAndGoToDocuments(page);
+  await page.getByRole('link', { name: 'Configurações' }).click();
+  await page.getByLabel('Ao ocultar o app').selectOption('immediate');
+  await page.getByRole('link', { name: 'Documentos' }).first().click();
+
+  const chooser = page.waitForEvent('filechooser');
+  await page.getByText('Selecionar PDFs').click();
+  // No Android, o seletor cobre o app: a página fica oculta enquanto o usuário escolhe.
+  const setVisibility = (value: DocumentVisibilityState) =>
+    page.evaluate((v) => {
+      Object.defineProperty(document, 'visibilityState', { value: v, configurable: true });
+      document.dispatchEvent(new Event('visibilitychange'));
+    }, value);
+  await setVisibility('hidden');
+  await (await chooser).setFiles(fixture(gabarito.files.text));
+  await setVisibility('visible');
+
+  await expect(page.getByText(`${gabarito.files.text}:`)).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByRole('banner')).toContainText('Cofre aberto');
+  await expect(page.getByRole('article', { name: gabarito.files.text })).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Etapas' }).locator('.nav-count')).toHaveText(
+    '1',
+  );
+});

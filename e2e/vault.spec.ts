@@ -183,12 +183,26 @@ test('bloqueia por inatividade', async ({ page }) => {
   await expect(page.getByText('O cofre foi bloqueado por inatividade.')).toBeVisible();
 });
 
-test('bloqueia ao ocultar o app', async ({ page }) => {
-  await createVault(page);
-  await page.evaluate(() => {
-    Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
+async function setVisibility(page: Page, state: DocumentVisibilityState) {
+  await page.evaluate((value) => {
+    Object.defineProperty(document, 'visibilityState', { value, configurable: true });
     document.dispatchEvent(new Event('visibilitychange'));
-  });
+  }, state);
+}
+
+test('por padrão, sair da tela não bloqueia o cofre', async ({ page }) => {
+  await createVault(page);
+  await setVisibility(page, 'hidden');
+  await setVisibility(page, 'visible');
+  await expect(page.getByRole('banner')).toContainText(`Cofre aberto: ${NAME}`);
+});
+
+test('bloqueia ao ocultar o app, se configurado', async ({ page }) => {
+  await createVault(page);
+  await page.getByRole('link', { name: 'Configurações' }).click();
+  await page.getByLabel('Ao ocultar o app').selectOption('immediate');
+  await page.getByRole('link', { name: 'Cofres' }).click();
+  await setVisibility(page, 'hidden');
   await expect(page.getByRole('banner')).toContainText('Nenhum cofre aberto');
   await expect(page.getByText('O cofre foi bloqueado porque o app saiu da tela.')).toBeVisible();
 });

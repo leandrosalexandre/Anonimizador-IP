@@ -68,8 +68,9 @@ atualização.
   cofre e as datas ficam visíveis para listar os cofres, por isso **não use nomes de pessoas no
   nome do cofre**.
 - **Não há recuperação de senha.** Sem a senha, o cofre não pode ser aberto.
-- O cofre **bloqueia sozinho** após 10 minutos sem uso e quando o app sai da tela. Os dois tempos
-  podem ser ajustados em Configurações.
+- O cofre fecha quando você toca em **Bloquear**, **sozinho** após 10 minutos sem uso (o tempo
+  fora da tela conta) e ao fechar o app. Sair do app por instantes ou abrir o seletor de arquivos
+  não fecha o cofre. Os tempos podem ser ajustados em Configurações.
 - **Levar para outro aparelho:** em Cofres, toque em **Exportar** para baixar um arquivo
   `.ipcofre` (cifrado com a mesma senha). No outro aparelho, use **Importar cofre** e digite a
   senha.

@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState, type DragEvent } from 'react';
 import { prepareImport, type ImportProgress } from '../../documents/importPdf';
 import { ExtractionCancelledError } from '../../pdf/pdfClient';
 import { userMessage } from '../../utils/errors';
+import { signalActivity } from '../../vault/autoLock';
 import { getSession, updateVaultContent, useSession } from '../../vault/session';
 
 interface ResultMessage {
@@ -55,7 +56,11 @@ export function ImportArea() {
         const current = getSession();
         const existing = current.status === 'unlocked' ? current.vault.content.documents : [];
         const prepared = await prepareImport(file, {
-          onProgress: setProgress,
+          onProgress: (p) => {
+            // Uma leitura longa, pedida pelo usuário, não é inatividade.
+            signalActivity();
+            setProgress(p);
+          },
           signal: controller.signal,
           findDuplicate: (sha) => existing.find((d) => d.sha256 === sha)?.fileName ?? null,
         });
