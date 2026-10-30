@@ -1141,6 +1141,50 @@ mark.snippet-hit {
   }
 }
 
+/* ---------- Exportação ---------- */
+
+.residual-list,
+.part-list {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.residual-row {
+  padding: 0.75rem;
+  background: var(--bg);
+  border-radius: var(--radius);
+}
+
+.residual-row p {
+  margin: 0 0 0.25rem;
+  overflow-wrap: anywhere;
+}
+
+.residual-context {
+  font-family: ui-monospace, 'Cascadia Mono', 'Roboto Mono', monospace;
+}
+
+.part-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.part-list .actions {
+  margin-top: 0;
+}
+
+.export-preview {
+  max-height: 70vh;
+}
+
 /* Tablet em retrato e telas estreitas: imagem e texto empilhados. */
 @media (max-width: 900px), (orientation: portrait) {
   .review-grid {

@@ -105,6 +105,8 @@ export interface VaultContent {
     dismissed?: string[];
     /** Data da última detecção automática. */
     detectedAt?: string;
+    /** Itens da varredura residual confirmados como não pessoais. */
+    residualIgnored?: string[];
   };
 }
 

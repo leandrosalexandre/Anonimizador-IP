@@ -36,9 +36,5 @@ export function ExportGate() {
       </div>
     );
   }
-  return (
-    <div className="empty-state">
-      <p>Revisão concluída. A geração do texto pseudonimizado chega na próxima etapa.</p>
-    </div>
-  );
+  return null;
 }

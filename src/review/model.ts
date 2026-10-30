@@ -3,7 +3,7 @@
 import type { DetectedEntity, EntityType } from '../detectors/types';
 import { fold } from '../detectors/text';
 import type { StoredEntity, VaultContent } from '../vault/types';
-import { indexScope, nextIndex, normalizeRole } from './labels';
+import { duplicateLabels, indexScope, nextIndex, normalizeRole } from './labels';
 
 const vkey = (s: string) => fold(s).replace(/\s+/g, ' ').trim();
 
@@ -334,4 +334,22 @@ export function reviewProgress(entities: readonly StoredEntity[]): ReviewProgres
     reviewed: entities.filter((e) => e.reviewed).length,
     pendingPeople: entities.filter((e) => e.type === 'PESSOA' && !e.reviewed).length,
   };
+}
+
+/** Confirma itens da varredura residual como "não é dado pessoal" (não voltam a aparecer). */
+export function ignoreResidual(content: VaultContent, keys: readonly string[]): VaultContent {
+  const current = content.config.residualIgnored ?? [];
+  return {
+    ...content,
+    config: { ...content.config, residualIgnored: [...new Set([...current, ...keys])] },
+  };
+}
+
+/** A exportação fica bloqueada sem revisão, com pessoa pendente ou marcador repetido. */
+export function exportBlocked(content: VaultContent): boolean {
+  return (
+    content.entities.length === 0 ||
+    reviewProgress(content.entities).pendingPeople > 0 ||
+    duplicateLabels(content.entities).length > 0
+  );
 }

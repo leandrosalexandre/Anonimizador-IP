@@ -16,7 +16,7 @@ boletim ocorrencia ocorrencias inquerito inqueritos policial termo termos declar
 depoimento depoimentos qualificacao interrogatorio auto autos apresentacao apreensao laudo laudos
 exame relatorio despacho portaria oficio certidao mandado prisao flagrante preventiva temporaria
 notificacao intimacao representacao denuncia queixa medida medidas protetiva protetivas requisicao
-natureza incidencia tipificacao capitulacao local data datas fato fatos relato historico nome nomes filiacao natural naturalidade
+alcunha apelido vulgo mae pai genitora genitor natureza incidencia tipificacao capitulacao local data datas fato fatos relato historico nome nomes filiacao natural naturalidade
 profissao endereco telefone telefones email cpf rg cnh cep dn obs observacao observacoes
 comunicante vitima vitimas autor autores autora investigado investigada indiciado indiciada
 conduzido conduzida testemunha testemunhas informante declarante interrogado interrogada

@@ -143,7 +143,7 @@ const LABELS: [RegExp, PersonRole | 'KEEP' | null][] = [
 ];
 
 const LABEL_RE = new RegExp(
-  `(?:^|[\\n;]|\\b)(${LABELS.map(([re]) => re.source).join('|')})\\s*:\\s*`,
+  `(?:^|[\\n;]|\\b)(${LABELS.map(([re]) => re.source).join('|')})[ \\t]*:[ \\t]*`,
   'giu',
 );
 
@@ -277,7 +277,7 @@ export function markAuthorities(text: string, candidates: Candidate[]): void {
 // ---------------------------------------------------------------- 6. Apelidos
 
 const NICKNAME_RE =
-  /(?<![\p{L}])(?:vulgo|alcunha(?:\s+de)?|conhecid[oa](?:\s+(?:apenas|somente|no\s+bairro|na\s+regi[ãa]o|pela?s?\s+\p{L}+))?\s+(?:como|por)|(?:pelo\s+)?apelido\s+(?:de\s+)?|apelidad[oa]\s+(?:de\s+)?)\s*[:,]?\s*/giu;
+  /(?<![\p{L}])(?:vulgo|alcunha(?:\s+de)?|conhecid[oa](?:\s+(?:apenas|somente|no\s+bairro|na\s+regi[ãa]o|pela?s?\s+\p{L}+))?\s+(?:como|por)|(?:pelo\s+)?apelido\s+(?:de\s+)?|apelidad[oa]\s+(?:de\s+)?)[ \t]*[:,]?[ \t]*/giu;
 
 export function detectApelidos(text: string): Candidate[] {
   const out: Candidate[] = [];
@@ -306,7 +306,7 @@ export function detectApelidos(text: string): Candidate[] {
     if (bare) push(offset, bare[0], 0.85);
   }
   // "Alcunha: CHICO BALA" em blocos de qualificação.
-  for (const m of text.matchAll(/\b(?:alcunha|apelido|vulgo)\s*:\s*([^\n,;]{2,40})/giu)) {
+  for (const m of text.matchAll(/\b(?:alcunha|apelido|vulgo)[ \t]*:[ \t]*([^\n,;]{2,40})/giu)) {
     const value = m[1] ?? '';
     const start = (m.index ?? 0) + m[0].length - value.length;
     if (!out.some((o) => o.start === start)) push(start, value.replace(/["“”]/g, ''), 0.95);

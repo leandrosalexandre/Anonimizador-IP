@@ -13,6 +13,8 @@ export interface AppSettings {
   ocrSearchablePdf: boolean;
   /** Termos extras que não são nomes de pessoas (lista de exclusão da detecção). */
   detectionExclusions: string[];
+  /** Bloco de instruções para a IA no topo do texto exportado (null = texto padrão). */
+  aiInstructions: string | null;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -21,6 +23,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   ocrBinarize: false,
   ocrSearchablePdf: false,
   detectionExclusions: [],
+  aiInstructions: null,
 };
 export const IDLE_LOCK_OPTIONS = [1, 2, 5, 10, 15, 30, 60] as const;
 export const LOCK_ON_HIDE_DELAY_MS: Record<LockOnHide, number | null> = {
@@ -56,6 +59,10 @@ function sanitize(value: unknown): AppSettings {
           .filter(Boolean)
           .slice(0, 500)
       : [],
+    aiInstructions:
+      typeof raw.aiInstructions === 'string' && raw.aiInstructions.trim()
+        ? raw.aiInstructions.slice(0, 5000)
+        : null,
   };
 }
 

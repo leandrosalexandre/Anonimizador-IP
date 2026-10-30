@@ -8,7 +8,7 @@ import { VaultsPage } from './pages/vaults/VaultsPage';
 import { DocumentsPage } from './pages/documents/DocumentsPage';
 import { PageReviewPage } from './pages/documents/PageReviewPage';
 import { ReviewPage } from './pages/review/ReviewPage';
-import { ExportGate } from './pages/ExportGate';
+import { ExportPage } from './pages/export/ExportPage';
 import { AutoLockController } from './components/AutoLockController';
 import { RequireVault } from './components/RequireVault';
 import { VaultStatus } from './components/VaultStatus';
@@ -24,13 +24,7 @@ function pageFor(route: AppRoute): ReactNode {
     case '/revisao':
       return <ReviewPage />;
     case '/exportar':
-      return (
-        <PlaceholderPage route={route}>
-          <RequireVault>
-            <ExportGate />
-          </RequireVault>
-        </PlaceholderPage>
-      );
+      return <ExportPage />;
     case '/configuracoes':
       return <SettingsPage />;
     default:

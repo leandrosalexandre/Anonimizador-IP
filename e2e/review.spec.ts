@@ -145,7 +145,7 @@ test('fluxo de revisão completo libera a exportação', async ({ page, baseURL 
   await expect(status).toContainText(/(\d+) de \1 entidades revisadas/);
 
   await page.getByRole('link', { name: 'Exportar', exact: true }).click();
-  await expect(page.getByText('Revisão concluída.')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Varredura residual' })).toBeVisible();
   expect(foreign).toEqual([]);
 });
 

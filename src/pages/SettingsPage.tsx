@@ -1,5 +1,6 @@
 import { useId, useState, useSyncExternalStore } from 'react';
 import { DEFAULT_EXCLUSIONS } from '../detectors/data/exclusoes';
+import { DEFAULT_AI_INSTRUCTIONS } from '../export/build';
 import { TypedConfirm } from '../components/TypedConfirm';
 import {
   IDLE_LOCK_OPTIONS,
@@ -105,6 +106,11 @@ export function SettingsPage() {
         </p>
       </div>
 
+      <InstructionsPanel
+        value={settings.aiInstructions}
+        onSave={(aiInstructions) => updateSettings({ aiInstructions })}
+      />
+
       <ExclusionsPanel
         value={settings.detectionExclusions}
         onSave={(detectionExclusions) => updateSettings({ detectionExclusions })}
@@ -196,6 +202,64 @@ function ExclusionsPanel({
           Salvar termos
         </button>
         {saved && <span className="hint">Salvo. Vale para as próximas detecções.</span>}
+      </div>
+    </div>
+  );
+}
+
+function InstructionsPanel({
+  value,
+  onSave,
+}: {
+  value: string | null;
+  onSave: (text: string | null) => void;
+}) {
+  const id = useId();
+  const [draft, setDraft] = useState(value ?? DEFAULT_AI_INSTRUCTIONS);
+  const [saved, setSaved] = useState(false);
+  const current = value ?? DEFAULT_AI_INSTRUCTIONS;
+
+  return (
+    <div className="panel">
+      <h2>Instruções para a IA</h2>
+      <p className="hint">
+        Texto colocado no topo de cada parte exportada. Não escreva aqui nenhum dado do inquérito.
+      </p>
+      <label htmlFor={id}>Instruções</label>
+      <textarea
+        id={id}
+        className="terms-editor"
+        rows={5}
+        value={draft}
+        onChange={(e) => {
+          setDraft(e.target.value);
+          setSaved(false);
+        }}
+      />
+      <div className="actions">
+        <button
+          type="button"
+          className="primary"
+          disabled={draft.trim() === current.trim()}
+          onClick={() => {
+            onSave(draft.trim() === DEFAULT_AI_INSTRUCTIONS ? null : draft);
+            setSaved(true);
+          }}
+        >
+          Salvar instruções
+        </button>
+        <button
+          type="button"
+          disabled={draft === DEFAULT_AI_INSTRUCTIONS}
+          onClick={() => {
+            setDraft(DEFAULT_AI_INSTRUCTIONS);
+            onSave(null);
+            setSaved(true);
+          }}
+        >
+          Restaurar padrão
+        </button>
+        {saved && <span className="hint">Salvo.</span>}
       </div>
     </div>
   );

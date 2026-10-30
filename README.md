@@ -7,8 +7,9 @@ telemetria nem comunicação com IA — o texto é copiado e colado manualmente.
 A especificação completa está em [`SPEC.md`](./SPEC.md); as decisões técnicas, em
 [`docs/DECISOES.md`](./docs/DECISOES.md).
 
-> **Estado atual:** Fase 5 — cofres criptografados, importação de PDFs, OCR offline, detecção de
-> dados pessoais e tela de revisão. A exportação (Fase 6) e a reidentificação (Fase 7) vêm a seguir.
+> **Estado atual:** Fase 6 — cofres criptografados, importação de PDFs, OCR offline, detecção e
+> revisão de dados pessoais e exportação do texto pseudonimizado. A reidentificação (Fase 7) vem a
+> seguir.
 
 ## Endereço
 
@@ -96,6 +97,17 @@ atualização.
    selecione um trecho que a detecção perdeu para marcá-lo. Ligue **Original × pseudonimizado**
    para ver o resultado.
 4. A exportação só é liberada quando todas as pessoas estiverem revisadas.
+
+## Exportação
+
+Em **Exportar** (liberado depois da revisão):
+
+1. Escolha as opções: instruções para a IA no topo, legenda de papéis e divisão em partes para IPs
+   longos.
+2. **Varredura residual**: o app analisa de novo o texto já pseudonimizado e lista o que ainda
+   parece dado pessoal. Para cada item, **Pseudonimizar** ou **Não é dado pessoal**. Copiar e
+   baixar só são liberados depois disso.
+3. **Copiar** (por parte), **Baixar .txt** ou **Baixar .md** e colar na IA.
 
 ## Desenvolvimento
 
