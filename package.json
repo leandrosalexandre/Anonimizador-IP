@@ -1,7 +1,7 @@
 {
   "name": "anonimizador-ip",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "description": "PWA offline para pseudonimizar inquéritos policiais antes de análise por IA.",
   "engines": {
@@ -33,6 +33,7 @@
     "wasm-feature-detect": "^1.9.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "1.63.0",
     "@tesseract.js-data/por": "^1.0.0",

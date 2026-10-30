@@ -14,6 +14,7 @@
   --warn: #92400e;
   --warn-bg: #fef3c7;
   --focus: #2563eb;
+  --link: #1e40af;
   --danger: #b91c1c;
   --danger-bg: #fee2e2;
   --info-bg: #e0f2fe;
@@ -53,6 +54,7 @@
     --warn: #fcd34d;
     --warn-bg: #78350f;
     --focus: #93c5fd;
+    --link: #93c5fd;
     --danger: #fca5a5;
     --danger-bg: #450a0a;
     --info-bg: #0c4a6e;
@@ -86,7 +88,7 @@ h1 {
 }
 
 a {
-  color: var(--primary);
+  color: var(--link);
 }
 
 :focus-visible {
@@ -134,7 +136,7 @@ button.primary,
 .app {
   min-height: 100dvh;
   display: grid;
-  grid-template-rows: auto auto 1fr;
+  grid-template-rows: auto auto 1fr auto;
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
     env(safe-area-inset-left);
 }
@@ -326,7 +328,7 @@ button.link {
   min-height: auto;
   border: none;
   background: none;
-  color: var(--primary);
+  color: var(--link);
   text-decoration: underline;
   padding: 0 0.25rem;
 }
@@ -813,6 +815,47 @@ textarea.terms-editor {
   background: var(--bg);
   color: var(--text);
   font: inherit;
+}
+
+/* ---------- Ajuda e rodapé ---------- */
+
+.app-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem 1.5rem;
+  padding: 1rem 1rem calc(1rem + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.app-footer a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch);
+}
+
+.help-steps {
+  margin: 1rem 0 0;
+  padding-left: 1.5rem;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.help-steps li {
+  padding: 0.75rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.help-steps h2 {
+  margin: 0 0 0.25rem;
+}
+
+.help-steps p {
+  margin: 0 0 0.5rem;
 }
 
 /* ---------- Revisão ---------- */

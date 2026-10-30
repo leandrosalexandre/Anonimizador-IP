@@ -7,13 +7,25 @@ telemetria nem comunicação com IA — o texto é copiado e colado manualmente.
 A especificação completa está em [`SPEC.md`](./SPEC.md); as decisões técnicas, em
 [`docs/DECISOES.md`](./docs/DECISOES.md).
 
-> **Estado atual:** Fase 7 — fluxo completo: cofres criptografados, importação de PDFs, OCR
-> offline, detecção e revisão de dados pessoais, exportação pseudonimizada e reidentificação da
-> análise. A Fase 8 (polimento, testes finais e publicação) vem a seguir.
+> **Versão 1.0.0** — fluxo completo: cofres criptografados, importação de PDFs, OCR offline,
+> detecção e revisão de dados pessoais, exportação pseudonimizada e reidentificação da análise.
+> Métricas em [`docs/METRICAS.md`](./docs/METRICAS.md).
 
 ## Endereço
 
-Depois de publicado: `https://leandrosalexandre.github.io/Anonimizador-IP/`
+**https://leandrosalexandre.github.io/Anonimizador-IP/**
+
+## Uso em 7 passos
+
+1. **Cofres**: crie um cofre para o inquérito (nome sem nomes de pessoas, senha forte).
+2. **Documentos**: importe os PDFs e confira as folhas (fls.).
+3. **Documentos**: faça o OCR das páginas escaneadas e confira o texto.
+4. **Revisão**: detecte os dados pessoais, atribua papéis e revise cada entidade.
+5. **Exportar**: resolva a varredura residual e copie o texto pseudonimizado.
+6. Cole na IA e peça a análise; copie a resposta.
+7. **Reidentificar**: cole a resposta para ver os nomes reais.
+
+O próprio app tem as telas **Como usar** e **Sobre** (rodapé).
 
 ## Instalação
 
@@ -149,5 +161,13 @@ O repositório pode ser público: contém apenas código, nunca dados de inquér
 
 ## Limitações
 
-- Revisão humana é obrigatória: a detecção automática pode deixar passar dados.
-- A pseudonimização não elimina o risco de identificação pelo contexto.
+- **Revisão humana obrigatória**: a detecção automática pode deixar passar dados pessoais ou marcar
+  palavras comuns. Confira cada página na aba Texto da Revisão e a varredura residual.
+- **A pseudonimização não elimina o risco de identificação pelo contexto** (datas, locais,
+  profissões, relações familiares e a própria descrição dos fatos podem identificar alguém).
+- **Textos manuscritos** (inclusive números de folha escritos à mão) não são reconhecidos pelo OCR.
+- A qualidade do OCR depende da digitalização. No tablet, o OCR leva alguns segundos por página;
+  mantenha o app aberto na tela até terminar.
+- Os dados ficam só neste aparelho e navegador: **limpar os dados do site** ou desinstalar o app
+  apaga os cofres. Use "Exportar" (arquivo `.ipcofre`) para guardar uma cópia cifrada.
+- Arquivos baixados (texto exportado, análise reidentificada, PDF pesquisável) não são cifrados.

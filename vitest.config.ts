@@ -4,6 +4,7 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
+  define: { __APP_VERSION__: '"teste"', __BUILD_DATE__: '"2026-01-01"' },
   resolve: {
     alias: {
       'virtual:pwa-register/react': fileURLToPath(

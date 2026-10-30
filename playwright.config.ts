@@ -19,7 +19,7 @@ export default defineConfig({
       name: 'tablet-chromium',
       use: { ...devices['Desktop Chrome'], viewport: { width: 800, height: 1280 }, hasTouch: true },
       // O OCR é igual nos dois tamanhos de tela e é lento: testado só no desktop.
-      testIgnore: /ocr\.spec\.ts/,
+      testIgnore: /(ocr|full-flow)\.spec\.ts/,
     },
   ],
   webServer: {

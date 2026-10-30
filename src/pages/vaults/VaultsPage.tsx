@@ -141,6 +141,9 @@ export function VaultsPage() {
         <div className="empty-state">
           <p>Nenhum cofre neste aparelho.</p>
           <p>Crie um cofre para o inquérito ou importe um arquivo {'.ipcofre'}.</p>
+          <p>
+            Primeira vez? Veja <Link to="/como-usar">como usar</Link>.
+          </p>
         </div>
       ) : (
         <ul className="vault-list" aria-label="Cofres neste aparelho">

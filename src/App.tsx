@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Navigate, NavLink, Route, Routes } from 'react-router';
+import { Link, Navigate, NavLink, Route, Routes } from 'react-router';
 import { ROUTES, type AppRoute } from './routes';
 import { PlaceholderPage } from './pages/PlaceholderPage';
 import { NotFoundPage } from './pages/NotFoundPage';
@@ -10,6 +10,8 @@ import { PageReviewPage } from './pages/documents/PageReviewPage';
 import { ReviewPage } from './pages/review/ReviewPage';
 import { ExportPage } from './pages/export/ExportPage';
 import { ReidentifyPage } from './pages/reidentify/ReidentifyPage';
+import { HelpPage } from './pages/HelpPage';
+import { AboutPage } from './pages/AboutPage';
 import { AutoLockController } from './components/AutoLockController';
 import { RequireVault } from './components/RequireVault';
 import { VaultStatus } from './components/VaultStatus';
@@ -80,9 +82,16 @@ export function App() {
             <Route key={route.path} path={route.path} element={pageFor(route)} />
           ))}
           <Route path="/conferencia/:docId/:pdfPage" element={<PageReviewPage />} />
+          <Route path="/como-usar" element={<HelpPage />} />
+          <Route path="/sobre" element={<AboutPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>
+      <footer className="app-footer no-print">
+        <Link to="/como-usar">Como usar</Link>
+        <Link to="/sobre">Sobre e privacidade</Link>
+        <span className="meta">Nada sai deste aparelho.</span>
+      </footer>
       <AutoLockController />
       <UpdatePrompt />
     </div>
