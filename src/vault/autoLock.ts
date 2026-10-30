@@ -2,7 +2,20 @@
 import { LOCK_ON_HIDE_DELAY_MS, type AppSettings } from '../settings/settings';
 import type { LockReason } from './session';
 
-const ACTIVITY_EVENTS = ['pointerdown', 'keydown', 'wheel', 'touchstart', 'input'] as const;
+/** Disparado pelo app durante processamentos longos pedidos pelo usuário (ex.: OCR). */
+export const APP_ACTIVITY_EVENT = 'anonimizador:atividade';
+const ACTIVITY_EVENTS = [
+  'pointerdown',
+  'keydown',
+  'wheel',
+  'touchstart',
+  'input',
+  APP_ACTIVITY_EVENT,
+] as const;
+
+export function signalActivity(): void {
+  window.dispatchEvent(new Event(APP_ACTIVITY_EVENT));
+}
 const CHECK_INTERVAL_MS = 5_000;
 
 export interface AutoLockOptions {

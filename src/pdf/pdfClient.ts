@@ -46,6 +46,51 @@ export function terminatePdfWorker(): void {
   worker = null;
 }
 
+/**
+ * Renderiza uma página em JPEG. `loadData` só é chamado se o worker ainda não tem o documento
+ * aberto (evita decifrar e copiar o PDF a cada página).
+ */
+export function renderPage(
+  key: string,
+  pdfPage: number,
+  dpi: number,
+  loadData: () => Promise<Uint8Array<ArrayBuffer>>,
+): Promise<{ image: Blob; width: number; height: number }> {
+  const w = getWorker();
+  const send = (jobId: number, data: ArrayBuffer | null) => {
+    const request: WorkerRequest = { type: 'render', jobId, key, data, pdfPage, dpi };
+    w.postMessage(request, data ? [data] : []);
+  };
+  return new Promise((resolve, reject) => {
+    const jobId = nextJob++;
+    const onMessage = (event: MessageEvent<WorkerResponse>) => {
+      const msg = event.data;
+      if (msg.jobId !== jobId) return;
+      if (msg.type === 'need-data') {
+        loadData().then(
+          (bytes) => send(jobId, bytes.slice().buffer),
+          (e: unknown) => {
+            w.removeEventListener('message', onMessage);
+            reject(e instanceof Error ? e : new PdfExtractionError('unknown'));
+          },
+        );
+        return;
+      }
+      w.removeEventListener('message', onMessage);
+      if (msg.type === 'image') {
+        resolve({
+          image: new Blob([msg.image], { type: 'image/jpeg' }),
+          width: msg.width,
+          height: msg.height,
+        });
+      } else if (msg.type === 'error') reject(new PdfExtractionError(msg.code));
+      else reject(new PdfExtractionError('unknown'));
+    };
+    w.addEventListener('message', onMessage);
+    send(jobId, null);
+  });
+}
+
 /** Lê o PDF no worker, página por página. `data` é copiado: o original continua utilizável. */
 export function extractPdf(
   data: Uint8Array<ArrayBuffer>,

@@ -2,6 +2,7 @@ import { RequireVault } from '../../components/RequireVault';
 import { useSession } from '../../vault/session';
 import { DocumentCard } from './DocumentCard';
 import { ImportArea } from './ImportArea';
+import { OcrPanel } from './OcrPanel';
 
 export function DocumentsPage() {
   const session = useSession();
@@ -15,6 +16,7 @@ export function DocumentsPage() {
       </p>
       <RequireVault>
         <ImportArea />
+        <OcrPanel />
         {documents.length === 0 ? (
           <div className="empty-state">
             <p>Nenhum documento neste cofre.</p>

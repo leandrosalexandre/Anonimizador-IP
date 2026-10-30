@@ -7,8 +7,8 @@ telemetria nem comunicação com IA — o texto é copiado e colado manualmente.
 A especificação completa está em [`SPEC.md`](./SPEC.md); as decisões técnicas, em
 [`docs/DECISOES.md`](./docs/DECISOES.md).
 
-> **Estado atual:** Fase 2 — cofres criptografados e importação de PDFs (texto, miniaturas e
-> folhas). As telas de Revisão em diante ainda são provisórias.
+> **Estado atual:** Fase 3 — cofres criptografados, importação de PDFs e OCR offline das páginas
+> escaneadas, com tela de conferência. As telas de Revisão em diante ainda são provisórias.
 
 ## Endereço
 
@@ -71,6 +71,19 @@ atualização.
   fls. N" ou corrija página por página em **Corrigir fls.**
 - O PDF original fica guardado cifrado no cofre, para o OCR e para levar o cofre a outro aparelho.
 
+## OCR das páginas escaneadas
+
+- Em **Documentos**, toque em **Fazer OCR das páginas sem texto** (ou em **Fazer OCR** numa página).
+  O reconhecimento acontece neste aparelho, sem internet, uma página por vez, com progresso,
+  estimativa de tempo e botão **Cancelar OCR**. Mantenha o app aberto na tela até terminar:
+  se o cofre bloquear, o OCR para, e as páginas já concluídas ficam salvas.
+- Em **Conferir**, a imagem da página aparece ao lado do texto (empilhados com o tablet em pé),
+  com zoom. Palavras de baixa confiança ficam destacadas em amarelo. Use **Corrigir texto** para
+  ajustar; a correção substitui o texto da página.
+- Em Configurações: binarização (para cópias manchadas) e **PDF pesquisável** (cópia do PDF com
+  camada de texto, para baixar; o arquivo baixado **não é cifrado**).
+- Textos manuscritos e números de folha escritos à mão não são reconhecidos.
+
 ## Desenvolvimento
 
 Requisitos: Node.js 22 ou superior.
@@ -84,6 +97,7 @@ npm run lint       # ESLint + Prettier
 npm test           # testes unitários (Vitest)
 npm run test:e2e   # testes E2E (Playwright): offline, CSP, instalabilidade e zero requisições externas
 npm run fixtures   # regera o IP fictício e o gabarito em test/fixtures/
+npm run bench:ocr  # mede o OCR no IP fictício escaneado (tempo, CER, acerto de entidades)
 ```
 
 O **IP fictício** de referência (`test/fixtures/`) tem versões com texto, escaneada e mista, além

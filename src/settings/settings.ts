@@ -7,9 +7,18 @@ export interface AppSettings {
   idleLockMinutes: number;
   /** Bloqueio ao ocultar ou fechar o app (SPEC 2.5: padrão imediato). */
   lockOnHide: LockOnHide;
+  /** Binarização (preto e branco) antes do OCR. Ajuda em cópias manchadas; piora fotos. */
+  ocrBinarize: boolean;
+  /** Oferece um PDF pesquisável (imagem + camada de texto) ao fim do OCR. */
+  ocrSearchablePdf: boolean;
 }
 
-export const DEFAULT_SETTINGS: AppSettings = { idleLockMinutes: 10, lockOnHide: 'immediate' };
+export const DEFAULT_SETTINGS: AppSettings = {
+  idleLockMinutes: 10,
+  lockOnHide: 'immediate',
+  ocrBinarize: false,
+  ocrSearchablePdf: false,
+};
 export const IDLE_LOCK_OPTIONS = [1, 2, 5, 10, 15, 30, 60] as const;
 export const LOCK_ON_HIDE_DELAY_MS: Record<LockOnHide, number | null> = {
   immediate: 0,
@@ -32,7 +41,12 @@ function sanitize(value: unknown): AppSettings {
     raw.lockOnHide && raw.lockOnHide in LOCK_ON_HIDE_DELAY_MS
       ? raw.lockOnHide
       : DEFAULT_SETTINGS.lockOnHide;
-  return { idleLockMinutes: idle, lockOnHide };
+  return {
+    idleLockMinutes: idle,
+    lockOnHide,
+    ocrBinarize: raw.ocrBinarize === true,
+    ocrSearchablePdf: raw.ocrSearchablePdf === true,
+  };
 }
 
 export function getSettings(): AppSettings {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { detectFolha, resolveFolhas, suggestOffset } from './folhas';
+import { detectFolha, parseFolhaStamp, resolveFolhas, suggestOffset } from './folhas';
 import type { TextLine } from './layout';
 
 const W = 595;
@@ -79,5 +79,18 @@ describe('suggestOffset', () => {
     expect(suggestOffset([p(1, 3), p(2, 4), p(3, 5), p(4, 99)])).toBe(2);
     expect(suggestOffset([p(1, 3)])).toBeNull();
     expect(suggestOffset([p(1, 3), p(2, 10)])).toBeNull();
+  });
+});
+
+describe('parseFolhaStamp', () => {
+  it.each([
+    ['| Fls. 3 |', 3],
+    ['Fl. 7\n', 7],
+    ['[ 12 ]', 12],
+    ['___\nFLS: 15\n—', 15],
+    ['ESTADO', null],
+    ['', null],
+  ])('lê "%s"', (text, expected) => {
+    expect(parseFolhaStamp(text)).toBe(expected);
   });
 });

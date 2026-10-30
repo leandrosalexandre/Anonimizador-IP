@@ -42,6 +42,10 @@ export interface StoredPage {
   /** Origem do texto atual; null se a página ainda não tem texto (imagem sem OCR). */
   textSource: TextSource | null;
   ocrConfidence: number | null;
+  /** Trechos [início, fim) de `text` com palavras de baixa confiança no OCR. */
+  ocrLowConfidence?: [number, number][];
+  /** Data da última correção manual do texto. */
+  textEditedAt?: string;
   text: string;
   folhaDetected: number | null;
   folhaManual: number | null;

@@ -36,7 +36,7 @@ const COMMON = [
 ];
 
 function stripAccents(s: string): string {
-  return s.normalize('NFD').replace(/[̀-ͯ]/g, '');
+  return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
 function charsetSize(password: string): number {

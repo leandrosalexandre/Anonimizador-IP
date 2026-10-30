@@ -71,8 +71,50 @@ async function extract(jobId: number, data: ArrayBuffer, thumbnailWidth: number)
   }
 }
 
+// Último documento aberto para renderização (a conferência navega página a página).
+let cached: { key: string; doc: PDFDocumentProxy } | null = null;
+
+async function render(message: Extract<WorkerRequest, { type: 'render' }>) {
+  const { jobId, key, data, pdfPage, dpi } = message;
+  try {
+    if (cached?.key !== key) {
+      if (!data) {
+        post({ type: 'need-data', jobId });
+        return;
+      }
+      await cached?.doc.destroy();
+      cached = null;
+      cached = { key, doc: await openPdf(new Uint8Array(data)).promise };
+    }
+    const page = await cached.doc.getPage(pdfPage);
+    try {
+      const viewport = page.getViewport({ scale: dpi / 72 });
+      const canvas = new OffscreenCanvas(Math.ceil(viewport.width), Math.ceil(viewport.height));
+      const context = canvas.getContext('2d');
+      if (!context) throw new Error('Canvas indisponível');
+      context.fillStyle = '#ffffff';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      await page.render({
+        canvas: null,
+        canvasContext: context as unknown as CanvasRenderingContext2D,
+        viewport,
+      }).promise;
+      const blob = await canvas.convertToBlob({ type: 'image/jpeg', quality: 0.85 });
+      const { width, height } = canvas;
+      canvas.width = canvas.height = 0;
+      const image = await blob.arrayBuffer();
+      post({ type: 'image', jobId, image, width, height }, [image]);
+    } finally {
+      page.cleanup();
+    }
+  } catch (error) {
+    post({ type: 'error', jobId, code: errorCode(error) });
+  }
+}
+
 self.onmessage = (event: MessageEvent<WorkerRequest>) => {
   const message = event.data;
   if (message.type === 'cancel') cancelled.add(message.jobId);
+  else if (message.type === 'render') void render(message);
   else void extract(message.jobId, message.data, message.thumbnailWidth);
 };

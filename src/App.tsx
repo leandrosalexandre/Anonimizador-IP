@@ -6,6 +6,7 @@ import { NotFoundPage } from './pages/NotFoundPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { VaultsPage } from './pages/vaults/VaultsPage';
 import { DocumentsPage } from './pages/documents/DocumentsPage';
+import { PageReviewPage } from './pages/documents/PageReviewPage';
 import { AutoLockController } from './components/AutoLockController';
 import { RequireVault } from './components/RequireVault';
 import { VaultStatus } from './components/VaultStatus';
@@ -69,6 +70,7 @@ export function App() {
           {ROUTES.map((route) => (
             <Route key={route.path} path={route.path} element={pageFor(route)} />
           ))}
+          <Route path="/conferencia/:docId/:pdfPage" element={<PageReviewPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>

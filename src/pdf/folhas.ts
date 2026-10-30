@@ -48,6 +48,25 @@ export function detectFolha(
 }
 
 /**
+ * Lê a folha no texto reconhecido de um recorte do canto da página (carimbo): "Fls. 12" ou uma
+ * linha só com o número.
+ */
+export function parseFolhaStamp(text: string): number | null {
+  const lines = text
+    .split('\n')
+    .map((l) => l.replace(/[|[\]{}()_—–-]/g, ' ').trim())
+    .filter(Boolean);
+  for (const line of lines) {
+    const m = STAMP_RE.exec(line);
+    const value = Number(m?.[1]);
+    if (value > 0 && value <= MAX_FOLHA) return value;
+  }
+  const bare = lines.find((l) => /^\d{1,5}$/.test(l));
+  const value = Number(bare);
+  return value > 0 && value <= MAX_FOLHA ? value : null;
+}
+
+/**
  * Folha final de cada página. Prioridade: correção manual > deslocamento informado >
  * detectada > inferida a partir da página detectada mais próxima.
  */

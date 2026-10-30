@@ -85,7 +85,7 @@ export function vaultFileName(name: string): string {
     .replace(/ª/g, 'a')
     .replace(/º/g, 'o')
     .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
+    .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-zA-Z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .slice(0, 60);

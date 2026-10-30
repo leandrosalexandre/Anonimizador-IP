@@ -1,4 +1,6 @@
 import { useId, useMemo, useState, type FormEvent } from 'react';
+import { Link } from 'react-router';
+import { startOcr, useOcrState } from '../../ocr/ocrStore';
 import { Thumbnail } from '../../components/Thumbnail';
 import { documentBlobIds } from '../../documents/importPdf';
 import { resolveFolhas, suggestOffset, type ResolvedFolha } from '../../pdf/folhas';
@@ -107,6 +109,12 @@ function PageRow({
   const [value, setValue] = useState('');
   const [error, setError] = useState<string | null>(null);
   const kind = kindLabel(page);
+  const ocr = useOcrState();
+  const ocrRunning = ocr.status === 'running';
+  const inOcr =
+    ocr.status === 'running' && ocr.docId === doc.id && ocr.currentPage === page.pdfPage;
+  const queued =
+    ocr.status === 'running' && ocr.docId === doc.id && ocr.pages.includes(page.pdfPage) && !inOcr;
 
   async function saveFolha(folhaManual: number | null) {
     setError(null);
@@ -138,12 +146,29 @@ function PageRow({
           </span>
           <span className="meta">PDF p. {page.pdfPage}</span>
           <span className={`kind-badge ${kind.className}`}>{kind.text}</span>
+          {inOcr && <span className="kind-badge ocr">OCR em andamento…</span>}
+          {queued && page.textSource !== 'ocr' && <span className="meta">na fila do OCR</span>}
+          {page.textSource === 'ocr' && page.ocrConfidence !== null && (
+            <span className="meta">confiança {Math.round(page.ocrConfidence)}%</span>
+          )}
         </p>
         {folha.source && <p className="meta">Folha {SOURCE_LABEL[folha.source]}</p>}
         <div className="actions">
           <button type="button" aria-expanded={showText} onClick={() => setShowText((v) => !v)}>
             {showText ? 'Ocultar texto' : 'Ver texto'}
           </button>
+          <Link className="button-like" to={`/conferencia/${doc.id}/${page.pdfPage}`}>
+            Conferir
+          </Link>
+          {page.kind === 'image' && page.textSource !== 'ocr' && (
+            <button
+              type="button"
+              disabled={ocrRunning}
+              onClick={() => void startOcr(doc, [page.pdfPage])}
+            >
+              Fazer OCR
+            </button>
+          )}
           <button type="button" onClick={() => setEditing((v) => !v)} aria-expanded={editing}>
             Corrigir fls.
           </button>
@@ -185,7 +210,7 @@ function PageRow({
             </pre>
           ) : (
             <p className="hint">
-              Página sem texto (imagem escaneada). O texto será obtido por OCR, na próxima etapa.
+              Página sem texto (imagem escaneada). Use “Fazer OCR” para reconhecer o texto.
             </p>
           )}
         </div>
@@ -200,7 +225,9 @@ export function DocumentCard({ doc }: { doc: StoredDocument }) {
   const [error, setError] = useState<string | null>(null);
   const folhas = useMemo(() => resolveFolhas(doc.pages, doc.folhaOffset), [doc]);
   const suggestion = useMemo(() => suggestOffset(doc.pages), [doc]);
-  const images = doc.pages.filter((p) => p.kind === 'image' && p.textSource !== 'ocr').length;
+  const pending = doc.pages.filter((p) => p.kind === 'image' && p.textSource !== 'ocr');
+  const images = pending.length;
+  const ocr = useOcrState();
   const first = folhas.find((f) => f.folha !== null)?.folha;
   const last = [...folhas].reverse().find((f) => f.folha !== null)?.folha;
 
@@ -227,6 +254,21 @@ export function DocumentCard({ doc }: { doc: StoredDocument }) {
           </p>
         </div>
         <div className="actions">
+          {images > 0 && (
+            <button
+              type="button"
+              className="primary"
+              disabled={ocr.status === 'running'}
+              onClick={() =>
+                void startOcr(
+                  doc,
+                  pending.map((p) => p.pdfPage),
+                )
+              }
+            >
+              Fazer OCR das páginas sem texto ({images})
+            </button>
+          )}
           <button type="button" aria-expanded={expanded} onClick={() => setExpanded((v) => !v)}>
             {expanded ? 'Recolher' : 'Mostrar páginas'}
           </button>

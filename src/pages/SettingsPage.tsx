@@ -78,6 +78,33 @@ export function SettingsPage() {
       </div>
 
       <div className="panel">
+        <h2>OCR (páginas escaneadas)</h2>
+        <label className="checkbox">
+          <input
+            type="checkbox"
+            checked={settings.ocrBinarize}
+            onChange={(e) => updateSettings({ ocrBinarize: e.target.checked })}
+          />
+          Converter para preto e branco antes do OCR (binarização)
+        </label>
+        <p className="hint">
+          Pode ajudar em cópias manchadas ou com fundo escuro. Em páginas limpas, deixe desligado.
+        </p>
+        <label className="checkbox">
+          <input
+            type="checkbox"
+            checked={settings.ocrSearchablePdf}
+            onChange={(e) => updateSettings({ ocrSearchablePdf: e.target.checked })}
+          />
+          Gerar PDF pesquisável ao fim do OCR
+        </label>
+        <p className="hint">
+          Oferece para baixar uma cópia do PDF com camada de texto nas páginas escaneadas. O arquivo
+          baixado não é cifrado: guarde-o em local seguro.
+        </p>
+      </div>
+
+      <div className="panel">
         <h2>Apagar tudo</h2>
         <p>
           Remove todos os cofres e preferências deste aparelho. O app continua instalado. Não pode

@@ -8,16 +8,17 @@ beforeEach(() => {
 
 describe('preferências', () => {
   it('padrão: 10 minutos e bloqueio imediato ao ocultar', () => {
-    expect(getSettings()).toEqual({ idleLockMinutes: 10, lockOnHide: 'immediate' });
+    expect(getSettings()).toEqual(DEFAULT_SETTINGS);
+    expect(DEFAULT_SETTINGS).toMatchObject({ idleLockMinutes: 10, lockOnHide: 'immediate' });
   });
 
   it('persiste e valida', () => {
     updateSettings({ idleLockMinutes: 5, lockOnHide: '1min' });
-    expect(JSON.parse(localStorage.getItem('anonimizador-ip:settings') ?? '')).toEqual({
+    expect(JSON.parse(localStorage.getItem('anonimizador-ip:settings') ?? '')).toMatchObject({
       idleLockMinutes: 5,
       lockOnHide: '1min',
     });
-    expect(getSettings()).toEqual({ idleLockMinutes: 5, lockOnHide: '1min' });
+    expect(getSettings()).toMatchObject({ idleLockMinutes: 5, lockOnHide: '1min' });
   });
 
   it('ignora valores inválidos', () => {

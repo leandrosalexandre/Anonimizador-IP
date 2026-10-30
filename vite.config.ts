@@ -22,45 +22,70 @@ function cspMetaTag(): Plugin {
   };
 }
 
-const PDFJS_ROOT = fileURLToPath(new URL('./node_modules/pdfjs-dist/', import.meta.url));
-/** Recursos do pdf.js servidos pelo próprio app (SPEC 2.2): mapas de caracteres, fontes padrão,
- * decodificadores WASM (JBIG2/JPEG 2000, comuns em PDFs escaneados) e perfis de cor. */
-const PDFJS_ASSETS: Record<string, RegExp> = {
-  cmaps: /\.bcmap$/,
-  standard_fonts: /\.(pfb|ttf)$|^LICENSE/,
-  wasm: /^(jbig2|openjpeg|qcms_bg)\.wasm$|^LICENSE/,
-  iccs: /\.icc$|^LICENSE/,
-};
+const NODE_MODULES = fileURLToPath(new URL('./node_modules/', import.meta.url));
 
-function pdfjsAssets(): Plugin {
-  const files = Object.entries(PDFJS_ASSETS).flatMap(([dir, pattern]) =>
-    readdirSync(join(PDFJS_ROOT, dir))
+/**
+ * Recursos de terceiros servidos pelo próprio app e pré-cacheados (SPEC 2.2):
+ * - pdf.js: mapas de caracteres, fontes padrão, decodificadores WASM (JBIG2/JPEG 2000, comuns
+ *   em PDFs escaneados) e perfis de cor;
+ * - Tesseract: worker, núcleos WASM só-LSTM (relaxed SIMD, SIMD e sem SIMD) e o modelo `por`
+ *   (tessdata best_int). Núcleo e worker ficam na mesma pasta: o núcleo procura o .wasm ao lado.
+ */
+const VENDOR_ASSETS: { from: string; pattern: RegExp; to: string; rename?: string }[] = [
+  { from: 'pdfjs-dist/cmaps', pattern: /\.bcmap$|^LICENSE/, to: 'pdfjs/cmaps' },
+  {
+    from: 'pdfjs-dist/standard_fonts',
+    pattern: /\.(pfb|ttf)$|^LICENSE/,
+    to: 'pdfjs/standard_fonts',
+  },
+  {
+    from: 'pdfjs-dist/wasm',
+    pattern: /^(jbig2|openjpeg|qcms_bg)\.wasm$|^LICENSE/,
+    to: 'pdfjs/wasm',
+  },
+  { from: 'pdfjs-dist/iccs', pattern: /\.icc$|^LICENSE/, to: 'pdfjs/iccs' },
+  { from: 'tesseract.js/dist', pattern: /^worker\.min\.js(\.LICENSE\.txt)?$/, to: 'tesseract' },
+  {
+    from: 'tesseract.js-core',
+    pattern: /^tesseract-core-(relaxedsimd-lstm|simd-lstm|lstm)\.(js|wasm)$|^LICENSE$/,
+    to: 'tesseract',
+  },
+  {
+    from: '@tesseract.js-data/por/4.0.0_best_int',
+    pattern: /^por\.traineddata\.gz$/,
+    to: 'tesseract/lang',
+  },
+];
+
+function vendorAssets(): Plugin {
+  const files = VENDOR_ASSETS.flatMap(({ from, pattern, to }) =>
+    readdirSync(join(NODE_MODULES, from))
       .filter((f) => pattern.test(f))
-      .map((f) => ({ dir, file: f })),
+      .map((f) => ({
+        source: join(NODE_MODULES, from, f),
+        url: `${to}/${f === 'LICENSE' ? `LICENSE-${from.split('/')[0]}` : f}`,
+      })),
   );
+  const contentType = (url: string) =>
+    url.endsWith('.wasm')
+      ? 'application/wasm'
+      : url.endsWith('.js')
+        ? 'text/javascript'
+        : 'application/octet-stream';
   return {
-    name: 'pdfjs-assets',
+    name: 'vendor-assets',
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
-        const match = /\/pdfjs\/(\w+)\/([\w.-]+)$/.exec(req.url ?? '');
-        const entry = match && files.find((f) => f.dir === match[1] && f.file === match[2]);
-        if (!entry) return next();
-        const path = join(PDFJS_ROOT, entry.dir, entry.file);
-        if (!existsSync(path)) return next();
-        res.setHeader(
-          'Content-Type',
-          entry.file.endsWith('.wasm') ? 'application/wasm' : 'application/octet-stream',
-        );
-        createReadStream(path).pipe(res);
+        const path = (req.url ?? '').split('?')[0] ?? '';
+        const entry = files.find((f) => path.endsWith(`/${f.url}`));
+        if (!entry || !existsSync(entry.source)) return next();
+        res.setHeader('Content-Type', contentType(entry.url));
+        createReadStream(entry.source).pipe(res);
       });
     },
     generateBundle() {
-      for (const { dir, file } of files) {
-        this.emitFile({
-          type: 'asset',
-          fileName: `pdfjs/${dir}/${file}`,
-          source: readFileSync(join(PDFJS_ROOT, dir, file)),
-        });
+      for (const { source, url } of files) {
+        this.emitFile({ type: 'asset', fileName: url, source: readFileSync(source) });
       }
     },
   };
@@ -76,7 +101,7 @@ export default defineConfig({
   plugins: [
     react(),
     cspMetaTag(),
-    pdfjsAssets(),
+    vendorAssets(),
     VitePWA({
       // O usuário decide quando atualizar, para não recarregar no meio de uma revisão.
       registerType: 'prompt',

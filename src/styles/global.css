@@ -702,6 +702,108 @@ progress {
   line-height: 1.5;
 }
 
+label.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: var(--touch);
+  font-weight: 400;
+}
+
+label.checkbox input {
+  width: 1.375rem;
+  height: 1.375rem;
+  min-height: 0;
+  flex: none;
+}
+
+.ocr-panel h2 {
+  margin-bottom: 0.25rem;
+}
+
+.ocr-panel .hint {
+  margin: 0.5rem 0 0.25rem;
+}
+
+mark.low-confidence {
+  background: #fde047;
+  color: #111;
+  border-radius: 2px;
+}
+
+.review-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.5rem 0 1rem;
+}
+
+.review-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+.review-image {
+  position: sticky;
+  top: 0.5rem;
+}
+
+.zoom-bar {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.zoom-viewport {
+  height: 75vh;
+  overflow: auto;
+  background: #e5e7eb;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  touch-action: pan-x pan-y pinch-zoom;
+}
+
+.zoom-viewport img {
+  display: block;
+  max-width: none;
+  margin: 0 auto;
+  background: #fff;
+}
+
+.review-text .page-text {
+  max-height: none;
+}
+
+.page-text-editor {
+  width: 100%;
+  min-height: 60vh;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  font-family: ui-monospace, 'Cascadia Mono', 'Roboto Mono', monospace;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+/* Tablet em retrato e telas estreitas: imagem e texto empilhados. */
+@media (max-width: 900px), (orientation: portrait) {
+  .review-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .review-image {
+    position: static;
+  }
+
+  .zoom-viewport {
+    height: 55vh;
+  }
+}
+
 /* Tablet em retrato e celulares: navegação em grade, sem rolagem horizontal. */
 @media (max-width: 860px) {
   .app-nav ol {
