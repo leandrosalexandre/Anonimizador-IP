@@ -10,11 +10,8 @@ const gabarito = JSON.parse(readFileSync(new URL('gabarito.json', FIXTURES), 'ut
   files: { scanned: string; mixed: { file: string; imagePages: number[] } };
 };
 
-// OCR é lento: um único projeto (desktop) e tempo maior.
+// OCR é lento: roda só no projeto desktop (ver playwright.config.ts) e com tempo maior.
 test.describe.configure({ timeout: 240_000 });
-test.beforeEach(({}, info) => {
-  test.skip(info.project.name !== 'desktop-chromium', 'OCR testado só no projeto desktop');
-});
 
 async function setup(page: Page, file: string) {
   await page.goto('./#/cofres');
