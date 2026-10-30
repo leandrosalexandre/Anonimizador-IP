@@ -1,3 +1,5 @@
+import type { Decision, EntityType } from '../detectors/types';
+
 /** Metadados em claro, usados apenas para listar os cofres (SPEC 4). */
 export interface VaultMeta {
   id: string;
@@ -66,14 +68,43 @@ export interface StoredDocument {
   pages: StoredPage[];
 }
 
-/** Conteúdo cifrado do cofre. As fases seguintes preenchem as entidades. */
+/**
+ * Entidade revisada (SPEC 4, `entidades[]`). O marcador ("rótulo") é calculado a partir do papel
+ * e do índice, que nunca são renumerados automaticamente. As ocorrências são recalculadas a partir
+ * das variantes sobre o texto atual das páginas (ver src/review/locate.ts).
+ */
+export interface StoredEntity {
+  id: string;
+  type: EntityType;
+  /** Papel (pessoas): um dos papéis padrão ou um papel criado pelo usuário. */
+  role: string | null;
+  /** Número no marcador ([VÍTIMA 1], [CPF 2]). */
+  index: number | null;
+  canonical: string;
+  variants: string[];
+  decision: Decision;
+  /** O usuário já revisou (aceitou, alterou ou criou) esta entidade. */
+  reviewed: boolean;
+  /** Pessoa a que o dado pertence (CPF, endereço, apelido…). */
+  linkedTo: string | null;
+  /** Outras entidades com que pode ser confundida (sugestão de mesclagem). */
+  ambiguousWith: string[];
+  source: 'detected' | 'manual';
+  confidence: number;
+}
+
+/** Conteúdo cifrado do cofre. */
 export interface VaultContent {
   version: 1;
   documents: StoredDocument[];
-  entities: unknown[];
+  entities: StoredEntity[];
   config: {
     customRoles: string[];
     keepNames: string[];
+    /** Variantes descartadas como falso positivo (não voltam numa nova detecção). */
+    dismissed?: string[];
+    /** Data da última detecção automática. */
+    detectedAt?: string;
   };
 }
 

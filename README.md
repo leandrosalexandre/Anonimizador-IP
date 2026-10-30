@@ -7,8 +7,8 @@ telemetria nem comunicação com IA — o texto é copiado e colado manualmente.
 A especificação completa está em [`SPEC.md`](./SPEC.md); as decisões técnicas, em
 [`docs/DECISOES.md`](./docs/DECISOES.md).
 
-> **Estado atual:** Fase 4 — cofres criptografados, importação de PDFs, OCR offline e detecção
-> automática de dados pessoais (módulo pronto e medido; a tela de Revisão vem na Fase 5).
+> **Estado atual:** Fase 5 — cofres criptografados, importação de PDFs, OCR offline, detecção de
+> dados pessoais e tela de revisão. A exportação (Fase 6) e a reidentificação (Fase 7) vêm a seguir.
 
 ## Endereço
 
@@ -83,6 +83,19 @@ atualização.
 - Em Configurações: binarização (para cópias manchadas) e **PDF pesquisável** (cópia do PDF com
   camada de texto, para baixar; o arquivo baixado **não é cifrado**).
 - Textos manuscritos e números de folha escritos à mão não são reconhecidos.
+
+## Revisão dos dados pessoais
+
+1. Em **Revisão**, toque em **Detectar dados pessoais**. O app sugere as entidades (pessoas,
+   CPFs, telefones, endereços…), com papel (vítima, autor…) e número, e sugere **manter** as
+   autoridades (Delegado, Escrivão…).
+2. Na aba **Entidades**, abra cada uma para ajustar o papel e o número, decidir entre pseudonimizar
+   e manter, vincular dados a uma pessoa, mesclar duplicadas, separar variantes ou descartar falsos
+   positivos. **Confirmar sugestões** aceita um grupo inteiro.
+3. Na aba **Texto**, confira os destaques página a página. Toque num destaque para abrir a entidade;
+   selecione um trecho que a detecção perdeu para marcá-lo. Ligue **Original × pseudonimizado**
+   para ver o resultado.
+4. A exportação só é liberada quando todas as pessoas estiverem revisadas.
 
 ## Desenvolvimento
 
