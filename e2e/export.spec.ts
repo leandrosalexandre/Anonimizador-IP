@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
-import { trackForeignRequests } from './helpers';
+import { enableAllTypes, trackForeignRequests } from './helpers';
 
 const PASSWORD = 'girassol tapete nuvem bicicleta';
 const FIXTURES = new URL('../test/fixtures/', import.meta.url);
@@ -10,6 +10,9 @@ const gabarito = JSON.parse(readFileSync(new URL('gabarito.json', FIXTURES), 'ut
 };
 
 test.describe.configure({ timeout: 120_000 });
+
+// Aceites do SPEC com todos os tipos ativos (placas, endereços, e-mails…).
+test.beforeEach(({ page }) => enableAllTypes(page));
 
 async function reviewedVault(page: Page) {
   await page.goto('./#/cofres');

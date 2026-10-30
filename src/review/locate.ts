@@ -2,7 +2,7 @@
 // Uma regex por página com todas as variantes, das mais longas para as mais curtas: em cada
 // posição vence a variante mais longa, e os trechos não se sobrepõem (SPEC Fase 6: "substituir
 // da maior para a menor variante, para não quebrar nomes compostos").
-import { fold, nameTokens } from '../detectors/text';
+import { accentInsensitive, fold, nameTokens } from '../detectors/text';
 import type { StoredEntity } from '../vault/types';
 
 export interface PageRef {
@@ -18,7 +18,6 @@ export interface Located {
   text: string;
 }
 
-const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const key = (s: string) => fold(s).replace(/\s+/g, ' ').trim();
 
 export interface Locator {
@@ -40,9 +39,8 @@ export function buildLocator(entities: readonly StoredEntity[]): Locator {
     }
   }
   if (!variants.length) return { locate: () => [] };
-  const alternatives = [...variants]
-    .sort((a, b) => b.length - a.length)
-    .map((v) => escape(v.trim()).replace(/\s+/g, '\\s+'));
+  // Sem diferenciar caixa nem acentos: "ANTONIA LUCIA" (laudo sem acentos) = "Antônia Lúcia".
+  const alternatives = [...variants].sort((a, b) => b.length - a.length).map(accentInsensitive);
   const re = new RegExp(
     `(?<![\\p{L}\\p{N}])(?:${alternatives.join('|')})(?![\\p{L}\\p{N}])`,
     'giu',

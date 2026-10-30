@@ -6,7 +6,7 @@ import { buildExport, DEFAULT_AI_INSTRUCTIONS, toMarkdown } from '../../export/b
 import { scanResidual, type ResidualItem } from '../../export/residual';
 import { getSettings, subscribeSettings } from '../../settings/settings';
 import { TYPE_LABEL } from '../../review/labels';
-import { addManual, exportBlocked, ignoreResidual } from '../../review/model';
+import { addManual, exportBlocked, ignoreResidual, markExported } from '../../review/model';
 import { useReviewData } from '../../review/useReviewData';
 import { copyText } from '../../utils/clipboard';
 import { downloadFile } from '../../utils/download';
@@ -122,9 +122,16 @@ function ExportView({ content }: { content: VaultContent }) {
         ? scanResidual(result.pages, data, {
             exclusions: settings.detectionExclusions,
             ignored: content.config.residualIgnored ?? [],
+            types: settings.enabledTypes,
           })
         : [],
-    [result, data, settings.detectionExclusions, content.config.residualIgnored],
+    [
+      result,
+      data,
+      settings.detectionExclusions,
+      settings.enabledTypes,
+      content.config.residualIgnored,
+    ],
   );
 
   if (!result || !data) return null;
@@ -142,9 +149,15 @@ function ExportView({ content }: { content: VaultContent }) {
       ? `texto-pseudonimizado-parte-${i + 1}-de-${result.parts.length}`
       : 'texto-pseudonimizado';
 
+  /** A partir da primeira exportação, os números dos marcadores não são mais renumerados. */
+  async function exported() {
+    if (!content.config.exportedAt) await updateVaultContent(markExported);
+  }
+
   async function copy(i: number) {
     try {
       await copyText(result?.parts[i] ?? '');
+      await exported();
       setMessage(
         `${result && result.parts.length > 1 ? `Parte ${i + 1} copiada` : 'Texto copiado'}. ${residualSummary}`,
       );
@@ -273,14 +286,20 @@ function ExportView({ content }: { content: VaultContent }) {
                 <button
                   type="button"
                   disabled={!ready}
-                  onClick={() => downloadFile(`${fileBase(i)}.txt`, p, 'text/plain')}
+                  onClick={() => {
+                    downloadFile(`${fileBase(i)}.txt`, p, 'text/plain');
+                    void exported();
+                  }}
                 >
                   Baixar .txt
                 </button>
                 <button
                   type="button"
                   disabled={!ready}
-                  onClick={() => downloadFile(`${fileBase(i)}.md`, toMarkdown(p), 'text/markdown')}
+                  onClick={() => {
+                    downloadFile(`${fileBase(i)}.md`, toMarkdown(p), 'text/markdown');
+                    void exported();
+                  }}
                 >
                   Baixar .md
                 </button>

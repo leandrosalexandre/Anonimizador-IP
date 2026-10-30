@@ -2,7 +2,7 @@
 // para outra origem: criar cofre → importar → OCR → revisar → exportar → reidentificar.
 import { expect, test } from '@playwright/test';
 import { readFileSync } from 'node:fs';
-import { trackForeignRequests, waitForServiceWorker } from './helpers';
+import { enableAllTypes, trackForeignRequests, waitForServiceWorker } from './helpers';
 
 const PASSWORD = 'girassol tapete nuvem bicicleta';
 const FIXTURES = new URL('../test/fixtures/', import.meta.url);
@@ -11,6 +11,9 @@ const gabarito = JSON.parse(readFileSync(new URL('gabarito.json', FIXTURES), 'ut
 };
 
 test.describe.configure({ timeout: 300_000 });
+
+// Aceites do SPEC com todos os tipos ativos (placas, endereços, e-mails…).
+test.beforeEach(({ page }) => enableAllTypes(page));
 
 test('fluxo completo offline: cofre, PDF misto com OCR, revisão, exportação e reidentificação', async ({
   page,

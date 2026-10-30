@@ -4,6 +4,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { detectEntities } from '../detectors';
+import { ENTITY_TYPES } from '../detectors/types';
 import { findAll } from '../detectors/text';
 import { applyDetection, confirm } from '../review/model';
 import { computeReviewData } from '../review/useReviewData';
@@ -56,7 +57,11 @@ function reviewedContent(): VaultContent {
   };
   const detected = applyDetection(
     base,
-    detectEntities(gabarito.pages.map((p) => ({ docId: 'doc', pdfPage: p.pdfPage, text: p.text }))),
+    // Escopo completo (todos os tipos ativos): o aceite da Fase 6 inclui placas e endereços.
+    detectEntities(
+      gabarito.pages.map((p) => ({ docId: 'doc', pdfPage: p.pdfPage, text: p.text })),
+      { types: ENTITY_TYPES },
+    ),
   );
   // Revisão sem nenhuma correção manual: aceita todas as sugestões.
   return confirm(
@@ -96,7 +101,9 @@ describe('exportação do IP fictício', () => {
   it('mantém as autoridades e usa marcadores', () => {
     expect(text).toContain('PAULO ROBERTO CAVALCANTE MENDES');
     expect(text).toContain('[VÍTIMA 1]');
-    expect(text).toContain('[APELIDO DE INVESTIGADO 1]');
+    expect(text).toContain('[APELIDO DE AUTOR 1]');
+    // "Neguinho" (o piloto não identificado) não pertence a nenhum envolvido conhecido.
+    expect(text).toMatch(/conhecido apenas como "\[APELIDO \d\]"/);
     expect(text).toMatch(/\[CPF \d\]/);
   });
 

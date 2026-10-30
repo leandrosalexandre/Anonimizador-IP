@@ -1,4 +1,5 @@
 // Preferências do app, sem nenhum conteúdo do inquérito: podem ficar em claro no localStorage.
+import { DEFAULT_ENABLED_TYPES, ENTITY_TYPES, type EntityType } from '../detectors/types';
 
 export type LockOnHide = 'immediate' | '1min' | '5min' | 'never';
 
@@ -15,6 +16,8 @@ export interface AppSettings {
   detectionExclusions: string[];
   /** Bloco de instruções para a IA no topo do texto exportado (null = texto padrão). */
   aiInstructions: string | null;
+  /** Tipos de dado a pseudonimizar (nomes de pessoas sempre). */
+  enabledTypes: EntityType[];
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -24,6 +27,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   ocrSearchablePdf: false,
   detectionExclusions: [],
   aiInstructions: null,
+  enabledTypes: [...DEFAULT_ENABLED_TYPES],
 };
 export const IDLE_LOCK_OPTIONS = [1, 2, 5, 10, 15, 30, 60] as const;
 export const LOCK_ON_HIDE_DELAY_MS: Record<LockOnHide, number | null> = {
@@ -65,6 +69,12 @@ function sanitize(value: unknown): AppSettings {
       typeof raw.aiInstructions === 'string' && raw.aiInstructions.trim()
         ? raw.aiInstructions.slice(0, 5000)
         : null,
+    enabledTypes: Array.isArray(raw.enabledTypes)
+      ? [
+          'PESSOA' as const,
+          ...ENTITY_TYPES.filter((t) => t !== 'PESSOA' && raw.enabledTypes?.includes(t)),
+        ]
+      : [...DEFAULT_ENABLED_TYPES],
   };
 }
 

@@ -1,7 +1,7 @@
 // Operações da revisão (SPEC Fase 5). Funções puras: recebem o conteúdo do cofre e devolvem o
 // novo conteúdo; a tela grava o resultado (cifrado) e tudo vale para o cofre inteiro.
-import type { DetectedEntity, EntityType } from '../detectors/types';
-import { fold } from '../detectors/text';
+import { ROLE_PRIORITY, type DetectedEntity, type EntityType } from '../detectors/types';
+import { fold, nameTokens, PARTICLES } from '../detectors/text';
 import type { StoredEntity, VaultContent } from '../vault/types';
 import { duplicateLabels, indexScope, nextIndex, normalizeRole } from './labels';
 
@@ -27,9 +27,41 @@ function update(
 }
 
 /**
+ * Renumera os marcadores de cada papel/tipo sem lacunas (VÍTIMA 1, VÍTIMA 2…), na ordem atual.
+ * Só enquanto nenhum texto foi exportado: depois disso, uma análise devolvida pela IA usa os
+ * números antigos, e renumerar trocaria as pessoas na reidentificação.
+ */
+export function compactIndexes(content: VaultContent): VaultContent {
+  if (content.config.exportedAt) return content;
+  const byScope = new Map<string, StoredEntity[]>();
+  for (const e of content.entities) {
+    if (e.decision !== 'pseudonymize' || e.index === null) continue;
+    const key = indexScope(e);
+    byScope.set(key, [...(byScope.get(key) ?? []), e]);
+  }
+  const next = new Map<string, number>();
+  for (const list of byScope.values()) {
+    list.sort((a, b) => (a.index ?? 0) - (b.index ?? 0)).forEach((e, i) => next.set(e.id, i + 1));
+  }
+  let changed = false;
+  const entities = content.entities.map((e) => {
+    const index = e.decision === 'pseudonymize' ? (next.get(e.id) ?? e.index) : null;
+    if (index === e.index) return e;
+    changed = true;
+    return { ...e, index };
+  });
+  return changed ? { ...content, entities } : content;
+}
+
+const isSeparate = (content: VaultContent, a: string, b: string) =>
+  (content.config.separate ?? []).some(([x, y]) => (x === a && y === b) || (x === b && y === a));
+
+/**
  * Incorpora o resultado da detecção. Entidades já existentes (mesmo tipo e alguma variante em
  * comum) mantêm papel, número e decisão e só ganham variantes novas. Variantes descartadas antes
- * não voltam. Números novos continuam a sequência existente.
+ * não voltam. Entidades detectadas antes, ainda não revisadas, que a nova detecção não encontra
+ * mais (ex.: falsos positivos de uma versão anterior do detector) saem da lista. Sugestões sem
+ * sinal forte ficam guardadas como "não aplicadas".
  */
 export function applyDetection(
   content: VaultContent,
@@ -38,6 +70,7 @@ export function applyDetection(
   const dismissed = new Set((content.config.dismissed ?? []).map(vkey));
   const entities = content.entities.map((e) => ({ ...e, variants: [...e.variants] }));
   const idMap = new Map<string, string>();
+  const matched = new Set<string>();
 
   for (const d of detected) {
     const variants = d.variants.filter((v) => !dismissed.has(vkey(v)));
@@ -50,7 +83,21 @@ export function applyDetection(
       for (const v of variants) {
         if (!existing.variants.some((x) => vkey(x) === vkey(v))) existing.variants.push(v);
       }
+      // Uma sugestão que agora tem sinal forte passa a ser aplicada.
+      if (existing.suggested && !d.suggestion) {
+        existing.suggested = false;
+        existing.decision = d.decision;
+        existing.reviewed = false;
+        existing.role = d.role;
+        existing.index = d.decision === 'pseudonymize' ? nextIndex(entities, existing) : null;
+      } else if (!existing.reviewed && existing.source === 'detected' && d.role !== existing.role) {
+        existing.role = d.role;
+        existing.index =
+          existing.decision === 'pseudonymize' ? nextIndex(entities, existing, existing.id) : null;
+      }
+      if (d.roleConflicts.length) existing.roleConflicts = d.roleConflicts;
       idMap.set(d.id, existing.id);
+      matched.add(existing.id);
       continue;
     }
     const role = d.type === 'PESSOA' ? d.role : null;
@@ -61,35 +108,50 @@ export function applyDetection(
       index: null,
       canonical: d.canonical,
       variants,
-      decision: d.decision,
-      reviewed: false,
+      decision: d.suggestion ? 'keep' : d.decision,
+      reviewed: d.suggestion,
       linkedTo: null,
       ambiguousWith: [],
       source: 'detected',
       confidence: d.confidence,
+      ...(d.suggestion ? { suggested: true } : {}),
+      ...(d.roleConflicts.length ? { roleConflicts: [...d.roleConflicts] } : {}),
     };
     if (entity.decision === 'pseudonymize') entity.index = nextIndex(entities, entity);
     entities.push(entity);
     idMap.set(d.id, entity.id);
+    matched.add(entity.id);
   }
+
+  // Detectadas antes, sem revisão (ou só sugeridas), e não encontradas agora: saem.
+  const stale = new Set(
+    entities
+      .filter((e) => e.source === 'detected' && (!e.reviewed || e.suggested) && !matched.has(e.id))
+      .map((e) => e.id),
+  );
+  const alive = replaceReferences(
+    entities.filter((e) => !stale.has(e.id)),
+    stale,
+    null,
+  );
 
   // Vínculos e ambiguidades usam os ids do cofre.
   for (const d of detected) {
     const id = idMap.get(d.id);
-    const e = entities.find((x) => x.id === id);
+    const e = alive.find((x) => x.id === id);
     if (!e) continue;
     if (!e.linkedTo && d.linkedTo) e.linkedTo = idMap.get(d.linkedTo) ?? null;
     const amb = d.ambiguousWith
       .map((a) => idMap.get(a))
-      .filter((a): a is string => !!a && a !== e.id);
+      .filter((a): a is string => !!a && a !== e.id && !isSeparate(content, e.id, a));
     e.ambiguousWith = [...new Set([...e.ambiguousWith, ...amb])];
   }
 
-  return {
+  return compactIndexes({
     ...content,
-    entities,
+    entities: alive,
     config: { ...content.config, detectedAt: new Date().toISOString() },
-  };
+  });
 }
 
 /** Atribui o papel (pessoas). O número é o próximo livre no papel, salvo se informado. */
@@ -132,7 +194,13 @@ export function setDecision(
         ? nextIndex(content.entities, e, e.id)
         : e.index,
     reviewed: true,
+    suggested: false,
   }));
+}
+
+/** Aceita uma sugestão: passa a ser pseudonimizada, com o próximo número livre. */
+export function acceptSuggestion(content: VaultContent, id: string): VaultContent {
+  return setDecision(content, id, 'pseudonymize');
 }
 
 /** Aceita as sugestões (papel, decisão) sem alterá-las. */
@@ -184,6 +252,14 @@ export function merge(content: VaultContent, ids: readonly string[]): VaultConte
     for (const v of e.variants) if (!variants.some((x) => vkey(x) === vkey(v))) variants.push(v);
   }
   const canonical = [...variants].sort((a, b) => b.length - a.length)[0] ?? target.canonical;
+  const roles = content.entities
+    .filter((e) => (e.id === target.id || absorbed.has(e.id)) && e.role)
+    .map((e) => normalizeRole(e.role ?? ''));
+  const order = (r: string) => {
+    const i = ROLE_PRIORITY.indexOf(r as (typeof ROLE_PRIORITY)[number]);
+    return i >= 0 ? i : ROLE_PRIORITY.length - 2;
+  };
+  const conflicts = [...new Set(roles)].sort((a, b) => order(a) - order(b));
   const entities = content.entities
     .filter((e) => !absorbed.has(e.id))
     .map((e) =>
@@ -193,10 +269,93 @@ export function merge(content: VaultContent, ids: readonly string[]): VaultConte
             variants,
             canonical: target.canonical.length >= canonical.length ? target.canonical : canonical,
             reviewed: true,
+            suggested: false,
+            ...(conflicts.length > 1 ? { roleConflicts: conflicts } : {}),
           }
         : e,
     );
-  return withEntities(content, replaceReferences(entities, absorbed, target.id));
+  return compactIndexes(withEntities(content, replaceReferences(entities, absorbed, target.id)));
+}
+
+/** Prioridade do papel (menor = mais relevante); papéis criados pelo usuário vêm antes de PESSOA. */
+function rolePriority(e: StoredEntity): number {
+  const role = e.role ? normalizeRole(e.role) : 'PESSOA';
+  const i = ROLE_PRIORITY.indexOf(role as (typeof ROLE_PRIORITY)[number]);
+  return i >= 0 ? i : ROLE_PRIORITY.length - 2;
+}
+
+/**
+ * "Possível mesma pessoa? → Unificar": junta na entidade de papel mais relevante (VÍTIMA > AUTOR
+ * > …) e, em empate, na de nome mais completo.
+ */
+export function unify(content: VaultContent, a: string, b: string): VaultContent {
+  const ea = content.entities.find((e) => e.id === a);
+  const eb = content.entities.find((e) => e.id === b);
+  if (!ea || !eb) return content;
+  const score = (e: StoredEntity) =>
+    rolePriority(e) * 100 - nameTokens(e.canonical).length - (e.suggested ? -1000 : 0);
+  const [target, other] = score(ea) <= score(eb) ? [ea, eb] : [eb, ea];
+  return merge(content, [target.id, other.id]);
+}
+
+/** "Manter separados": não são a mesma pessoa; a sugestão não volta numa nova detecção. */
+export function keepSeparate(content: VaultContent, a: string, b: string): VaultContent {
+  const entities = content.entities.map((e) =>
+    e.id === a || e.id === b
+      ? { ...e, ambiguousWith: e.ambiguousWith.filter((x) => x !== a && x !== b) }
+      : e,
+  );
+  const separate: [string, string][] = [...(content.config.separate ?? []), [a, b]];
+  return { ...content, entities, config: { ...content.config, separate } };
+}
+
+/** Remove palavras de um nome, nas pontas sobram só palavras de nome (sem partículas soltas). */
+function removeWords(text: string, remove: ReadonlySet<string>): string {
+  const words = text.split(/\s+/).filter((w) => w && !remove.has(fold(w)));
+  while (words.length && PARTICLES.has(fold(words[0] ?? ''))) words.shift();
+  while (words.length && PARTICLES.has(fold(words[words.length - 1] ?? ''))) words.pop();
+  return words.join(' ');
+}
+
+/**
+ * "Limpar nome": corta palavras que não fazem parte do nome (rótulos, texto da linha seguinte) do
+ * nome canônico e de todas as variantes, e unifica com a pessoa de mesmo nome, se houver uma só.
+ */
+export function cleanName(
+  content: VaultContent,
+  id: string,
+  words: readonly string[],
+): VaultContent {
+  const entity = content.entities.find((e) => e.id === id);
+  if (!entity || !words.length) return content;
+  const remove = new Set(words.map(fold));
+  const canonical = removeWords(entity.canonical, remove);
+  if (!canonical) return content;
+  const variants: string[] = [];
+  for (const v of entity.variants) {
+    const cleaned = removeWords(v, remove);
+    if (cleaned && !variants.some((x) => vkey(x) === vkey(cleaned))) variants.push(cleaned);
+  }
+  if (!variants.some((v) => vkey(v) === vkey(canonical))) variants.unshift(canonical);
+  const cleanedContent = update(content, id, (e) => ({
+    ...e,
+    canonical,
+    variants,
+    reviewed: true,
+  }));
+
+  // Unifica com a outra pessoa cujo nome contém exatamente as palavras que sobraram.
+  const tokens = nameTokens(canonical);
+  const same = cleanedContent.entities.filter(
+    (e) =>
+      e.id !== id &&
+      e.type === entity.type &&
+      e.variants.some((v) => {
+        const vt = nameTokens(v);
+        return tokens.every((t) => vt.includes(t)) || vt.every((t) => tokens.includes(t));
+      }),
+  );
+  return same.length === 1 && same[0] ? unify(cleanedContent, same[0].id, id) : cleanedContent;
 }
 
 /** Separa uma variante numa entidade nova, a revisar. */
@@ -243,7 +402,7 @@ export function discard(content: VaultContent, id: string): VaultContent {
     null,
   );
   const dismissed = [...new Set([...(content.config.dismissed ?? []), ...entity.variants])];
-  return { ...content, entities, config: { ...content.config, dismissed } };
+  return compactIndexes({ ...content, entities, config: { ...content.config, dismissed } });
 }
 
 export class SelectionError extends Error {
@@ -329,11 +488,29 @@ export interface ReviewProgress {
 }
 
 export function reviewProgress(entities: readonly StoredEntity[]): ReviewProgress {
+  const applied = entities.filter((e) => !e.suggested);
   return {
-    total: entities.length,
-    reviewed: entities.filter((e) => e.reviewed).length,
-    pendingPeople: entities.filter((e) => e.type === 'PESSOA' && !e.reviewed).length,
+    total: applied.length,
+    reviewed: applied.filter((e) => e.reviewed).length,
+    pendingPeople: applied.filter((e) => e.type === 'PESSOA' && !e.reviewed).length,
   };
+}
+
+/**
+ * Recomeça a revisão: apaga todas as entidades e decisões (os documentos ficam). Para cofres
+ * revisados com uma versão anterior do detector.
+ */
+export function resetReview(content: VaultContent): VaultContent {
+  const config = { ...content.config };
+  delete config.detectedAt;
+  delete config.separate;
+  return { ...content, entities: [], config };
+}
+
+/** Marca a primeira exportação (a partir daí os números dos marcadores ficam fixos). */
+export function markExported(content: VaultContent): VaultContent {
+  if (content.config.exportedAt) return content;
+  return { ...content, config: { ...content.config, exportedAt: new Date().toISOString() } };
 }
 
 /** Confirma itens da varredura residual como "não é dado pessoal" (não voltam a aparecer). */

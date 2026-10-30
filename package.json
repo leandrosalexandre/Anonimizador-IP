@@ -18,9 +18,9 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "icons": "node scripts/gen-icons.mjs",
-    "fixtures": "node scripts/fixtures/gen-ip-ficticio.mjs",
+    "fixtures": "node scripts/fixtures/gen-ip-ficticio.mjs && node scripts/fixtures/gen-ip-ficticio-ce.mjs",
     "bench:ocr": "node scripts/bench-ocr.mjs",
-    "metrics": "vitest run test/detection.test.ts --silent=false"
+    "metrics": "vitest run test/detection.test.ts test/detection-ce.test.ts --silent=false"
   },
   "dependencies": {
     "idb": "^8.0.4",

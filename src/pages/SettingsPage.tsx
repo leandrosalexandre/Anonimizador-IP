@@ -1,5 +1,7 @@
 import { useId, useState, useSyncExternalStore } from 'react';
 import { DEFAULT_EXCLUSIONS } from '../detectors/data/exclusoes';
+import { DEFAULT_ENABLED_TYPES, ENTITY_TYPES, type EntityType } from '../detectors/types';
+import { TYPE_TITLE } from '../review/labels';
 import { DEFAULT_AI_INSTRUCTIONS } from '../export/build';
 import { TypedConfirm } from '../components/TypedConfirm';
 import {
@@ -106,6 +108,11 @@ export function SettingsPage() {
           baixado não é cifrado: guarde-o em local seguro.
         </p>
       </div>
+
+      <TypesPanel
+        value={settings.enabledTypes}
+        onChange={(enabledTypes) => updateSettings({ enabledTypes })}
+      />
 
       <InstructionsPanel
         value={settings.aiInstructions}
@@ -262,6 +269,54 @@ function InstructionsPanel({
         </button>
         {saved && <span className="hint">Salvo.</span>}
       </div>
+    </div>
+  );
+}
+
+/** Tipos de dado que a detecção procura e pseudonimiza (nomes de pessoas sempre). */
+function TypesPanel({
+  value,
+  onChange,
+}: {
+  value: readonly EntityType[];
+  onChange: (types: EntityType[]) => void;
+}) {
+  const optional = ENTITY_TYPES.filter((t) => t !== 'PESSOA');
+  const isDefault =
+    value.length === DEFAULT_ENABLED_TYPES.length &&
+    DEFAULT_ENABLED_TYPES.every((t) => value.includes(t));
+  const toggle = (type: EntityType, on: boolean) =>
+    onChange(ENTITY_TYPES.filter((t) => t === 'PESSOA' || (t === type ? on : value.includes(t))));
+  return (
+    <div className="panel">
+      <h2>O que pseudonimizar</h2>
+      <p className="hint">
+        Padrão: nomes de pessoas (com apelidos) e documentos pessoais. Municípios, bairros, ruas,
+        hospitais, órgãos, datas do fato e números de BO/IP/processo ficam em claro. Depois de
+        mudar, toque em “Detectar de novo” na Revisão.
+      </p>
+      <fieldset className="type-choice">
+        <legend className="visually-hidden">Tipos de dado</legend>
+        <label className="checkbox">
+          <input type="checkbox" checked disabled />
+          {TYPE_TITLE.PESSOA} (sempre)
+        </label>
+        {optional.map((t) => (
+          <label key={t} className="checkbox">
+            <input
+              type="checkbox"
+              checked={value.includes(t)}
+              onChange={(e) => toggle(t, e.target.checked)}
+            />
+            {TYPE_TITLE[t]}
+          </label>
+        ))}
+      </fieldset>
+      {!isDefault && (
+        <button type="button" onClick={() => onChange([...DEFAULT_ENABLED_TYPES])}>
+          Voltar ao padrão
+        </button>
+      )}
     </div>
   );
 }

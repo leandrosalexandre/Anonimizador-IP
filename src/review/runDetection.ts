@@ -14,9 +14,11 @@ export async function runDetection(): Promise<void> {
       pdfPage: p.pdfPage,
       text: p.text,
     }));
+    const settings = getSettings();
     const detected = detectEntities(pages, {
-      exclusions: getSettings().detectionExclusions,
+      exclusions: settings.detectionExclusions,
       keepNames: c.config.keepNames,
+      types: settings.enabledTypes,
     });
     return applyDetection(c, detected);
   });

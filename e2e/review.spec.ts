@@ -1,10 +1,13 @@
 import { expect, test, type Page } from '@playwright/test';
-import { trackForeignRequests } from './helpers';
+import { enableAllTypes, trackForeignRequests } from './helpers';
 
 const PASSWORD = 'girassol tapete nuvem bicicleta';
 const FIXTURE = new URL('../test/fixtures/ip-ficticio-texto.pdf', import.meta.url).pathname;
 
 test.describe.configure({ timeout: 120_000 });
+
+// Aceites do SPEC com todos os tipos ativos (placas, endereços, e-mails…).
+test.beforeEach(({ page }) => enableAllTypes(page));
 
 async function setup(page: Page) {
   await page.goto('./#/cofres');

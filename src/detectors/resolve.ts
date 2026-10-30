@@ -10,6 +10,10 @@ const PRIORITY: Record<EntityType, number> = {
   CPF: 16,
   CHASSI_RENAVAM: 15,
   CNH: 14,
+  CNS: 14,
+  TITULO_ELEITOR: 14,
+  PASSAPORTE: 14,
+  PRONTUARIO: 13,
   RG: 13,
   TELEFONE: 12,
   PLACA: 11,
@@ -49,6 +53,13 @@ function beats(a: Candidate, b: Candidate): boolean {
   ) {
     return false;
   }
+  // Nome lido de rótulo ou gatilho vence a sequência capitalizada que o contém
+  // ("FILHO DE MARIA IVONE MOTA" → "MARIA IVONE MOTA").
+  if (a.type === 'PESSOA' && b.type === 'PESSOA') {
+    const strongA = !a.detector.startsWith('sequencia');
+    const strongB = !b.detector.startsWith('sequencia');
+    if (strongA !== strongB) return strongA;
+  }
   // Mesmo tipo: o maior (mais completo) vence; empate, o mais confiável.
   if (a.type === b.type) {
     const la = a.end - a.start;
@@ -69,6 +80,9 @@ function absorb(winner: Candidate, loser: Candidate): Candidate {
     confidence: Math.max(winner.confidence, loser.confidence),
     ...((winner.role ?? loser.role) ? { role: winner.role ?? loser.role } : {}),
     ...(winner.authority || loser.authority ? { authority: true } : {}),
+    // Basta um sinal forte para o nome deixar de ser só sugestão.
+    ...(winner.suggestion && loser.suggestion ? { suggestion: true } : { suggestion: false }),
+    ...((winner.group ?? loser.group) ? { group: winner.group ?? loser.group } : {}),
     detector:
       winner.detector === loser.detector ? winner.detector : `${winner.detector}+${loser.detector}`,
   };
