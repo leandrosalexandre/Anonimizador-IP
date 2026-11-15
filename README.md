@@ -98,6 +98,13 @@ atualização.
   camada de texto, para baixar; o arquivo baixado **não é cifrado**).
 - Textos manuscritos e números de folha escritos à mão não são reconhecidos.
 
+## Colar texto (anonimização rápida)
+
+Em **Documentos → Colar texto**, cole um relato ou depoimento avulso (por exemplo, de um flagrante)
+e toque em **Anonimizar texto**. O app substitui os nomes na hora e mostra o texto pronto para
+copiar, com a legenda. Leia antes de copiar; ajustes ficam na Revisão. A resposta da IA volta em
+**Reidentificar**, com os mesmos marcadores.
+
 ## Revisão dos dados pessoais
 
 1. Em **Revisão**, toque em **Detectar dados pessoais**. Por padrão, o app pseudonimiza só
@@ -153,6 +160,11 @@ Em **Exportar** (liberado depois da revisão):
    folha de onde vieram, e os duvidosos aparecem como "familiar (vínculo incerto) [VERIFICAR]".
 
 ## Reidentificação
+
+Depois de reidentificar, **Baixar Word (.docx)** gera o relatório no padrão do relatório final:
+brasões no cabeçalho, quadro de referência, seções, citações recuadas, local e data, assinatura e
+rodapé da unidade. Preencha uma vez "Assinatura e rodapé" (fica salvo no aparelho). **Copiar
+instruções do modelo para a IA** copia um roteiro para a IA escrever nesse formato.
 
 Em **Reidentificar**, cole a análise devolvida pela IA (ou importe um `.txt`/`.md`). O app troca os
 marcadores pelos nomes e dados reais, mesmo com pequenas variações da IA ("Vítima 1", "VITIMA 1",

@@ -80,15 +80,30 @@ export function dataKey(type: EntityType, text: string): string {
   }
 }
 
-/** Os tokens de `small` cabem em `big` (cada um casa com um token distinto)? */
+/** Os tokens de `small` aparecem em `big`, na mesma ordem (cada um casa com um token distinto)? */
 function tokensFit(small: string[], big: string[], fuzzy: boolean): boolean {
-  const used = new Set<number>();
+  let from = 0;
   for (const t of small) {
-    const idx = big.findIndex((b, i) => !used.has(i) && tokensMatch(t, b, fuzzy));
+    let idx = -1;
+    for (let i = from; i < big.length; i++) {
+      if (tokensMatch(t, big[i] ?? '', fuzzy)) {
+        idx = i;
+        break;
+      }
+    }
     if (idx < 0) return false;
-    used.add(idx);
+    from = idx + 1;
   }
   return true;
+}
+
+/** `tokens` contém, em sequência, o início (2 ou mais palavras) ou o nome inteiro de `name`? */
+function containsNameStart(tokens: string[], name: string[]): boolean {
+  if (name.length < 2 || tokens.length <= 2) return false;
+  for (let i = 0; i + 1 < tokens.length; i++) {
+    if (tokens[i] === name[0] && tokens[i + 1] === name[1]) return true;
+  }
+  return false;
 }
 
 /** Forma canônica preferida: a mais completa entre as "limpas", em caixa mista. */
@@ -142,20 +157,53 @@ function conflicts(cluster: Cluster, c: LocatedCandidate): boolean {
   );
 }
 
-/** Agrupa pessoas (e apelidos) por compatibilidade de tokens. */
+const textKey = (t: string) => fold(t).replace(/\s+/g, ' ').trim();
+
+/** Nome vindo de campo do documento, rótulo ou gatilho (e não só de palavras capitalizadas). */
+const reliable = (c: LocatedCandidate) => c.detector.split('+').some((d) => d !== 'sequencia');
+
+/**
+ * Agrupa pessoas (e apelidos). Ordem: primeiro os nomes confiáveis (campos do documento, rótulos
+ * e gatilhos), do mais completo ao mais curto; depois as sequências capitalizadas; por fim os
+ * nomes truncados do índice e os de uma palavra só. Regras para não misturar pessoas:
+ * - um nome mais curto só entra num grupo se as palavras estiverem na mesma ordem;
+ * - sequência capitalizada que contém o nome de alguém mais outras palavras ("TATUAGENS DE
+ *   FULANO", "FULANO DE TAL APF") é descartada: o nome dentro dela já é encontrado pelo grupo;
+ * - palavra solta só entra se for o prenome de uma única pessoa (sobrenome solto não entra);
+ * - nome truncado ("FULANO DE T…") entra no único grupo cujo nome começa assim.
+ */
 export function clusterPeople(
   candidates: readonly LocatedCandidate[],
   type: 'PESSOA' | 'APELIDO',
 ): Cluster[] {
   const clusters: Cluster[] = [];
+  const rank = (c: LocatedCandidate) => (reliable(c) ? 0 : c.suggestion ? 2 : 1);
   const ordered = [...candidates].sort(
-    (a, b) => nameTokens(b.text).length - nameTokens(a.text).length || b.confidence - a.confidence,
+    (a, b) =>
+      rank(a) - rank(b) ||
+      nameTokens(b.text).length - nameTokens(a.text).length ||
+      b.confidence - a.confidence,
   );
   const pendingShort: LocatedCandidate[] = [];
+  const truncated: LocatedCandidate[] = [];
+  const create = (c: LocatedCandidate, tokens: string[], ambiguous: Cluster[]) => {
+    const cluster: Cluster = {
+      id: newId(type === 'PESSOA' ? 'p' : 'a'),
+      type,
+      tokens,
+      members: [c],
+      ambiguousWith: new Set(ambiguous.map((m) => m.id)),
+    };
+    clusters.push(cluster);
+  };
 
   for (const c of ordered) {
     const tokens = nameTokens(c.text);
     if (!tokens.length) continue;
+    if (c.truncated) {
+      truncated.push(c);
+      continue;
+    }
     // Nomes com 1 token são resolvidos depois que todos os nomes completos formaram grupos.
     if (tokens.length === 1 && type === 'PESSOA') {
       pendingShort.push(c);
@@ -166,41 +214,38 @@ export function clusterPeople(
     const matches = exact.length ? exact : allowed.filter((k) => tokensFit(tokens, k.tokens, true));
     if (matches.length === 1 && matches[0]) {
       matches[0].members.push(c);
-    } else {
-      const cluster: Cluster = {
-        id: newId(type === 'PESSOA' ? 'p' : 'a'),
-        type,
-        tokens,
-        members: [c],
-        ambiguousWith: new Set(),
-      };
-      for (const m of matches) cluster.ambiguousWith.add(m.id);
-      clusters.push(cluster);
+      continue;
     }
+    if (type === 'PESSOA' && !reliable(c) && !matches.length) {
+      // Nome de alguém com palavras a mais: fica só o nome, que o grupo já encontra.
+      if (clusters.some((k) => containsNameStart(tokens, k.tokens))) continue;
+    }
+    // Um grupo mais curto que cabe neste nome pode ser a mesma pessoa: fica como dúvida.
+    const shorter = matches.length ? [] : allowed.filter((k) => tokensFit(k.tokens, tokens, false));
+    create(c, tokens, matches.length ? matches : shorter);
+  }
+
+  for (const c of truncated) {
+    const prefix = textKey(c.text);
+    const matches = clusters.filter((k) =>
+      k.members.some((m) => textKey(m.text).startsWith(prefix) && textKey(m.text) !== prefix),
+    );
+    if (matches.length === 1 && matches[0]) matches[0].members.push(c);
+    else if (nameTokens(c.text).length >= 2) create(c, nameTokens(c.text), matches);
   }
 
   for (const c of pendingShort) {
     const token = nameTokens(c.text)[0] ?? '';
-    // Prefere casar com o primeiro nome; depois com qualquer token.
     const allowed = clusters.filter((k) => !conflicts(k, c));
-    const byFirst = allowed.filter((k) => k.tokens[0] === token);
-    const exact = byFirst.length ? byFirst : allowed.filter((k) => k.tokens.includes(token));
-    const matches = exact.length
-      ? exact
-      : allowed.filter((k) => k.tokens.some((t) => tokensMatch(token, t, true)));
-    if (matches.length === 1 && matches[0]) {
-      matches[0].members.push(c);
-    } else {
-      const cluster: Cluster = {
-        id: newId('p'),
-        type,
-        tokens: [token],
-        members: [c],
-        ambiguousWith: new Set(),
-      };
-      for (const m of matches) cluster.ambiguousWith.add(m.id);
-      clusters.push(cluster);
+    const byFirst = allowed.filter((k) => tokensMatch(token, k.tokens[0] ?? '', false));
+    if (byFirst.length === 1 && byFirst[0]) {
+      byFirst[0].members.push(c);
+      continue;
     }
+    // Sobrenome ou palavra solta vinda só de capitalização: não vira pessoa nem variante.
+    if (type === 'PESSOA' && !reliable(c)) continue;
+    const others = byFirst.length ? byFirst : allowed.filter((k) => k.tokens.includes(token));
+    create(c, [token], others);
   }
   return clusters;
 }

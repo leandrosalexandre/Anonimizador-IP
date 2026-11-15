@@ -1,5 +1,6 @@
 // Preferências do app, sem nenhum conteúdo do inquérito: podem ficar em claro no localStorage.
 import { DEFAULT_ENABLED_TYPES, ENTITY_TYPES, type EntityType } from '../detectors/types';
+import type { ReportTemplate } from '../report/model';
 
 export type LockOnHide = 'immediate' | '1min' | '5min' | 'never';
 
@@ -22,6 +23,8 @@ export interface AppSettings {
   customCategories: string[];
   /** Funções de autoridade criadas pelo usuário em "Outros" ("Guarda Municipal"). */
   customPositions: string[];
+  /** Dados fixos do relatório em Word: rodapé da unidade, cidade e assinatura. */
+  reportTemplate: ReportTemplate;
   /**
    * Termos ensinados na revisão como "não é dado pessoal" (bairro, rua, órgão…), com o motivo
    * digitado. Valem para todos os cofres; ficam em claro como as demais preferências.
@@ -45,6 +48,17 @@ export const DEFAULT_SETTINGS: AppSettings = {
   learnedTerms: [],
   customCategories: [],
   customPositions: [],
+  reportTemplate: {
+    unitLines: [
+      'DEPARTAMENTO DE HOMICÍDIOS E PROTEÇÃO À PESSOA – 10ª DHPP',
+      'Rua Juvenal de Carvalho, n. 1125, Fátima, Fortaleza/CE',
+      'CEP: 60.050-220 FONE/FAX: (85) 3101-7470',
+    ],
+    city: 'Fortaleza/CE',
+    signerName: '',
+    signerTitle: 'Delegado de Polícia',
+    signerUnit: '',
+  },
 };
 export const IDLE_LOCK_OPTIONS = [1, 2, 5, 10, 15, 30, 60] as const;
 export const LOCK_ON_HIDE_DELAY_MS: Record<LockOnHide, number | null> = {
@@ -77,6 +91,25 @@ function stringList(value: unknown): string[] {
     out.push(t);
   }
   return out.slice(0, 200);
+}
+
+function reportTemplate(value: unknown): ReportTemplate {
+  const d = DEFAULT_SETTINGS.reportTemplate;
+  const raw = (typeof value === 'object' && value !== null ? value : {}) as Partial<ReportTemplate>;
+  const text = (v: unknown, fallback: string) =>
+    typeof v === 'string' ? v.slice(0, 160) : fallback;
+  return {
+    unitLines: Array.isArray(raw.unitLines)
+      ? raw.unitLines
+          .filter((l): l is string => typeof l === 'string')
+          .map((l) => l.slice(0, 160))
+          .slice(0, 4)
+      : [...d.unitLines],
+    city: text(raw.city, d.city),
+    signerName: text(raw.signerName, d.signerName),
+    signerTitle: text(raw.signerTitle, d.signerTitle),
+    signerUnit: text(raw.signerUnit, d.signerUnit),
+  };
 }
 
 function sanitize(value: unknown): AppSettings {
@@ -122,6 +155,7 @@ function sanitize(value: unknown): AppSettings {
       : [],
     customCategories: stringList(raw.customCategories),
     customPositions: stringList(raw.customPositions),
+    reportTemplate: reportTemplate(raw.reportTemplate),
   };
 }
 

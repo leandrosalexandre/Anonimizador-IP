@@ -321,9 +321,12 @@ export function detectQualification(text: string, ctx: NameContext): Candidate[]
         'qualificacao',
         role && role !== 'KEEP' ? role : undefined,
       );
+      // Nome de uma palavra só vale se for prenome conhecido ("VÍTIMAS: (SEM NOME)" não é).
+      if (nameScore(span.text).tokens.length === 1 && !nameScore(span.text).first) continue;
       if (role === 'KEEP') {
         c.authority = true;
-        c.position = capitalize(m[1] ?? '');
+        // "Condutor" e "Atendente" são papéis no ato, não cargos.
+        if (!/condutor|atendente|autoridade/i.test(m[1] ?? '')) c.position = capitalize(m[1] ?? '');
       }
       if (role === 'FAMILIAR') c.relation = relationOf(m[1] ?? '');
       if (group) c.group = group;

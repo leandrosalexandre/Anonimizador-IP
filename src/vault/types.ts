@@ -66,6 +66,8 @@ export interface StoredDocument {
   /** "A página 1 do PDF corresponde à fls. 1 + offset". */
   folhaOffset: number | null;
   pages: StoredPage[];
+  /** Texto colado pelo usuário (sem PDF: `pdfBlobId` vazio, uma página só). */
+  pasted?: boolean;
 }
 
 /**

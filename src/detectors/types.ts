@@ -78,6 +78,8 @@ export interface Candidate {
   relation?: string;
   /** Cargo de quem é autoridade ("Delegado de Polícia Civil", "Escrivã"). */
   position?: string;
+  /** Nome cortado por "…" (índice do procedimento): é o início de um nome completo. */
+  truncated?: boolean;
 }
 
 export interface PageText {
