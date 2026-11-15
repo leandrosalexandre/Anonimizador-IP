@@ -71,6 +71,8 @@ const SIGNATURE_ROLES: [RegExp, Partial<Candidate>][] = [
   [/^escriv/i, { authority: true, position: 'Escrivão' }],
   [/^perit/i, { authority: true, role: 'PERITO', position: 'Perito' }],
   [/^condutor/i, { authority: true }],
+  // "ASSINATURA PADRÃO" é de quem assina como usuário do sistema (servidor policial).
+  [/^assinatura\s+padr/i, { authority: true }],
   [/^(?:interrogad|autuad|indiciad|conduzid|infrator)/i, { role: 'AUTOR' }],
   [/^v[íi]tima/i, { role: 'VÍTIMA' }],
   [/^testemunha/i, { role: 'TESTEMUNHA' }],

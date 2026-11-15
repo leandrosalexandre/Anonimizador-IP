@@ -237,6 +237,16 @@ export function clusterPeople(
   for (const c of pendingShort) {
     const token = nameTokens(c.text)[0] ?? '';
     const allowed = clusters.filter((k) => !conflicts(k, c));
+    if (c.detector === 'posto') {
+      // "OIP FULANO" (nome de guerra): entra na única autoridade que tem essa palavra no nome;
+      // nunca se junta a quem não é autoridade (o nome ficaria em claro).
+      const officers = clusters.filter(
+        (k) => k.tokens.includes(token) && k.members.some((m) => m.authority),
+      );
+      if (officers.length === 1 && officers[0]) officers[0].members.push(c);
+      else create(c, [token], []);
+      continue;
+    }
     const byFirst = allowed.filter((k) => tokensMatch(token, k.tokens[0] ?? '', false));
     if (byFirst.length === 1 && byFirst[0]) {
       byFirst[0].members.push(c);

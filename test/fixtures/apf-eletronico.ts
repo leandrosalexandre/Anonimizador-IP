@@ -132,7 +132,7 @@ export const APF_PAGES: string[] = [
   image(
     [
       'UMA CRIANÇA / ADOLESCENTE SE FEZ PRESENTE COM UM RECADO PARA QUE ENTRASSEM',
-      'EM CONTATO COM UMA PESSOA DE NOME DANILO NÚMERO 85 99999-0001',
+      'EM CONTATO COM UMA PESSOA DE NOME DANILO PELO NÚMERO 85 99999-0001',
     ],
     7,
   ),
@@ -166,6 +166,48 @@ export const APF_PAGES: string[] = [
       16,
     ),
   ].join('\n'),
+  // PDF p. 13 — legendas em CAIXA ALTA (não são nomes)
+  image(
+    [
+      'HOMEM DE PRETO INICIA A EXPULSÃO / AGRESSÕES À VÍTIMA ÀS 17:07:14',
+      '',
+      'VÍTIMA TENTA FUGIR DO ESPANCAMENTO',
+      '',
+      'VÍTIMA CAI AO SOLO ÀS 17:11:35',
+    ],
+    17,
+  ),
+  // PDF p. 14 — auto de apreensão (objetos e cores) e nota de culpa
+  [
+    HASH,
+    '',
+    'AUTO DE EXIBIÇÃO E APREENSÃO',
+    'COR: BRANCO, ACABAMENTO: AVARIADO, DESCRIÇÃO DO CELULAR: IPHONE DE COR BRANCA AVARIADO , COM DUAS CÂMERAS TRASEIRAS, CAPINHA DE COR SALMÃO',
+    'IDENTIFICADOR: PCCE-000000044232-OBJ, MARCA: APPLE, MODELO: IPHONE 13 PRO MAX',
+    'IPHONE BRANCO, AVARIADO, UMA CÂMERA TRASEIRA. ACOMPANHA CHIP DA OI. CAPINHA BRANCA .',
+    'QUE um homem vestido de camisa branca desferiu golpes; CAMISA BRANCA apreendida.',
+    'NOTA DE CULPA',
+    'A Autoridade Policial, no uso de suas atribuições legais, FAZ SABER DANILO EUFRÁSIO DOS REIS; Nome da mãe: MARLENE EUFRÁSIO DOS REIS;',
+    signed('DANILO EUFRÁSIO DOS REIS (INTERROGADO), em 27/10/2026 22:50:00 - BIOMETRIA DIGITAL', '1/1', 18),
+  ].join('\n'),
+  // PDF p. 15 — recognição: postos e graduações, assinatura padrão, "Sr. Fulano", peritos
+  [
+    HASH,
+    '',
+    'RECOGNIÇÃO VISUOGRÁFICA',
+    'Viatura: BPTUR 132 Composição: Perito: BRENO Composição: 1. SGT PAULO VÍTOR MENEZES 1. DPC MÁRCIO MUNIZ Motorista: SGT MÁRCIO ARAGÃO 151.757-1-0 2. SD HEITOR VASCONCELOS 2. OIP MIGUEL RABECÃO ARRUDA 300.932-0-8 3. OIP GOES Viatura: 7063 3. 4. OIP ANA VIVIAN',
+    'Segundo o Sr. Edvaldo, gerente da barraca, as imagens só poderiam ser cedidas pelo proprietário do estabelecimento, o Sr. Franklin. É o relato.',
+    'No Núcleo de Perícia Forense, pelo Coordenador(a) Dr(a). Ana Leopoldina Nogueira Rocha, foi designado o(a) perito(a) Dr(a). Ivon Teixeira De Souza para o exame.',
+    signed('OSMAR GOMES GOES (ASSINATURA PADRÃO), em 27/10/2026 09:57:07 - BIOMETRIA DIGITAL', '1/1', 33),
+  ].join('\n'),
+  // PDF p. 16 — log de movimentação (nome cortado sem reticências)
+  [
+    'LOG DE MOVIMENTAÇÃO',
+    'RODRIGO VASCONCELOS PRADO 27/10/2026 22:55 INSERIDO TERMO DE QUALIFICAÇÃO E INTERROGATÓRIO - ALISSON KAU',
+    '27/10/2026 22:55 INSERIDO NOTA DE CULPA - DANILO EUFRÁSIO DOS REIS',
+    '',
+    '60 de 60',
+  ].join('\n'),
 ];
 
 /** Nomes reais (fictícios) que NÃO podem aparecer no texto exportado. */
@@ -184,8 +226,31 @@ export const APF_INVOLVED = [
   'SÉRGIO AUGUSTO',
   'JOANA MOTA',
   'ABEL PINHEIRO',
+  'Edvaldo',
+  'Franklin',
+  'KAU',
   'dos Reis',
 ];
 
 /** Autoridades e policiais: ficam com o nome real. */
-export const APF_KEPT = ['BRUNO HENRIQUE TAVARES DE LIMA', 'CARLA REGINA MOTA PINHEIRO'];
+export const APF_KEPT = [
+  'BRUNO HENRIQUE TAVARES DE LIMA',
+  'CARLA REGINA MOTA PINHEIRO',
+  'SGT PAULO VÍTOR MENEZES',
+  'DPC MÁRCIO MUNIZ',
+  'SGT MÁRCIO ARAGÃO',
+  'SD HEITOR VASCONCELOS',
+  'OIP GOES',
+  'OIP ANA VIVIAN',
+  'Ana Leopoldina Nogueira Rocha',
+  'Ivon Teixeira De Souza',
+  // Não são nomes: legendas, objetos e cores ficam como estão.
+  'VÍTIMA TENTA FUGIR DO ESPANCAMENTO',
+  'VÍTIMA CAI AO SOLO ÀS 17:11:35',
+  'IPHONE DE COR BRANCA AVARIADO',
+  'IPHONE 13 PRO MAX',
+  'CAPINHA BRANCA',
+  'camisa branca',
+  'CAMISA BRANCA apreendida',
+  'PELO NÚMERO',
+];

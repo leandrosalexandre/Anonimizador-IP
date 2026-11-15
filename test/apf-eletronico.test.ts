@@ -85,8 +85,39 @@ describe('APF fictício (sistema eletrônico)', () => {
     expect(byName(/^Josimar/)[0]?.role).toBe('COMUNICANTE');
     // 2 autores, mãe do autor, 2 pais + 2 mães de policiais, testemunha, noticiante, intimada,
     // delegado e 2 policiais.
-    expect(people.length).toBeLessThanOrEqual(13);
+    expect(people.filter((e) => e.decision === 'pseudonymize').length).toBeLessThanOrEqual(12);
     expect(text).not.toMatch(/\[PESSOA \d+\]\.\.\./);
+  });
+
+  it('legendas, objetos e cores não viram pessoas nem sugestões', () => {
+    const junk = content.entities.filter((e) =>
+      /tenta|fugir|cai|solo|avariad|camisa|capinha|pro max|faz saber|pelo|sgt|dpc|oip|rabec/i.test(
+        e.canonical,
+      ),
+    );
+    expect(junk.map((e) => e.canonical)).toEqual([]);
+    expect(people.filter((e) => e.role === 'VÍTIMA')).toHaveLength(0);
+    expect(content.entities.filter((e) => e.suggested).map((e) => e.canonical)).toEqual([]);
+  });
+
+  it('nome cortado sem reticências, "FAZ SABER" e "DE NOME … PELO" ligam ao autor certo', () => {
+    expect(flat).toContain('INTERROGATÓRIO - [AUTOR 2] 27/10/2026');
+    expect(flat).toContain('FAZ SABER [AUTOR 1]; Nome da mãe: [FAMILIAR 3];');
+    expect(flat).toContain('PESSOA DE NOME [AUTOR 1] PELO NÚMERO');
+  });
+
+  it('postos e graduações, peritos e coordenador ficam com o nome real', () => {
+    const kept = (re: RegExp) => people.find((e) => re.test(e.canonical));
+    expect(kept(/^Paulo Vítor/)).toMatchObject({ decision: 'keep', position: 'Policial Militar' });
+    expect(kept(/^Márcio Muniz/)).toMatchObject({ decision: 'keep', position: 'Delegado' });
+    expect(kept(/^Osmar Gomes Goes/)?.decision).toBe('keep');
+    expect(kept(/^Ivon/)).toMatchObject({ decision: 'keep', role: 'PERITO' });
+    expect(kept(/^Ana Leopoldina/)?.decision).toBe('keep');
+  });
+
+  it('"Sr. Fulano" só com o prenome vira pessoa a confirmar (não fica em claro)', () => {
+    expect(flat).toMatch(/Segundo o Sr\. \[PESSOA \d\], gerente da barraca/);
+    expect(flat).toMatch(/o Sr\. \[PESSOA \d\]\. É o relato/);
   });
 
   it('delegado e policiais ficam com o nome real, na função certa', () => {

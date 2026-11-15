@@ -241,3 +241,64 @@ describe('termos ensinados na revisão', () => {
     expect(people(['Antônio Bezerra'])).toEqual(['Ana Paula Rocha']);
   });
 });
+
+describe('texto em CAIXA ALTA, postos e nomes cortados (v1.2.1)', () => {
+  it('legendas e objetos em CAIXA ALTA não viram pessoas nem sugestões', () => {
+    for (const text of [
+      'VÍTIMA TENTA FUGIR DO ESPANCAMENTO',
+      'VÍTIMA CAI AO SOLO ÀS 17:11:35',
+      'DESCRIÇÃO DO CELULAR: IPHONE DE COR BRANCA AVARIADO , MODELO IPHONE 13 PRO MAX',
+      'HOMEM DE CAMISA BRANCA E CAPINHA BRANCA',
+    ])
+      expect(detectPage(text).filter((c) => c.type === 'PESSOA')).toEqual([]);
+  });
+
+  it('nome em CAIXA ALTA termina onde acabam as palavras de nome', () => {
+    expect(names('EM CONTATO COM UMA PESSOA DE NOME MARCOS PELO NÚMERO 85')).toEqual(['MARCOS']);
+    expect(names('A AUTORIDADE FAZ SABER MARCOS PEREIRA LIMA QUE FOI PRESO')).toEqual([
+      'MARCOS PEREIRA LIMA',
+    ]);
+  });
+
+  it('posto ou graduação antes do nome: policial mantido, com a função', () => {
+    const found = detectPage('Composição: 1. SGT PEDRO ALVES NUNES 2. OIP LUCAS BRITO 300.932-0-8');
+    expect(found.filter((c) => c.type === 'PESSOA')).toMatchObject([
+      { text: 'PEDRO ALVES NUNES', authority: true, position: 'Policial Militar' },
+      { text: 'LUCAS BRITO', authority: true, position: 'Inspetor / Oficial Investigador' },
+    ]);
+    // Sigla que também é palavra comum só vale com prenome conhecido.
+    expect(names('CEL QUEBRADO NA CALÇADA; CAP PRETO')).toEqual([]);
+  });
+
+  it('nome de guerra não se junta a quem não é autoridade', () => {
+    const entities = detectEntities([page('VÍTIMA: CARLOS LIMA BRITO\nGuarnição: OIP BRITO')]);
+    const victim = people(entities).find((e) => e.canonical === 'Carlos Lima Brito');
+    expect(victim?.decision).toBe('pseudonymize');
+    expect(victim?.variants).not.toContain('BRITO');
+  });
+
+  it('nome cortado sem reticências entra na pessoa do nome completo', () => {
+    const entities = detectEntities([
+      page(
+        'INFRATOR: RAFAEL MOURA TEIXEIRA\nLOG: INSERIDO INTERROGATÓRIO - RAFAEL MOU\n27/10/2026',
+      ),
+    ]);
+    expect(people(entities)).toHaveLength(1);
+    expect(people(entities)[0]?.variants).toContain('RAFAEL MOU');
+  });
+
+  it('"Sr. Fulano" com um prenome só é aplicado e ligado à pessoa de mesmo prenome', () => {
+    const entities = detectEntities([
+      page('TESTEMUNHAS: EDSON PEREIRA ROCHA\nSegundo o Sr. Edson, gerente, e o Sr. Wagner.'),
+    ]);
+    expect(people(entities).map((e) => e.canonical)).toEqual(['Edson Pereira Rocha', 'Wagner']);
+    expect(people(entities)[0]?.occurrences).toHaveLength(2);
+  });
+
+  it('"o(a) perito(a) Dr(a). Fulano" fica mantido como perito', () => {
+    const [e] = detectEntities([
+      page('foi designado o(a) perito(a) Dr(a). Lauro Teixeira Souza para o exame.'),
+    ]);
+    expect(e).toMatchObject({ decision: 'keep', role: 'PERITO', suggestion: false });
+  });
+});
