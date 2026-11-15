@@ -1,9 +1,11 @@
 // Dados derivados para a revisão e a exportação: páginas com texto, ocorrências de cada entidade
 // (recalculadas sobre o texto atual) e folhas onde cada uma aparece.
 import { useMemo } from 'react';
+import { footerFolha, joinHyphenated, stripNoise } from '../documents/cleanText';
 import { checkFolhas, resolveFolhas } from '../pdf/folhas';
 import type { StoredEntity, VaultContent } from '../vault/types';
 import { labelOf } from './labels';
+import { accentInsensitive } from '../detectors/text';
 import { buildLocator, type Located } from './locate';
 
 export interface ReviewPage {
@@ -16,7 +18,12 @@ export interface ReviewPage {
   exportFolha: number | null;
   /** Folha repetida ou fora de ordem: conferir. */
   folhaInconsistent: boolean;
+  /** Texto da revisão e da exportação: hífens de fim de linha unidos e ruído removido. */
   text: string;
+  /** Texto para a detecção: hífens unidos, com o bloco de assinatura (diz quem é quem). */
+  detectText: string;
+  /** Página de um texto colado (sem folha nem página de PDF). */
+  pasted: boolean;
 }
 
 export interface EntityStats {
@@ -39,7 +46,16 @@ export const pageKey = (docId: string, pdfPage: number) => `${docId}|${pdfPage}`
 
 export function collectPages(content: VaultContent): ReviewPage[] {
   return content.documents.flatMap((doc) => {
-    const folhas = resolveFolhas(doc.pages, doc.folhaOffset);
+    const joined = doc.pages.map((p) => joinHyphenated(p.text));
+    const clean = stripNoise(joined);
+    // Procedimentos eletrônicos não têm carimbo: a folha está no rodapé "N de M".
+    const folhas = resolveFolhas(
+      doc.pages.map((p) => ({
+        ...p,
+        folhaDetected: p.folhaDetected ?? footerFolha(p.text),
+      })),
+      doc.folhaOffset,
+    );
     const checked = checkFolhas(folhas);
     return doc.pages
       .map((p, i) => ({
@@ -50,19 +66,55 @@ export function collectPages(content: VaultContent): ReviewPage[] {
         folha: folhas[i]?.folha ?? null,
         exportFolha: checked[i]?.folha ?? null,
         folhaInconsistent: checked[i]?.inconsistent ?? false,
-        text: p.text,
+        text: clean[i] ?? '',
+        detectText: joined[i] ?? '',
+        pasted: !!doc.pasted,
       }))
       .filter((p) => p.text.trim().length > 0);
   });
 }
 
+/** Início da página que completa o nome cortado no fim da página anterior. */
+function continuation(
+  prevText: string,
+  last: Located,
+  nextText: string,
+  byId: ReadonlyMap<string, StoredEntity>,
+): Located | null {
+  if (prevText.slice(last.end).trim() !== '') return null;
+  const entity = byId.get(last.entityId);
+  if (!entity || entity.type !== 'PESSOA') return null;
+  const head = accentInsensitive(last.text);
+  const lead = /^\s*/.exec(nextText)?.[0].length ?? 0;
+  for (const v of [...entity.variants].sort((a, b) => b.length - a.length)) {
+    const m = new RegExp(`^${head}\\s+(.+)$`, 'iu').exec(v.trim());
+    if (!m?.[1]) continue;
+    const rest = new RegExp(`^${accentInsensitive(m[1])}(?![\\p{L}\\p{N}])`, 'iu').exec(
+      nextText.slice(lead),
+    );
+    if (rest) {
+      return { entityId: entity.id, start: lead, end: lead + rest[0].length, text: rest[0] };
+    }
+  }
+  return null;
+}
+
 export function computeReviewData(content: VaultContent): ReviewData {
   const pages = collectPages(content);
   const locator = buildLocator(content.entities);
+  const byIdEarly = new Map(content.entities.map((e) => [e.id, e]));
   const located = new Map<string, Located[]>();
   const stats = new Map<string, EntityStats>();
+  let previous: { page: ReviewPage; last: Located | undefined } | null = null;
   for (const page of pages) {
-    const found = locator.locate(page.text);
+    let found = locator.locate(page.text);
+    // Nome que começa no fim de uma página e termina no início da seguinte ("… filho de MARIA
+    // DA SILVA" / "dos Santos; QUE …"): o resto do nome recebe o mesmo marcador.
+    if (previous?.last && previous.page.docId === page.docId) {
+      const rest = continuation(previous.page.text, previous.last, page.text, byIdEarly);
+      if (rest) found = [rest, ...found.filter((l) => l.start >= rest.end)];
+    }
+    previous = { page, last: found[found.length - 1] };
     located.set(page.key, found);
     for (const l of found) {
       const s = stats.get(l.entityId) ?? { count: 0, folhas: [], pages: [] };

@@ -1559,3 +1559,19 @@ mark.reid-unknown {
   gap: 0.5rem;
   width: 100%;
 }
+
+/* Relatório em Word e colar texto */
+.report-fields {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+}
+
+.report-fields textarea {
+  width: 100%;
+}
+
+.paste-result {
+  margin-top: 1rem;
+}

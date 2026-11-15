@@ -69,6 +69,9 @@ homicidio tentado tentada tentativa consumado lesao corporal roubo furto trafico
 ameacas violencia feminicidio latrocinio receptacao porte posse ilegal arma armas fogo drogas
 entorpecentes dano injuria calunia difamacao sequestro extorsao estelionato titulo eleitor
 eleitoral passaporte carteira trabalho previdencia social natureza tentativa fls folha folhas
+com uma um se que para por em sem sob sobre entre dias mes ano horas minutos pessoa pessoas
+protecao homicidios trata tatuagens imagens descricoes identificacao comprovacao indice nota culpa
+ciencia garantias constitucionais guia recolhimento preso recibo protocolo log movimentacao achado
 pagina arquivo arquivos arquivado arquivamento anexo anexos documentos digitalizado digitalizada
 assinatura assinado assinada impresso impressao emitido emitida gerado sistema usuario pagina paginas
 `

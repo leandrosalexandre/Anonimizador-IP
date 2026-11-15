@@ -119,7 +119,36 @@ export async function prepareImport(
 /** Blobs que pertencem a um documento (para removê-lo do cofre). */
 export function documentBlobIds(doc: StoredDocument): string[] {
   return [
-    doc.pdfBlobId,
+    ...(doc.pdfBlobId ? [doc.pdfBlobId] : []),
     ...doc.pages.flatMap((p) => (p.thumbnailBlobId ? [p.thumbnailBlobId] : [])),
   ];
+}
+
+/** Documento a partir de um texto colado (relato, depoimento): uma página, sem PDF. */
+export function pastedDocument(title: string, text: string, existing: number): StoredDocument {
+  const clean = text.replace(/\r\n?/g, '\n').trim();
+  return {
+    id: crypto.randomUUID(),
+    fileName: title.trim() || `Texto colado ${existing + 1}`,
+    sha256: '',
+    byteLength: clean.length,
+    importedAt: new Date().toISOString(),
+    pdfBlobId: '',
+    folhaOffset: null,
+    pasted: true,
+    pages: [
+      {
+        pdfPage: 1,
+        width: 0,
+        height: 0,
+        kind: 'text',
+        textSource: 'pdf',
+        ocrConfidence: null,
+        text: clean,
+        folhaDetected: null,
+        folhaManual: null,
+        thumbnailBlobId: null,
+      },
+    ],
+  };
 }

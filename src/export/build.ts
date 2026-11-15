@@ -103,7 +103,13 @@ export function buildLegend(
       if (e.minor) notes.push('menor de idade à época do fato');
       let suffix = '';
       if (hasLink(e)) {
-        const of = e.relatedTo ? labelFor(e.relatedTo) : null;
+        // Familiar de quem é mantido em claro (policial, autoridade): cita o nome, que já
+        // aparece no texto.
+        const target = e.relatedTo ? entities.find((x) => x.id === e.relatedTo) : undefined;
+        const of = e.relatedTo
+          ? (labelFor(e.relatedTo) ??
+            (target?.type === 'PESSOA' && target.decision === 'keep' ? target.canonical : null))
+          : null;
         const repeated =
           !!e.relation &&
           !!e.relatedTo &&
@@ -195,12 +201,16 @@ export function buildExport(
   const docNumber = (docId: string) => (multiDoc ? docIds.indexOf(docId) + 1 : null);
   const pages: ExportPage[] = data.pages.map((p) => ({
     key: p.key,
-    header: pageHeader(p.exportFolha, p.pdfPage, docNumber(p.docId), p.folhaInconsistent),
+    header: p.pasted
+      ? `=== ${p.fileName} ===`
+      : pageHeader(p.exportFolha, p.pdfPage, docNumber(p.docId), p.folhaInconsistent),
     text: substitute(p.text, data.located.get(p.key) ?? [], data.labelFor).trim(),
   }));
 
   // Aviso no topo: páginas sem folha legível ou com sequência inconsistente.
-  const toCheck = data.pages.filter((p) => p.exportFolha === null || p.folhaInconsistent);
+  const toCheck = data.pages.filter(
+    (p) => !p.pasted && (p.exportFolha === null || p.folhaInconsistent),
+  );
   const folhaWarning = toCheck.length
     ? `ATENÇÃO: confira a numeração das folhas nas páginas do PDF ${toCheck
         .map((p) =>
@@ -241,4 +251,32 @@ export function toMarkdown(part: string): string {
     })
     .join('\n')
     .replace(/\n{3,}/g, '\n\n');
+}
+
+/**
+ * Anonimização rápida de um único documento (texto colado): o texto com os marcadores e a
+ * legenda só das pessoas que aparecem nele, sem passar pela tela Exportar.
+ */
+export function quickExport(
+  entities: readonly StoredEntity[],
+  data: ReviewData,
+  docId: string,
+): { text: string; people: number; data: number; suggestions: number } {
+  const pages = data.pages.filter((p) => p.docId === docId);
+  const present = new Set(
+    pages.flatMap((p) => (data.located.get(p.key) ?? []).map((l) => l.entityId)),
+  );
+  const inDoc = entities.filter((e) => present.has(e.id));
+  const result = buildExport(
+    inDoc,
+    { ...data, pages },
+    { instructions: DEFAULT_AI_INSTRUCTIONS, includeLegend: true, partSize: null },
+  );
+  const applied = inDoc.filter((e) => e.decision === 'pseudonymize' && !e.suggested);
+  return {
+    text: result.parts[0] ?? '',
+    people: applied.filter((e) => e.type === 'PESSOA' || e.type === 'APELIDO').length,
+    data: applied.filter((e) => e.type !== 'PESSOA' && e.type !== 'APELIDO').length,
+    suggestions: inDoc.filter((e) => e.suggested).length,
+  };
 }

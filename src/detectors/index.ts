@@ -16,6 +16,8 @@ import {
   nameContext,
 } from './persons';
 import { resolveOverlaps } from './resolve';
+import { detectStructured } from './structured';
+import { FIRST_NAMES, SURNAMES } from './lexicon';
 import { findAll, fold, isUpper, nameTokens, PARTICLES } from './text';
 import { DEFAULT_ENABLED_TYPES } from './types';
 import type {
@@ -37,6 +39,7 @@ export function detectPage(text: string, options: DetectionOptions = {}): Candid
   const exclusions = buildExclusions(options.exclusions);
   const ctx = nameContext(text, exclusions, options.learnedTerms);
   const people = [
+    ...detectStructured(text, exclusions),
     ...detectQualification(text, ctx),
     ...detectTriggers(text, ctx),
     ...detectCapitalized(text, ctx),
@@ -75,15 +78,22 @@ const LINKABLE: ReadonlySet<EntityType> = new Set([
   'APELIDO',
 ]);
 
-/** Formas derivadas do nome completo: "Maria Souza", "Maria da Conceição" e o prenome. */
+/**
+ * Formas derivadas do nome completo: todo início do nome com 2 ou mais palavras ("Maria da
+ * Conceição", "Maria da Conceição Silva") e prenome + último sobrenome ("Maria Souza").
+ */
 function derivedVariants(canonical: string): string[] {
   const words = canonical.split(/\s+/).filter(Boolean);
   const main = words.filter((w) => !PARTICLES.has(fold(w)));
   const out: string[] = [];
   if (main.length >= 3) {
     out.push(`${main[0]} ${main[main.length - 1]}`);
-    const secondIndex = words.indexOf(main[1] ?? '');
-    if (secondIndex > 0) out.push(words.slice(0, secondIndex + 1).join(' '));
+    let count = 0;
+    words.forEach((w, i) => {
+      if (PARTICLES.has(fold(w))) return;
+      count++;
+      if (count >= 2 && count < main.length) out.push(words.slice(0, i + 1).join(' '));
+    });
   }
   return out;
 }
@@ -135,7 +145,7 @@ function expandOccurrences(entities: DetectedEntity[], pages: PageIndex[]): void
   // Prenome isolado só é procurado se nenhuma outra pessoa tem o mesmo prenome.
   const firstNameOwners = new Map<string, number>();
   for (const e of entities) {
-    if (e.type !== 'PESSOA') continue;
+    if (e.type !== 'PESSOA' || e.suggestion) continue;
     const t = nameTokens(e.canonical)[0];
     if (t) firstNameOwners.set(t, (firstNameOwners.get(t) ?? 0) + 1);
   }
@@ -184,7 +194,11 @@ function expandOccurrences(entities: DetectedEntity[], pages: PageIndex[]): void
             if (!/^\p{Lu}/u.test(found)) continue;
             const after = page.text.slice(end, end + 30);
             const before = page.text.slice(Math.max(0, start - 30), start);
-            if (/^[ \t]+(?:(?:da|de|do|das|dos|e)[ \t]+)?\p{Lu}/u.test(after)) continue;
+            // Seguido de outro nome ("Maria Oliveira") é outra pessoa; seguido de palavra comum
+            // em maiúsculas ("DANILO NÚMERO") ou de "e Fulano", não.
+            const next = /^[ \t]+(?:(?:da|de|do|das|dos)[ \t]+)?(\p{Lu}[\p{L}]*)/u.exec(after)?.[1];
+            const nextKey = next ? fold(next) : '';
+            if (next && (FIRST_NAMES.has(nextKey) || SURNAMES.has(nextKey))) continue;
             if (/\p{Lu}[\p{L}]*[ \t]+$/u.test(before) && !isUpper(found)) continue;
           }
           const occ: Occurrence = {
@@ -263,8 +277,9 @@ function isMultiColumn(line: string): boolean {
  */
 function suggestRelatives(entities: DetectedEntity[], pages: readonly PageText[]): void {
   const textOf = new Map(pages.map((p) => [`${p.docId}|${p.pdfPage}`, p.text]));
+  // Inclui quem é mantido em claro: a filiação de um policial é dele, não do preso mais próximo.
   const people = entities.filter(
-    (e) => e.type === 'PESSOA' && e.role !== 'FAMILIAR' && e.decision === 'pseudonymize',
+    (e) => e.type === 'PESSOA' && e.role !== 'FAMILIAR' && !e.suggestion,
   );
   for (const e of entities) {
     if (e.type !== 'PESSOA' || e.role !== 'FAMILIAR') continue;
