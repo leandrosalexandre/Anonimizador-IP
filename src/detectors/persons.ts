@@ -118,6 +118,71 @@ function nameScore(text: string): { tokens: string[]; first: boolean; known: num
   };
 }
 
+const nameLike = (t: string) => FIRST_NAMES.has(t) || SURNAMES.has(t);
+
+/**
+ * Em CAIXA ALTA a capitalização não diz nada (legendas, objetos e relatos inteiros vêm assim):
+ * só é nome o trecho que começa por prenome conhecido e segue com palavras de nome. Aceita uma
+ * palavra desconhecida entre duas conhecidas ("DANILO EUFRÁSIO DOS REIS") e, depois de duas
+ * conhecidas, um último sobrenome desconhecido.
+ */
+function capsRuns(span: Span): Span[] {
+  const words = [...span.text.matchAll(/[^\s]+/gu)];
+  const keys = words.map((w) => wordKey(w[0]));
+  const out: Span[] = [];
+  let i = 0;
+  while (i < words.length) {
+    if (!FIRST_NAMES.has(keys[i] ?? '')) {
+      i++;
+      continue;
+    }
+    let last = i;
+    let known = 1;
+    let k = i + 1;
+    while (k < words.length) {
+      const t = keys[k] ?? '';
+      if (PARTICLES.has(t)) {
+        k++;
+        continue;
+      }
+      if (nameLike(t)) {
+        last = k;
+        known++;
+        k++;
+        continue;
+      }
+      let next = k + 1;
+      while (next < words.length && PARTICLES.has(keys[next] ?? '')) next++;
+      if (t.length >= 4 && next < words.length && nameLike(keys[next] ?? '')) {
+        last = next;
+        known++;
+        k = next + 1;
+        continue;
+      }
+      if (known >= 2 && t.length >= 4) {
+        last = k;
+        k++;
+      }
+      break;
+    }
+    const first = words[i];
+    const end = words[last];
+    if (first && end) {
+      const s = first.index ?? 0;
+      const e = (end.index ?? 0) + end[0].replace(/[.,;:]+$/u, '').length;
+      out.push({ start: span.start + s, end: span.start + e, text: span.text.slice(s, e) });
+    }
+    i = Math.max(k, last + 1);
+  }
+  return out;
+}
+
+/** Sugestão só quando todas as palavras são de nome (2 ou mais). */
+function plausibleName(text: string): boolean {
+  const { tokens } = nameScore(text);
+  return tokens.length >= 2 && tokens.every(nameLike);
+}
+
 /** Confiança de que uma sequência capitalizada é nome de pessoa (0 = descartar). */
 export function sequenceConfidence(text: string): number {
   const { tokens, first, known } = nameScore(text);
@@ -343,6 +408,8 @@ interface Trigger {
   role: PersonRole | null;
   /** Sinal fraco: só aplica se o nome também começar por prenome conhecido. */
   weak?: boolean;
+  /** Tratamento ("o Sr. Fulano"): um prenome conhecido sozinho já é pessoa. */
+  honorific?: boolean;
   many?: 'pair' | 'list';
 }
 
@@ -372,8 +439,9 @@ const TRIGGERS: Trigger[] = [
   },
   { re: '(?:o|a)\\s+advogad[oa]', role: 'ADVOGADO' },
   { re: '(?:o|a)\\s+m[ée]dic[oa](?:\\s+plantonista)?', role: 'MÉDICO' },
-  { re: '(?:o|a)\\s+senhor[a]?', role: null, weak: true },
-  { re: '(?:o|a)\\s+sr[a]?\\.?', role: null, weak: true },
+  { re: '(?:pessoa\\s+)?de\\s+nome', role: null },
+  { re: '(?:(?:[oa]|d[oa]|ao|pel[oa])\\s+)?senhor[a]?', role: null, weak: true, honorific: true },
+  { re: '(?:(?:[oa]|d[oa]|ao|pel[oa])\\s+)?sr[a]?\\.?', role: null, weak: true, honorific: true },
   { re: '(?:o|a)\\s+vizinh[oa]', role: null, weak: true },
   { re: 'como\\s+sendo', role: null, weak: true },
   { re: 'de\\s+propriedade\\s+de', role: null, weak: true },
@@ -400,7 +468,14 @@ export function detectTriggers(text: string, ctx: NameContext): Candidate[] {
       allowSingle: true,
     });
     const group = names.length > 1 && trigger.many === 'pair' ? `g${++groupCounter}` : undefined;
-    for (const span of names) {
+    for (const raw of names) {
+      let span = raw;
+      if (isUpper(span.text)) {
+        // Em CAIXA ALTA, só o trecho que é mesmo nome ("VÍTIMA TENTA FUGIR" não é).
+        const run = capsRuns(span)[0];
+        if (!run || run.start !== span.start) continue;
+        span = run;
+      }
       const { tokens, first } = nameScore(span.text);
       // Nome isolado só se for prenome conhecido.
       if (tokens.length === 1 && !first) continue;
@@ -410,7 +485,11 @@ export function detectTriggers(text: string, ctx: NameContext): Candidate[] {
         'gatilho',
         trigger.role ?? undefined,
       );
-      if (trigger.weak && !strongSequence(span.text)) c.suggestion = true;
+      if (trigger.weak && !strongSequence(span.text)) {
+        if (trigger.honorific && tokens.length === 1) c.confidence = 0.8;
+        else if (plausibleName(span.text)) c.suggestion = true;
+        else continue;
+      }
       if (trigger.role === 'FAMILIAR') c.relation = relationOf(m[groupIndex + 1] ?? '');
       if (group) c.group = group;
       out.push(c);
@@ -480,7 +559,10 @@ export function detectCapitalized(text: string, ctx: NameContext): Candidate[] {
       .flatMap(splitAtCaseChange)
       .map((s) => dropTrailingLabel(text, s))
       .filter((s) => s.text)
-      .flatMap((s) => splitOnExclusions(s, ctx.exclusions, ctx.blocked));
+      .flatMap((s) => splitOnExclusions(s, ctx.exclusions, ctx.blocked))
+      .flatMap((s) =>
+        isUpper(s.text) ? capsRuns(s).filter((r) => nameScore(r.text).tokens.length >= 2) : [s],
+      );
     for (const part of parts) {
       if (NAMED_AFTER.test(text.slice(Math.max(0, part.start - 40), part.start))) continue;
       const confidence = sequenceConfidence(part.text);
@@ -506,8 +588,9 @@ export function markAuthorities(text: string, candidates: Candidate[]): void {
   const titleAfter = new RegExp(`^${AUTHORITY_TITLE.source}`, 'iu');
   for (const c of candidates) {
     if (c.type !== 'PESSOA') continue;
-    const before = text.slice(Math.max(0, c.start - 45), c.start);
-    const sameLine = before.split('\n').pop() ?? '';
+    const before = text.slice(Math.max(0, c.start - 60), c.start);
+    // "o(a) perito(a) Dr(a). FULANO" → "o perito Dr. FULANO".
+    const sameLine = (before.split('\n').pop() ?? '').replace(/\(\s*[aoã]s?\s*\)/giu, '');
     const after = text.slice(c.end, c.end + 70);
     const nextLine = /^[ \t,]*\n[ \t]*([^\n]*)/u.exec(after)?.[1] ?? '';
     const sameLineAfter = /^[ \t]*[,–-][ \t]*([^\n]*)/u.exec(after)?.[1] ?? '';
@@ -517,7 +600,10 @@ export function markAuthorities(text: string, candidates: Candidate[]): void {
     const after1 = titleAfter.exec(nextLine)?.[0] ?? titleAfter.exec(sameLineAfter)?.[0];
     if (before1 || after1 || /^(?:mat(?:r[íi]cula)?\.?|DPC)\b/iu.test(nextLine)) {
       c.authority = true;
-      if (before1 ?? after1) c.position = capitalize(before1 ?? after1 ?? '');
+      c.suggestion = false;
+      // O posto ("DPC FULANO") já definiu a função.
+      if ((before1 ?? after1) && c.detector !== 'posto')
+        c.position = capitalize(before1 ?? after1 ?? '');
       if (PERITO_TITLE.test(before1 ?? after1 ?? '')) c.role = 'PERITO';
     }
     // Médico: "Dr. FULANO - CRM 12345", "médico FULANO", "Médico: Dr. FULANO".
@@ -536,6 +622,44 @@ export function markAuthorities(text: string, candidates: Candidate[]): void {
       c.suggestion = false;
     }
   }
+}
+
+// ---------------------------------------------------------------- Postos e graduações
+
+const RANKS: [RegExp, string, boolean][] = [
+  // [posto, função, exige prenome conhecido (siglas que também são palavras comuns)]
+  [/^(?:SGT|SUBTEN|ST)$/, 'Policial Militar', false],
+  [/^(?:AL-SD|SD|CB|TEN|CAP|MAJ|CEL)$/, 'Policial Militar', true],
+  [/^DPC$/, 'Delegado', false],
+  [/^EPC$/, 'Escrivão', false],
+  [/^(?:OIP|IPC)$/, 'Inspetor / Oficial Investigador', false],
+];
+const RANK_RE =
+  /(?<![\p{L}\p{N}-])(AL-SD|SUBTEN|SGT|ST|SD|CB|TEN|CAP|MAJ|CEL|DPC|EPC|IPC|OIP)\.?(?:[ \t]+(?:PM|BM|PC))?[ \t]+([\p{Lu}]{2,}(?:[ \t]+[\p{Lu}]{2,}){0,5})(?![\p{L}])/gu;
+
+/** "SGT FULANO DE TAL", "OIP FULANO": policial identificado pelo posto fica com o nome real. */
+export function detectRanks(text: string, ctx: NameContext): Candidate[] {
+  const out: Candidate[] = [];
+  for (const m of text.matchAll(RANK_RE)) {
+    const rule = RANKS.find(([re]) => re.test(m[1] ?? ''));
+    const name = m[2] ?? '';
+    if (!rule) continue;
+    const start = (m.index ?? 0) + m[0].length - name.length;
+    const span = splitOnExclusions(
+      { start, end: start + name.length, text: name },
+      ctx.exclusions,
+      ctx.blocked,
+    )[0];
+    if (!span || span.start !== start) continue;
+    const { tokens, first } = nameScore(span.text);
+    if (!tokens.length || (rule[2] && !first)) continue;
+    out.push({
+      ...personCandidate(capTokens(span), 0.9, 'posto'),
+      authority: true,
+      position: rule[1],
+    });
+  }
+  return out;
 }
 
 // ---------------------------------------------------------------- Papel pela seção da peça

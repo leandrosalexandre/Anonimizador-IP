@@ -11,6 +11,7 @@ import {
   detectCapitalized,
   detectEmpresas,
   detectQualification,
+  detectRanks,
   detectTriggers,
   markAuthorities,
   nameContext,
@@ -41,6 +42,7 @@ export function detectPage(text: string, options: DetectionOptions = {}): Candid
   const people = [
     ...detectStructured(text, exclusions),
     ...detectQualification(text, ctx),
+    ...detectRanks(text, ctx),
     ...detectTriggers(text, ctx),
     ...detectCapitalized(text, ctx),
   ];
@@ -140,6 +142,32 @@ function claim(index: PageIndex, start: number, end: number, claimer: DetectedEn
   return true;
 }
 
+/**
+ * Nome cortado pelo sistema sem reticências ("… INTERROGATÓRIO - FULANO DE TA"): se o início do
+ * nome é seguido de um pedaço em CAIXA ALTA da palavra seguinte do nome, o pedaço entra junto.
+ */
+function extendCutName(text: string, start: number, end: number, canonical: string): number {
+  const full = fold(canonical).split(/\s+/).filter(Boolean);
+  const found = fold(text.slice(start, end)).split(/\s+/).filter(Boolean);
+  if (found.length >= full.length || found.some((w, i) => w !== full[i])) return end;
+  let n = found.length;
+  let pos = end;
+  // Partículas inteiras entre o trecho e o pedaço cortado ("FULANO DE TA").
+  for (;;) {
+    const m = /^[ \t]+([\p{Lu}]+)(?![\p{L}])/u.exec(text.slice(pos, pos + 30));
+    const next = full[n];
+    if (!m || !next) return end;
+    const piece = fold(m[1] ?? '');
+    if (piece === next && PARTICLES.has(next)) {
+      pos += m[0].length;
+      n++;
+      continue;
+    }
+    if (piece.length >= 3 && piece !== next && next.startsWith(piece)) return pos + m[0].length;
+    return end;
+  }
+}
+
 /** Procura variantes conhecidas em todas as páginas e acrescenta as ocorrências encontradas. */
 function expandOccurrences(entities: DetectedEntity[], pages: PageIndex[]): void {
   // Prenome isolado só é procurado se nenhuma outra pessoa tem o mesmo prenome.
@@ -186,7 +214,9 @@ function expandOccurrences(entities: DetectedEntity[], pages: PageIndex[]): void
     for (const index of pages) {
       const { page, occupied } = index;
       for (const s of searches) {
-        for (const [start, end] of findAll(page.text, s.text, false)) {
+        for (const [start, foundEnd] of findAll(page.text, s.text, false)) {
+          const end =
+            e.type === 'PESSOA' ? extendCutName(page.text, start, foundEnd, e.canonical) : foundEnd;
           if (!claim(index, start, end, e)) continue;
           const found = page.text.slice(start, end);
           if (s.single) {

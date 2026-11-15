@@ -73,6 +73,12 @@ com uma um se que para por em sem sob sobre entre dias mes ano horas minutos pes
 protecao homicidios trata tatuagens imagens descricoes identificacao comprovacao indice nota culpa
 ciencia garantias constitucionais guia recolhimento preso recibo protocolo log movimentacao achado
 pagina arquivo arquivos arquivado arquivamento anexo anexos documentos digitalizado digitalizada
+camisa camiseta capinha bermuda short calca blusa vestido bone chinelo tenis mochila bolsa capa
+branco branca vermelho vermelha azul verde cinza rosa salmao avariado avariada danificado
+pro max plus mini chip oi vivo claro camera cameras traseira traseiras acabamento descricao
+faz saber pelo pela pelos pelas ao aos nos nas num numa tenta fugir cai solo espancamento
+agressoes agressao expulsao homem mulher inicia viatura composicao rabecao sgt subten sd cb ten
+cap maj cel dpc epc ipc oip bptur coordenador coordenadora designado designada
 assinatura assinado assinada impresso impressao emitido emitida gerado sistema usuario pagina paginas
 `
   .split(/\s+/)
@@ -80,4 +86,4 @@ assinatura assinado assinada impresso impressao emitido emitida gerado sistema u
 
 /** Cargos e funções que indicam autoridade ou servidor no exercício da função (a manter). */
 export const AUTHORITY_TITLE =
-  /(?<![\p{L}\p{N}])(?:delegad\p{L}(?:\s+de\s+pol[ií]cia(?:\s+civil)?)?|escriv\p{L}{1,3}|inspetor[a]?|agente(?:\s+de\s+pol[ií]cia)?|investigador[a]?|comiss[áa]ri[oa]|perit[oa](?:\s+criminal)?|ju[ií]z[a]?(?:\s+de\s+direito)?|promotor[a]?(?:\s+de\s+justi[çc]a)?|defensor[a]?\s+p[úu]blic[oa]|dpc|mm\.?\s*ju[ií]z[a]?)(?![\p{L}\p{N}])/iu;
+  /(?<![\p{L}\p{N}])(?:delegad\p{L}(?:\s+de\s+pol[ií]cia(?:\s+civil)?)?|escriv\p{L}{1,3}|inspetor[a]?|agente(?:\s+de\s+pol[ií]cia)?|investigador[a]?|comiss[áa]ri[oa]|coordenador[a]?|perit[oa](?:\s+criminal)?|ju[ií]z[a]?(?:\s+de\s+direito)?|promotor[a]?(?:\s+de\s+justi[çc]a)?|defensor[a]?\s+p[úu]blic[oa]|dpc|mm\.?\s*ju[ií]z[a]?)(?![\p{L}\p{N}])/iu;

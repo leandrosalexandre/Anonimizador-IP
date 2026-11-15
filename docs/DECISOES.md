@@ -270,3 +270,29 @@ reproduzido com nomes inventados em `test/fixtures/apf-eletronico.ts`.
 | Colar texto         | Aba "Colar texto" em Documentos: o texto vira um documento do cofre (`pasted`, uma página, sem PDF), a detecção roda na hora e o resultado aparece com legenda, pronto para copiar, sem passar pela tela Exportar (avisa para ler antes de copiar)                                                                                                                                                                                                                           | Pedido: anonimizar um relato de flagrante sem importar PDF                          |
 | Relatório em Word   | Reidentificar → "Baixar Word (.docx)": o texto reidentificado é dividido em título, quadro de referência, vocativos, seções, parágrafos, citações (linhas com ">" ou parágrafo longo entre aspas), local e data e assinatura. O .docx é escrito à mão (`src/report`), com ZIP sem compressão, sem biblioteca nova. Brasões do cabeçalho extraídos do modelo enviado pelo usuário; rodapé, cidade e assinatura ficam nas preferências                                         | Pedido: relatório no padrão do modelo                                               |
 | Cofres antigos      | Continuam abrindo. Para aplicar o motor novo a um inquérito já revisado: Revisão → "Recomeçar a revisão do zero"                                                                                                                                                                                                                                                                                                                                                             | As decisões antigas são preservadas por padrão                                      |
+
+## Versão 1.2.1 — texto em CAIXA ALTA, postos policiais e nomes cortados
+
+Erros vistos na revisão de um APF real (reproduzidos no APF fictício com nomes inventados):
+
+- **CAIXA ALTA não é sinal de nome.** Legendas de fotos, objetos apreendidos e relatos inteiros
+  vêm em maiúsculas. Em trecho todo em maiúsculas, gatilhos e sequências só aceitam o pedaço que
+  começa por prenome conhecido e segue com palavras de nome (uma desconhecida entre duas
+  conhecidas é aceita; depois de duas conhecidas, um último sobrenome desconhecido também).
+  Sequência em maiúsculas com menos de 2 palavras de nome é descartada — não vira nem sugestão.
+  Limite assumido: nome em maiúsculas com sobrenomes raros, fora dos campos do documento, pode
+  ser cortado; a varredura residual continua apontando prenomes soltos.
+- **Novas exclusões**: roupas, cores, acessórios de celular, "faz saber", preposições contraídas
+  ("pelo", "ao"…), siglas de posto.
+- **Postos e graduações** (`SGT`, `SD`, `CB`, `DPC`, `EPC`, `OIP`…) antes de nome em maiúsculas:
+  pessoa mantida, com a função. Siglas que também são palavras (`CEL`, `CAP`, `TEN`, `SD`, `CB`)
+  exigem prenome conhecido. Nome de guerra de uma palavra ("OIP FULANO") só se junta a quem já é
+  autoridade — nunca a envolvido, para não deixar nome em claro.
+- **"(ASSINATURA PADRÃO)"** na assinatura eletrônica indica usuário do sistema (servidor): mantido.
+- **"o(a) perito(a) Dr(a). Fulano"** e **"Coordenador(a)"**: as formas "(a)" são ignoradas ao
+  procurar o cargo antes do nome.
+- **Nome cortado sem reticências** (log de movimentação): o início do nome seguido de um pedaço
+  em maiúsculas da palavra seguinte entra na mesma pessoa.
+- **"Sr./Sra. Fulano"** com um prenome conhecido: aplicado (não fica como sugestão); junta-se à
+  única pessoa com esse prenome ou vira "Pessoa" a confirmar. Gatilho novo: "de nome".
+- **Sugestões** de gatilhos fracos só quando todas as palavras são de nome.
